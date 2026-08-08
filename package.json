@@ -8,7 +8,7 @@
     "build": "node tools/build.mjs",
     "package": "node tools/package.mjs",
 
-    "test": "node --test test/checks/image.test.mjs test/checks/rules.test.mjs",
+    "test": "node --test test/checks/image.test.mjs test/checks/manifest.test.mjs test/checks/rules.test.mjs",
     "test:theme": "node --test test/checks/theme.test.mjs",
     "test:dnr": "node test/checks/dnr-2kb.mjs",
     "test:liveness": "node test/checks/legend-liveness.mjs",
