@@ -19,6 +19,7 @@ node tools/build.mjs        # assemble extension/ -> dist/chrome/ and dist/firef
 node tools/package.mjs      # build + emit the store ZIP and XPI into dist/
 npm test                    # 35 offline checks, ~120 ms, no network, no browser
 npm run test:theme          # 28 theme-layer checks (browser, no network)
+npm run test:widget         # 20 in-page widget checks (browser + live Maps)
 npm run test:dnr            # 2 KB DNR-trap detector (launches a browser)
 npm run test:liveness       # CompactLegend token canary (network)
 npm run test:package        # installs the built ZIP and XPI in real browsers
@@ -105,6 +106,33 @@ Rules that keep it from looking like a generic dark-mode extension:
   imagery), and never go near photos, Street View, satellite, or avatars.
 - **Never touch the map canvas** — it is already dark by other means. Regression check: map-area
   mean RGB must not move when the theme toggles.
+
+## The on-page widget
+
+`extension/content/widget.js` is a self-contained control that mounts into a
+**shadow root** on the Maps page. The shadow boundary is load-bearing, not
+hygiene: `theme.js` rewrites every colour-valued custom property on `:root`, so
+without it the widget's own palette would be transformed along with Maps'. Its
+CSS therefore lives in a template literal in that file, not in a
+manifest-registered `.css`.
+
+It positions itself **by measurement, never by selector** — same reason as the
+theme. Two passes: find Google's tall left results column (if open, move onto the
+map), then find the lowest painted thing overlapping the column we are about to
+occupy and sit below it. The second pass must include `button` and `a` at a low
+minimum width, because over the map the obstruction is the category chip row —
+individual ~100px buttons in a transparent container. A card-shaped probe misses
+them entirely and lands the panel on top of Google's filters.
+
+**`npm run test:widget` is headed on purpose and parks the physical cursor
+first.** It was written headed, passed 12/12 alone, then failed 5 of 12 inside
+`test:full` because a headed browser also receives the real OS pointer — wherever
+the mouse was left decided whether the panel was hovered open. Headless was tried
+and removes the pointer, but Chromium headless does not load the unpacked
+extension here (measured: 0/3, twice). So the check parks the cursor via
+PowerShell and asserts `no stray pointer over the widget at rest` outright.
+Note the parking must use `-EncodedCommand`; Node's Windows argv quoting mangled
+the `-Command` form on every run while the same text pasted into a shell worked.
 
 ## Verification discipline
 

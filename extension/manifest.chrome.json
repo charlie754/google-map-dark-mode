@@ -106,7 +106,8 @@
         "https://maps.google.com/*"
       ],
       "js": [
-        "content/theme.js"
+        "content/theme.js",
+        "content/widget.js"
       ],
       "css": [
         "content/theme.css"

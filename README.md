@@ -121,6 +121,36 @@ independently.
 
 ---
 
+## The on-page control
+
+The toolbar popup is a long way from where you are actually looking, so the same
+three switches are also on the map itself: a small **Dark Mode** pill that reads
+its own state, and expands into the full panel when you hover or focus it.
+
+It places itself by measurement rather than by selector, because Maps' class
+names are obfuscated and rotate:
+
+- normally it sits in the top-left, **below** whatever Google has put there —
+  the search field alone, or the weather and traffic card when that appears
+- when you run a search, Google's results column takes over the left side, so
+  the pill **moves onto the map** instead, and drops below the category filter
+  chips rather than covering them
+- it re-measures on resize and whenever Maps rebuilds that corner
+
+It lives in a shadow root. That is not incidental: the sibling content script
+rewrites every colour-valued custom property on `:root`, and without the shadow
+boundary this panel's own palette would be transformed along with Maps'.
+
+Credits: the GitHub button is [fuzzy-warthog-48 by
+Itskrish01](https://uiverse.io/Itskrish01/fuzzy-warthog-48) from uiverse.io,
+rewritten from Tailwind utilities into plain CSS so it works inside the shadow
+root. The four keyframes it references are not published on that page — they
+live in the author's own Tailwind config — so those are reconstructed from how
+each one is used. The rest of the panel follows the glass/accent vocabulary of
+the GOAT desktop app.
+
+---
+
 ## Limitations — the honest list
 
 - **This depends on undocumented Google behaviour.** Nothing here is a public

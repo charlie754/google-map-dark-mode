@@ -13,7 +13,8 @@
     "test:dnr": "node test/checks/dnr-2kb.mjs",
     "test:liveness": "node test/checks/legend-liveness.mjs",
     "test:package": "node test/checks/package-install.mjs",
-    "test:full": "npm run build && npm test && npm run test:theme && npm run test:dnr && npm run test:liveness",
+    "test:widget": "node test/checks/widget.mjs",
+    "test:full": "npm run build && npm test && npm run test:theme && npm run test:widget && npm run test:dnr && npm run test:liveness",
 
     "gate:live": "node test/live-gate.mjs chrome",
     "gate:live:control": "node test/live-gate.mjs chrome-control",
