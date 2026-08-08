@@ -10,7 +10,7 @@ recording that produced docs/media/demo.gif:
 
     per-frame ADAPTIVE palette      100 MB
     global palette + dithering       46 MB
-    global palette, no dithering     19 MB   <- what this script does
+    global palette, no dithering     21 MB   <- what this script does
 
 Both matter for the same reason: a GIF frame can only be stored as a delta if
 its pixels are byte-identical to the previous frame's. Per-frame palettes
@@ -44,11 +44,25 @@ while True:
     i += 1
 cap.release()
 
-# One palette shared by every frame, derived from a mid-clip frame. Per-frame
-# ADAPTIVE palettes look marginally better but force a full local colour table
-# and a full pixel block per frame -- 100 MB for this clip. A single global
-# palette lets the encoder emit inter-frame deltas instead.
-base = rgb[len(rgb) // 2].convert("P", palette=Image.ADAPTIVE, colors=256)
+# One palette shared by every frame. Per-frame ADAPTIVE palettes look marginally
+# better but force a full local colour table and a full pixel block per frame --
+# 100 MB for this clip. A single global palette lets the encoder emit
+# inter-frame deltas instead.
+#
+# Derive it from frames sampled across the whole clip, never from one frame.
+# Deriving it from the middle frame lost the reds outright: that frame is a
+# full-screen dark blue map, so a 256-colour adaptive palette computed from it
+# spends every slot on blues and greys, and the Ko-fi button -- the one strongly
+# red thing in the recording, and on screen for only part of it -- quantised to a
+# washed-out pink. Stacking PALETTE_SAMPLES frames into one image before
+# quantising makes every colour the clip ever shows compete for slots.
+PALETTE_SAMPLES = 48
+picks = [rgb[round(k * (len(rgb) - 1) / (PALETTE_SAMPLES - 1))] for k in range(PALETTE_SAMPLES)]
+w0, h0 = picks[0].size
+stack = Image.new("RGB", (w0, h0 * len(picks)))
+for n, im in enumerate(picks):
+    stack.paste(im, (0, n * h0))
+base = stack.convert("P", palette=Image.ADAPTIVE, colors=256)
 frames = [im.quantize(palette=base, dither=Image.NONE) for im in rgb]
 
 # 33ms/frame == 30fps. GIF stores delay in 10ms units, so 3 is the closest
