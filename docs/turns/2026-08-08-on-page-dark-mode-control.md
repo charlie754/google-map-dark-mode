@@ -143,6 +143,29 @@ can be removed from both manifests in one edit.
 - **P1** — capture a `prefers-reduced-motion` screenshot pair as standing evidence.
 - **P2** — the collapsed pill could show the state in colour as well as words for glanceability.
 
+## 9a. Amendment, same day
+
+Operator, after asking whether the button stars the project directly: it does not — it is
+`window.open` on the repo URL, and the user clicks GitHub's own Star button there. Starring is an
+authenticated write (`PUT /user/starred/{owner}/{repo}`) needing an OAuth token with `public_repo`
+scope belonging to that user, so doing it in-button would mean the extension holding write access to
+people's GitHub accounts. Not a trade worth making for a star button, and GitHub provides no
+one-click star URL precisely because of it.
+
+Two changes requested and made:
+
+- label `Star this on GitHub` → **`Star Project on Github`**
+- the closing sentence under the button (*"Free and open source, and staying that way…"*) **removed**
+  from the on-page panel, along with its `.foot` rules, stagger delay and reduced-motion entry. The
+  GitHub button now carries the panel's closing margin itself. The same sentence remains in the
+  toolbar popup, which was not in scope.
+
+The repo URL was **kept** rather than switched to the profile: "Star Project" only has a referent on
+a repository — a profile page has no Star button. One line to change if that was not the intent.
+
+Re-verified after the change: `test:widget` **20/20**, label confirmed on the wire as
+`label="Star Project on Github"`, both archives rebuilt.
+
 ## 10. Artefacts
 
 - This report: `docs/turns/2026-08-08-on-page-dark-mode-control.md`

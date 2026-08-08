@@ -180,15 +180,14 @@
 /* Rows fade and rise in, staggered, so the panel assembles rather than
    appearing. Delays are only on the way in; closing is immediate so the panel
    never appears to hesitate when the pointer leaves. */
-.row, .kofi, .gh, .foot {
+.row, .kofi, .gh {
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .shell.is-open .row,
 .shell.is-open .kofi,
-.shell.is-open .gh,
-.shell.is-open .foot { opacity: 1; transform: none; }
+.shell.is-open .gh { opacity: 1; transform: none; }
 /* Keyed by data-row, not :nth-of-type -- the rows share a parent with a rule
    and two paragraphs, so type counting would silently address the wrong ones. */
 .shell.is-open .row[data-row="enabled"]    { transition-delay: 60ms; }
@@ -196,7 +195,6 @@
 .shell.is-open .row[data-row="darkChrome"] { transition-delay: 160ms; }
 .shell.is-open .kofi { transition-delay: 210ms; }
 .shell.is-open .gh   { transition-delay: 250ms; }
-.shell.is-open .foot { transition-delay: 290ms; }
 
 /* ---- switch rows ---- */
 
@@ -368,8 +366,9 @@
   to   { opacity: 0.45; transform: translate(-50%, -50%) scale(1.2); }
 }
 
-.foot { margin: 9px 0 0; font-size: 10px; line-height: 1.45; color: var(--ink-muted); }
-.foot b { color: var(--ink-cream); font-weight: 600; }
+/* The GitHub button is the last thing in the panel; nothing follows it, so it
+   carries the closing margin itself. */
+.gh { margin-bottom: 2px; }
 
 /* ---- health notice, only rendered when something is actually wrong ---- */
 .warn {
@@ -386,7 +385,7 @@
 .shell.has-warning .warn { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
-  .shell, .shell:hover, .body, .row, .kofi, .gh, .foot, .moon, .chev, .thumb, .track {
+  .shell, .shell:hover, .body, .row, .kofi, .gh, .moon, .chev, .thumb, .track {
     transition: none !important;
     transform: none !important;
   }
@@ -394,8 +393,7 @@
   .gh__sweep, .gh__bar, .gh__star svg, .gh__glow { animation: none !important; }
   .gh:hover .gh__star, .gh:hover .gh__label { transform: none !important; }
   /* Without the rise animation the rows still need to be visible when open. */
-  .shell.is-open .row, .shell.is-open .kofi,
-  .shell.is-open .gh, .shell.is-open .foot { opacity: 1; }
+  .shell.is-open .row, .shell.is-open .kofi, .shell.is-open .gh { opacity: 1; }
 }
 `;
 
@@ -496,10 +494,8 @@
     '<span class="gh__sweep"><span class="gh__bar"></span></span>' +
     '<span class="gh__inner">' +
     '<span class="gh__star">' + SVG_STAR + '<span class="gh__glow"></span></span>' +
-    '<span class="gh__label">Star this on GitHub</span>' +
+    '<span class="gh__label">Star Project on Github</span>' +
     '</span></button>' +
-    '<p class="foot">Free and open source, and staying that way. ' +
-    'A tip is a one-off &mdash; <b>nothing</b> in the extension changes either way.</p>' +
     '</div></div></div></div>';
 
   /* ------------------------------------------------------------------ state */
