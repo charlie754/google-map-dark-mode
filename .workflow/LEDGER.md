@@ -61,11 +61,42 @@ unauthenticated, style-name-keyed asset — `https://www.gstatic.com/maps/res/Co
 
 ---
 
+## M0.9 — adversarial review: **DONE** (2026-08-07)
+
+Workflow `wf_57c8be03-35e`, 56 agents, 4 lenses, every finding independently attacked by a refuter.
+**51 candidates → 12 survivors → 1 HIGH.** The core mechanism held: the reviewer's closing words
+were *"the surviving set is one real bug and a tail of minor debt."*
+
+| Finding | Sev | State |
+|---|---|---|
+| F1 content script never injects on bare `/maps` or `?q=` | HIGH | **FIXED** and proven on the failing URLs in both engines |
+| F2 already-dark guard unreachable | MED | **FIXED** — latched guard + evidence floor |
+| F3 detected failure had no remediation | MED | **FIXED** — auto-disable, persisted, cause-keyed re-enable |
+| F4 late alias tokens inverted twice | MED | **FIXED** — sentinel cascade probe |
+| F5 `combineVerdict` reported healthy when unverified | LOW | **FIXED** — `unverified` verdict + packed-build oracle |
+| F6 `MAX_PASSES` a lifetime budget | LOW | **FIXED** — refunded on productive passes |
+| F7 health record never refreshed | LOW | **FIXED** — 6 h alarm, sequenced after F3 |
+
+## M3 / M4 — UI and packaging: **DONE** (2026-08-08)
+
+Renamed to **Google Map Dark Mode** v1.0.0. Popup + options, dark on by default, Ko-fi tab matching
+the author's previous extension. Gecko id `google-map-dark-mode@charlie754.github.io`. Store
+artifacts built and **installed in real browsers**: XPI activates in Firefox, ZIP contents render a
+dark Maps in Chromium. Published: https://github.com/charlie754/google-map-dark-mode @ `084c6a9`.
+
+## M5 — store submission: **BLOCKED on human steps + one operator decision**
+
+Both reviewer-facing blockers are closed (Source link live, add-on id shippable). Remaining: store
+accounts, the US$5 Chrome fee, at least one 1280×800 screenshot, the uploads — and the operator's
+ToS/trademark decision, which is not mine to make.
+
+---
+
 ## OPEN — carried forward
 
 | Sev | Item |
 |---|---|
-| HIGH | **Terrain gap on tile transports.** Rules 3/4 match `!2sRoadmap!` literally, so `!2sTerrain!` raster/stream tiles are unrewritten by construction. mapcore is covered by rule 2; the raster arm (all Firefox) is not. Pinned as a `KNOWN GAP` test; never driven live in Terrain mode. |
+| ~~HIGH~~ | ~~Terrain gap on tile transports~~ — **CLOSED 2026-08-08.** Rules 3/4 widened to `(Roadmap\|Terrain)`; corpus entries and mutation proofs added. Still never driven live in Terrain mode. |
 | HIGH | **`#gb` Google account bar is outside the token system** — hard-coded `#ffffff` on `#0b57d0`. A full-brightness Sign-in button on a dark UI. App-launcher glyph sits at 1.66:1, pre-existing and pixel-proven unchanged. |
 | MEDIUM | Panel `box-shadow`s are hard-coded `rgba(0,0,0,…)` in CSS rules, not tokens; correctly preserved, so dark panels lose drop-shadow separation. |
 | MEDIUM | Never exercised: satellite, Street View, directions, `/maps/embed`, regional `google.<cctld>` hosts. Manifest does not even match regional TLDs. |
