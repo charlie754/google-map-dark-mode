@@ -16,6 +16,7 @@
  * classic event-page script, so it is copied verbatim.
  */
 
+import { execFileSync } from "node:child_process";
 import { readdir, readFile, writeFile, mkdir, rm } from "node:fs/promises";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -173,6 +174,26 @@ async function build() {
     }
     const refs = checkReferences(target.name, manifest, emittedRel);
 
+    // Syntax-check every emitted .js the same way: from disk, with the real
+    // parser. This build validated JSON and manifest references but never the
+    // JavaScript, and twice shipped a file that could not parse -- a backtick
+    // inside a CSS comment closed the template literal holding the widget's
+    // stylesheet, the build reported success, and the extension loaded with no
+    // content script at all. `node --check` is the cheapest possible guard
+    // against an artifact that cannot run.
+    let jsChecked = 0;
+    for (const { rel } of emitted) {
+      if (!rel.endsWith(".js")) continue;
+      const abs = join(outDir, ...rel.split("/"));
+      try {
+        execFileSync(process.execPath, ["--check", abs], { stdio: "pipe" });
+      } catch (err) {
+        const detail = String(err.stderr || err.message || "").trim().split("\n").slice(0, 4).join("\n");
+        throw new Error(`dist/${target.name}/${rel} is not valid JavaScript:\n${detail}`);
+      }
+      jsChecked++;
+    }
+
     const subtotal = emitted.reduce((n, e) => n + e.bytes, 0);
     grandTotal += subtotal;
 
@@ -180,7 +201,7 @@ async function build() {
     for (const { rel, bytes } of emitted.sort((a, b) => (a.rel < b.rel ? -1 : 1))) {
       console.log(`  ${relative(ROOT, join(outDir, ...rel.split("/"))).split(sep).join("/")}  ${bytes} bytes`);
     }
-    console.log(`  -- ${emitted.length} files, ${subtotal} bytes, ${jsonChecked} JSON file(s) parsed OK, ${refs} manifest reference(s) resolved`);
+    console.log(`  -- ${emitted.length} files, ${subtotal} bytes, ${jsonChecked} JSON + ${jsChecked} JS file(s) parsed OK, ${refs} manifest reference(s) resolved`);
     console.log("");
   }
 

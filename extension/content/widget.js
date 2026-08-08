@@ -260,6 +260,13 @@
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(210, 65, 62, 0.28);
+  /* Re-declared here, and this is not redundant: the "all: unset" at the top of
+     this rule resets transition to none, and this rule comes AFTER the
+     .row/.kofi/.gh block that sets it. Without this the hover scale applied
+     instantly -- the button jumped to 1.05 with no animation whatsoever, which
+     is exactly what it looked like. */
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-base) var(--ease),
+              box-shadow var(--dur-base) var(--ease), background var(--dur-fast) var(--ease);
 }
 /* The stagger transition above owns opacity/transform, so hover adds its own
    properties rather than replacing the shorthand. */
@@ -276,6 +283,15 @@
 .shell.is-open .gh:hover { transform: scale(1.05); }
 .shell.is-open .kofi:active,
 .shell.is-open .gh:active { transform: scale(0.96); }
+
+/* The entry stagger above parks a 210ms/250ms transition-delay on these two
+   buttons, and a delay set in one rule keeps applying in every other state.
+   Hovering therefore sat still for a fifth of a second before the scale began,
+   which reads as "the button does not animate" -- and it is invisible to any
+   assertion that only samples the final transform. Clear it for the pointer
+   states so the lift starts on the same frame as the pointer arrives. */
+.shell.is-open .kofi:hover, .shell.is-open .kofi:active,
+.shell.is-open .gh:hover,   .shell.is-open .gh:active { transition-delay: 0s; }
 
 .kofi:hover { box-shadow: var(--glass-shadow-hover), 0 10px 26px rgba(210, 65, 62, 0.45); }
 .gh:hover { box-shadow: var(--glass-shadow-hover); }
@@ -331,6 +347,10 @@
   background: #262626;
   overflow: hidden;
   cursor: pointer;
+  /* See the note on .kofi: the "all: unset" above wipes the transition this
+     rule would otherwise inherit from the .row/.kofi/.gh block. */
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-base) var(--ease),
+              box-shadow var(--dur-base) var(--ease);
 }
 .gh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -524,6 +544,7 @@
   let openTimer = 0;
   let closeTimer = 0;
   let pinned = false; // click-to-pin, so touch and keyboard users get a latch
+  let reloading = false; // a map-affecting setting changed; the page is going back
 
   /* --------------------------------------------------------------- placement
    * Google's top-left overlay stack is the search field plus, conditionally, a
@@ -883,10 +904,49 @@
         if (area !== 'local' || !changes.settings) return;
         const next = changes.settings.newValue;
         if (!next) return;
+
+        /* Which settings need the page back?
+         *
+         * `darkChrome` is genuinely live -- theme.js re-derives the palette from
+         * :root and repaints on the spot, no reload.
+         *
+         * `darkMap` and `enabled` are not, and cannot be. The map surface is
+         * painted by Maps' WebGL renderer from the CompactLegend palette it
+         * fetches ONCE per session; our rule decides which variant that fetch
+         * returns. Flipping the rule afterwards changes nothing already in the
+         * renderer, and Maps exposes no way to make it re-fetch. So the switch
+         * looked broken: correct on the next load, inert until then.
+         *
+         * Reloading is therefore the mechanism, not a workaround. It is cheap
+         * here because Maps keeps its whole view state -- coordinates, zoom,
+         * place, search -- in the URL, so the page comes back where it was.
+         *
+         * Ordering is already safe: the background applies the ruleset BEFORE
+         * it writes settings, so by the time this listener runs the engine is
+         * in its new state and the reload re-fetches the right palette. */
+        /* Compare the event's own oldValue against its newValue, NOT against
+           our `settings`. patch() updates `settings` optimistically the instant
+           the switch is clicked so the control feels instant, which means by
+           the time this listener runs the local copy already holds the new
+           value and a local comparison always says "nothing changed" -- the
+           reload silently never fired. The event carries the truth. */
+        const prev = changes.settings.oldValue || DEFAULT_SETTINGS;
+        const mapAffecting =
+          (typeof next.darkMap === 'boolean' && next.darkMap !== prev.darkMap) ||
+          (typeof next.enabled === 'boolean' && next.enabled !== prev.enabled);
+
         for (const k of Object.keys(DEFAULT_SETTINGS)) {
           if (typeof next[k] === 'boolean') settings[k] = next[k];
         }
         render();
+
+        if (!mapAffecting || reloading) return;
+        reloading = true;
+        // Say so, rather than appearing to refresh itself for no reason.
+        const state = shadow && shadow.querySelector('[data-state]');
+        if (state) state.textContent = 'Applying…';
+        // Long enough for that word to paint; short enough to feel immediate.
+        setTimeout(function () { location.reload(); }, 180);
       });
     }
   }

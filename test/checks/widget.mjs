@@ -3,6 +3,8 @@
  * Run: node verify-widget.mjs
  */
 import { chromium } from '@playwright/test';
+import { meanRgb, luminance } from '../lib/image.mjs';
+import { mapClip } from '../lib/session.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -154,11 +156,18 @@ try {
   await page.screenshot({ path: path.join(OUT, '1-collapsed.png'), clip: { x: 0, y: 0, width: 560, height: 420 } });
 
   // ---- 3. hover expands, and the expansion is animated (not a jump)
-  const box = await q(() => {
+  /* Read the host rect immediately before every hover, never from a value
+     captured earlier. The widget re-places whenever Maps rebuilds its overlays
+     -- the weather card can arrive seconds after load and push it down -- so a
+     stale coordinate silently misses the pill, the panel never opens, and three
+     unrelated assertions fail downstream. This mirrors real life: the control
+     can move out from under the pointer. */
+  const hostPoint = () => q(() => {
     const r = document.getElementById('gmdm-widget-host').getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    return { x: r.left + r.width / 2, y: r.top + Math.min(24, r.height / 2) };
   });
-  await page.mouse.move(box.x, box.y);
+  const box = await hostPoint();
+  await page.mouse.move(...Object.values(await hostPoint()));
   const widths = [];
   for (let i = 0; i < 14; i++) {
     widths.push(await q(() => {
@@ -267,21 +276,51 @@ try {
   await page.screenshot({ path: path.join(OUT, '3b-github-hover.png'), clip: { x: 0, y: 0, width: 480, height: 620 } });
 
   // ---- 5. a switch actually drives the engine
+  // Toggling darkMap now reloads the tab on purpose: the map surface is painted
+  // from a palette Maps fetches once per session, so a rule flip alone cannot
+  // repaint it. Assert the reload happens -- that IS the hot-apply feature --
+  // and do it with waitForNavigation rather than a sleep, so a regression that
+  // silently stops reloading fails here instead of racing.
+  const flip = async (key) => {
+    const nav = page.waitForNavigation({ timeout: 20000 }).then(() => true, () => false);
+    await page.evaluate((k) => {
+      document.getElementById('gmdm-widget-host').shadowRoot
+        .querySelector(`.track[data-key="${k}"]`).click();
+    }, key);
+    const navigated = await nav;
+    if (navigated) await page.waitForTimeout(7000);
+    return navigated;
+  };
+
   const before = await worker.evaluate(() => chrome.declarativeNetRequest.getEnabledRulesets());
-  await page.mouse.move(box.x, box.y);
+  await page.mouse.move(...Object.values(await hostPoint()));
   await page.waitForTimeout(400);
-  await page.evaluate(() => document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.track[data-key="darkMap"]').click());
-  await page.waitForTimeout(1200);
+  const navOff = await flip('darkMap');
   const after = await worker.evaluate(() => chrome.declarativeNetRequest.getEnabledRulesets());
   const stored = await worker.evaluate(() => chrome.storage.local.get('settings'));
   ok('switch drives the DNR ruleset', before.includes('dark_map') && !after.includes('dark_map'),
      `rulesets ${JSON.stringify(before)} -> ${JSON.stringify(after)}; storage=${JSON.stringify(stored.settings)}`);
-  await page.screenshot({ path: path.join(OUT, '4-map-off.png'), clip: { x: 0, y: 0, width: 560, height: 560 } });
+  ok('turning the map surface off reloads the tab so it applies at once', navOff,
+     navOff ? 'page navigated within 20s of the toggle' : 'NO RELOAD -- the switch would need a manual refresh');
 
-  await page.evaluate(() => document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.track[data-key="darkMap"]').click());
-  await page.waitForTimeout(1200);
+  // And the map is actually light again afterwards, which is the point.
+  const offShot = await page.screenshot({ path: path.join(OUT, '4-map-off.png'), clip: mapClip(page.viewportSize()) });
+  const offMean = meanRgb(offShot);
+  const offLum = { ...offMean, lum: luminance(offMean) };
+  ok('map is light after turning the map surface off',
+     offLum.lum > 150, `mean=(${offLum.r.toFixed(1)}, ${offLum.g.toFixed(1)}, ${offLum.b.toFixed(1)}) lum=${offLum.lum.toFixed(1)}`);
+
+  await page.mouse.move(...Object.values(await hostPoint()));
+  await page.waitForTimeout(500);
+  const navOn = await flip('darkMap');
   const restored = await worker.evaluate(() => chrome.declarativeNetRequest.getEnabledRulesets());
   ok('switch restores it', restored.includes('dark_map'), `rulesets=${JSON.stringify(restored)}`);
+  ok('turning it back on reloads too', navOn, navOn ? 'page navigated' : 'NO RELOAD');
+  const onShot = await page.screenshot({ path: path.join(OUT, '4b-map-on.png'), clip: mapClip(page.viewportSize()) });
+  const onMean = meanRgb(onShot);
+  const onLum = { ...onMean, lum: luminance(onMean) };
+  ok('map is dark again after turning it back on',
+     onLum.lum < 100, `mean=(${onLum.r.toFixed(1)}, ${onLum.g.toFixed(1)}, ${onLum.b.toFixed(1)}) lum=${onLum.lum.toFixed(1)}`);
 
   // ---- 5b. a search opens Google's results column; we must vacate it
   const beforeMode = await q(() => document.getElementById('gmdm-widget-host').dataset.gmdmPlacement);
@@ -407,42 +446,79 @@ try {
     };
     return { kofiRest: read('.kofi'), ghRest: read('.gh') };
   });
-  const kofiBox2 = await q(() => {
-    const r = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.kofi').getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-  await page.mouse.move(kofiBox2.x, kofiBox2.y);
-  await page.waitForTimeout(600);
-  const kofiHover = await q(() => {
-    const cs = getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.kofi'));
-    return { t: cs.transform, s: cs.boxShadow };
-  });
   const scaleOf = (m) => { const n = /matrix\(([\d.]+)/.exec(m || ''); return n ? +n[1] : null; };
-  ok('Ko-fi enlarges on hover (GoatApp scale)', scaleOf(kofiHover.t) && scaleOf(kofiHover.t) > 1.02,
-     `rest=${lift.kofiRest.t} hover=${kofiHover.t} (scale ${scaleOf(kofiHover.t)})`);
-  ok('Ko-fi gains the GoatApp hover shadow',
-     kofiHover.s !== lift.kofiRest.s && /44px|18px/.test(kofiHover.s),
-     `hover shadow=${kofiHover.s.slice(0, 90)}`);
 
-  const ghBox2 = await q(() => {
-    const r = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.gh').getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-  await page.mouse.move(ghBox2.x, ghBox2.y);
-  await page.waitForTimeout(600);
-  const ghHover2 = await q(() => {
-    const cs = getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.gh'));
-    return { t: cs.transform, s: cs.boxShadow };
-  });
-  ok('GitHub button enlarges on hover', scaleOf(ghHover2.t) && scaleOf(ghHover2.t) > 1.02,
-     `rest=${lift.ghRest.t} hover=${ghHover2.t} (scale ${scaleOf(ghHover2.t)})`);
-  ok('GitHub button gains the GoatApp hover shadow',
-     ghHover2.s !== lift.ghRest.s && /44px|18px/.test(ghHover2.s),
-     `hover shadow=${ghHover2.s.slice(0, 90)}`);
+  /* Sample the scale WHILE the pointer arrives, not just once it has settled.
+   *
+   * The first version of this check read the final transform only, and passed
+   * while the buttons visibly did not animate: the entry stagger left a
+   * transition-delay of 210ms/250ms on them, so the lift sat still for a fifth
+   * of a second and then appeared. A settled-state assertion cannot see that.
+   * Intermediate values are the evidence that it is a transition at all. */
+  const measureLift = async (sel) => {
+    /* Rest the pointer on the PILL -- inside the shell, so the panel stays open,
+       but not on either button, so both are at rest. No pinning: clicking the
+       pill toggles the latch, so calling this twice (once per button) turned the
+       panel off on the second call. Hovering a neutral part of the same element
+       is idempotent by construction.
+       The host rect is read fresh each time: `box` was captured before this
+       check navigated three times, and the widget has since moved onto the map. */
+    const here = await q(() => {
+      const r = document.getElementById('gmdm-widget-host').getBoundingClientRect();
+      return { x: r.left + 40, y: r.top + 22 };
+    });
+    await page.mouse.move(here.x, here.y);
+    await page.waitForTimeout(700);
+    const open = await q(() => {
+      const sh = document.getElementById('gmdm-widget-host').shadowRoot;
+      return { open: sh.querySelector('.shell').classList.contains('is-open'), cls: sh.querySelector('.shell').className };
+    });
+    if (!open.open) {
+      return { rest: { t: 'PANEL-NOT-OPEN ' + open.cls, s: '', d: '' },
+               settled: { t: 'PANEL-NOT-OPEN', s: '', d: '' }, scales: [], mid: 0 };
+    }
+    const rest = await q((s) => {
+      const cs = getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector(s));
+      return { t: cs.transform, s: cs.boxShadow, d: cs.transitionDelay };
+    }, sel);
+    const target = await q((s) => {
+      const r = document.getElementById('gmdm-widget-host').shadowRoot.querySelector(s).getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, sel);
+    await page.mouse.move(target.x, target.y);
+    const samples = [];
+    for (let i = 0; i < 14; i++) {
+      samples.push(await q((s) => getComputedStyle(
+        document.getElementById('gmdm-widget-host').shadowRoot.querySelector(s)).transform, sel));
+      await page.waitForTimeout(28);
+    }
+    await page.waitForTimeout(500);
+    const settled = await q((s) => {
+      const cs = getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector(s));
+      return { t: cs.transform, s: cs.boxShadow, d: cs.transitionDelay };
+    }, sel);
+    const scales = samples.map(scaleOf).filter((n) => n !== null);
+    return { rest, settled, scales, mid: scales.filter((n) => n > 1.004 && n < 1.046).length };
+  };
+
+  for (const [label, sel] of [['Ko-fi', '.kofi'], ['GitHub button', '.gh']]) {
+    const m = await measureLift(sel);
+    ok(`${label} enlarges on hover (GoatApp scale 1.05)`,
+       scaleOf(m.settled.t) && scaleOf(m.settled.t) > 1.02,
+       `rest=${m.rest.t} settled=${m.settled.t} (scale ${scaleOf(m.settled.t)})`);
+    ok(`${label} lift is ANIMATED, not a jump`, m.mid >= 2,
+       `${m.mid} intermediate scales sampled: [${m.scales.map((n) => n.toFixed(3)).join(', ')}]`);
+    ok(`${label} has no leftover stagger delay on hover`,
+       /^0s(, 0s)*$/.test(m.settled.d.trim()),
+       `transition-delay while hovered = "${m.settled.d}" (must be 0s, or the lift waits before starting)`);
+    ok(`${label} gains the GoatApp hover shadow`,
+       m.settled.s !== m.rest.s && /44px|18px/.test(m.settled.s),
+       `hover shadow=${m.settled.s.slice(0, 90)}`);
+  }
   await page.screenshot({ path: path.join(OUT, '9-hover-lift.png'), clip: { x: 0, y: 0, width: 900, height: 620 } });
 
   // ---- 6. full window, for the record
-  await page.mouse.move(box.x, box.y);
+  await page.mouse.move(...Object.values(await hostPoint()));
   await page.waitForTimeout(700);
   await page.screenshot({ path: path.join(OUT, '5-fullwindow.png') });
 
