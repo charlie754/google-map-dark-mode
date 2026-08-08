@@ -6,6 +6,12 @@ Chrome and Firefox, Manifest V3, no dependencies, no servers, no tracking.
 
 Unofficial. Not affiliated with, endorsed by, or connected to Google.
 
+![The extension running on Google Maps: the on-page panel, the three switches, and the map turning dark](docs/media/demo.gif)
+
+*Screen recording, 640×360 at 30fps. The map surface and the app chrome are both
+dark, and the panel places itself by measurement so Maps' own overlays are never
+covered.*
+
 <img src="docs/evidence/tile-z13-Roadmap.png" width="256" alt="Google's light map tile"> <img src="docs/evidence/tile-z13-RoadmapDark.png" width="256" alt="Google's own dark map tile, which is what this extension makes Maps use">
 
 *Left: what Maps normally serves. Right: what it serves when asked for the dark
