@@ -58,6 +58,9 @@
   const PROBE_MIN_HEIGHT = 28;
   /** Pass 2 counts anything chip-sized upward, not just full cards. */
   const OBSTACLE_MIN_WIDTH = 56;
+  /** Above this, a left-column overlay is a panel we must vacate, not a card we
+   *  sit under. Measured: weather/traffic card 100px, suggestions 246px. */
+  const LEFT_COLUMN_MIN_HEIGHT = 160;
 
   const DEFAULT_SETTINGS = { enabled: true, darkMap: true, darkChrome: true };
 
@@ -183,7 +186,8 @@
 .row, .kofi, .gh {
   opacity: 0;
   transform: translateY(-6px);
-  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-base) var(--ease),
+              box-shadow var(--dur-base) var(--ease), background var(--dur-fast) var(--ease);
 }
 .shell.is-open .row,
 .shell.is-open .kofi,
@@ -259,9 +263,22 @@
 }
 /* The stagger transition above owns opacity/transform, so hover adds its own
    properties rather than replacing the shorthand. */
-.kofi:hover { background: #e04b48; box-shadow: 0 10px 26px rgba(210, 65, 62, 0.45); }
-.kofi:active { transform: scale(0.97); }
+.kofi:hover { background: #e04b48; }
 .kofi:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Hover lift, taken from the GOAT desktop app so both products answer the
+   pointer the same way: .glass:hover scales and swaps in --glass-shadow-hover,
+   .primary-cta scales 1.05 on hover and 0.96 on press.
+   Scoped under .shell.is-open because the entry-stagger rule parks transform
+   at none at the same specificity -- unscoped, whichever came last would win
+   and the lift would be a coin flip. */
+.shell.is-open .kofi:hover,
+.shell.is-open .gh:hover { transform: scale(1.05); }
+.shell.is-open .kofi:active,
+.shell.is-open .gh:active { transform: scale(0.96); }
+
+.kofi:hover { box-shadow: var(--glass-shadow-hover), 0 10px 26px rgba(210, 65, 62, 0.45); }
+.gh:hover { box-shadow: var(--glass-shadow-hover); }
 /* Title over handle, matching the toolbar popup. Laying them side by side
    fits at 272px on paper but wraps the title the moment the font falls back. */
 .kofi__label { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
@@ -316,7 +333,6 @@
   cursor: pointer;
 }
 .gh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.gh:active { transform: scale(0.98); }
 
 .gh__corner { position: absolute; inset: 0; border-radius: 999px; overflow: hidden; pointer-events: none; }
 .gh__blob {
@@ -537,16 +553,27 @@
     const vw = window.innerWidth;
     const els = doc.body ? doc.body.querySelectorAll('div, form, header') : [];
 
-    /* Pass 1 -- is Google's tall left panel open? That is the search-results /
-       place-details column. When it is, the top-left corner belongs to Google
-       and we must not sit on it; the requirement is to move onto the map. */
+    /* Pass 1 -- has Google taken over the left column? Three different things
+       do that and all of them must push us onto the map:
+
+         search suggestions   l=88  t=60  w=376  h=246
+         results list         l=72  t=0   w=408  h=900
+         place details        same column as the results list
+
+       and one thing must NOT, because the requirement is to sit under it:
+
+         weather/traffic card l=88  t=72  w=376  h=100
+
+       Height is what separates them, so that is the test. The earlier
+       `height >= 50% of viewport` only caught the results list, which is why
+       the suggestions dropdown was covered. */
     let panelRight = -1;
     for (let i = 0; i < els.length; i++) {
       const el = els[i];
       if (host && (el === host || el.contains(host))) continue;
       const r = el.getBoundingClientRect();
-      if (r.left > 140 || r.right < 200 || r.right > vw * 0.75) continue;
-      if (r.top > 160 || r.height < vh * 0.5) continue;
+      if (r.left > 140 || r.right < 200 || r.right > vw * 0.6) continue;
+      if (r.top > 200 || r.height < LEFT_COLUMN_MIN_HEIGHT) continue;
       if (r.width < 260 || r.width > 560) continue;
       const cs = getComputedStyle(el);
       if (!visible(cs) || !isPainted(cs)) continue;
@@ -811,18 +838,45 @@
   function watch() {
     window.addEventListener('resize', place, { passive: true });
 
-    // Maps rebuilds its top-left stack when the weather card arrives, when a
-    // search opens the results panel, and on navigation. Re-measure on any
-    // structural change, debounced through place()'s own rAF gate.
-    let t = 0;
-    const mo = new MutationObserver(function () {
-      clearTimeout(t);
-      t = setTimeout(function () {
+    /* THE BUG THIS FIXES, recorded so it is not reintroduced.
+     *
+     * This observer used `subtree: false`, which only reports direct children
+     * of <body>. Maps builds the suggestions dropdown, the results list and the
+     * place card deep inside the tree, so the observer never fired for any of
+     * them and the panel simply never re-placed -- measured sitting at
+     * {l:88, t:184} with mode "top-left" while the results column was plainly
+     * open at {l:72, w:408, h:900}. The placement maths was right the whole
+     * time; nothing was ever asking it to run.
+     *
+     * A subtree observer on Google Maps fires constantly, so the expensive scan
+     * is both debounced and rate-limited. Our own writes cannot feed back: the
+     * widget is inside a shadow root (invisible to this observer) and its
+     * position is set via style/dataset attributes, which childList ignores.
+     */
+    let debounce = 0;
+    let lastScan = 0;
+    const RESCAN_MIN_MS = 220;
+
+    const schedule = function () {
+      clearTimeout(debounce);
+      const since = performance.now() - lastScan;
+      const wait = since >= RESCAN_MIN_MS ? 120 : RESCAN_MIN_MS - since + 40;
+      debounce = setTimeout(function () {
+        lastScan = performance.now();
         if (!doc.getElementById(HOST_ID)) build(); // Maps wiped the body
         place();
-      }, 250);
-    });
-    if (doc.body) mo.observe(doc.body, { childList: true, subtree: false });
+      }, wait);
+    };
+
+    const mo = new MutationObserver(schedule);
+    if (doc.body) mo.observe(doc.body, { childList: true, subtree: true });
+
+    /* Focus is the earliest signal that the search field is about to open its
+       dropdown; the DOM mutation follows a frame or two later. Listening for
+       both means we start moving with the panel rather than behind it. */
+    doc.addEventListener('focusin', schedule, true);
+    doc.addEventListener('click', schedule, true);
+    window.addEventListener('popstate', schedule);
 
     if (api && api.storage && api.storage.onChanged) {
       api.storage.onChanged.addListener(function (changes, area) {

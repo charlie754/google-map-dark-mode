@@ -233,8 +233,12 @@ try {
     const cs = (sel) => getComputedStyle(sh.querySelector(sel));
     return {
       label: g.querySelector('.gh__label').textContent.trim(),
-      ghW: +rg.width.toFixed(2), kofiW: +rk.width.toFixed(2),
-      ghLeft: +rg.left.toFixed(2), kofiLeft: +rk.left.toFixed(2),
+      // offsetWidth/offsetLeft, NOT getBoundingClientRect: the buttons now scale
+      // 1.05 on hover, and this measurement runs with the pointer still parked
+      // on Ko-fi from the steam test. The rect would report 244 -> 256.2 and
+      // fail an assertion about layout with a fact about a transform.
+      ghW: g.offsetWidth, kofiW: k.offsetWidth,
+      ghLeft: g.offsetLeft, kofiLeft: k.offsetLeft,
       belowKofi: rg.top >= rk.bottom - 1,
       sweep: cs('.gh__sweep').animationName,
       bar: cs('.gh__bar').animationName,
@@ -317,6 +321,125 @@ try {
      shifted ? `mode=${shifted.mode} widget=${JSON.stringify(shifted.me)} panel=${JSON.stringify(shifted.panel)} overlaps=${shifted.overlaps}` : 'n/a');
   await page.screenshot({ path: path.join(OUT, '6-search-shifted.png'), clip: { x: 0, y: 0, width: 900, height: 500 } });
   console.log(`      placement mode before search = ${beforeMode}`);
+
+  // ---- 5c. THE INTERACTIVE PATH -- this is what actually caught the bug.
+  // 5b navigates straight to a results URL, so placement runs once on boot with
+  // the panel already there and passes. The real failure was that nothing ever
+  // asked placement to re-run when Maps built a panel *after* load: the
+  // MutationObserver used subtree:false and never saw it. Drive it by hand.
+  await page.goto(MAPS, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(9000);
+  await page.mouse.move(1200, 780);
+
+  const overlapNow = () => page.evaluate(() => {
+    const h = document.getElementById('gmdm-widget-host');
+    if (!h) return null;
+    const me = h.shadowRoot.querySelector('.shell').getBoundingClientRect();
+    let worst = null;
+    for (const el of document.body.querySelectorAll('div, form, header')) {
+      if (el === h || el.contains(h)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 150 || r.height < 40 || r.left > 520 || r.top > 500) continue;
+      if (r.height > innerHeight * 0.95 && r.width > innerWidth * 0.9) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0') continue;
+      if (/rgba\(0, 0, 0, 0\)/.test(cs.backgroundColor) && cs.boxShadow === 'none') continue;
+      const hit = !(me.right <= r.left || me.left >= r.right || me.bottom <= r.top || me.top >= r.bottom);
+      if (hit) {
+        const area = (Math.min(me.right, r.right) - Math.max(me.left, r.left)) *
+                     (Math.min(me.bottom, r.bottom) - Math.max(me.top, r.top));
+        if (!worst || area > worst.area) worst = { area: Math.round(area), box: [r.left | 0, r.top | 0, r.width | 0, r.height | 0] };
+      }
+    }
+    return { mode: h.dataset.gmdmPlacement, me: [me.left | 0, me.top | 0, me.width | 0, me.height | 0], worst };
+  });
+
+  const idle = await overlapNow();
+  ok('interactive: idle, tucked under Google\'s cards',
+     idle && !idle.worst, `mode=${idle?.mode} widget=${JSON.stringify(idle?.me)} overlap=${JSON.stringify(idle?.worst)}`);
+
+  const input = await q(() => {
+    const i = document.querySelector('input[name="q"], input#searchboxinput, input[aria-label*="Search"]');
+    if (!i) return null;
+    const r = i.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  ok('search input located', !!input, JSON.stringify(input));
+
+  if (input) {
+    await page.mouse.click(input.x, input.y);
+    await page.waitForTimeout(1500);
+    await page.keyboard.type('coffee', { delay: 90 });
+    await page.waitForTimeout(2500);
+    await page.mouse.move(1200, 780);
+    await page.waitForTimeout(600);
+    const sugg = await overlapNow();
+    ok('interactive: suggestions dropdown is not covered',
+       sugg && !sugg.worst,
+       `mode=${sugg?.mode} widget=${JSON.stringify(sugg?.me)} overlap=${JSON.stringify(sugg?.worst)}`);
+    await page.screenshot({ path: path.join(OUT, '7-suggestions.png'), clip: { x: 0, y: 0, width: 900, height: 560 } });
+
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(9000);
+    await page.mouse.move(1200, 780);
+    await page.waitForTimeout(800);
+    const res = await overlapNow();
+    ok('interactive: results panel is not covered',
+       res && !res.worst && res.mode === 'on-map',
+       `mode=${res?.mode} widget=${JSON.stringify(res?.me)} overlap=${JSON.stringify(res?.worst)}`);
+    await page.screenshot({ path: path.join(OUT, '8-results-interactive.png'), clip: { x: 0, y: 0, width: 900, height: 560 } });
+  }
+
+  // ---- 5d. GoatApp hover lift on both buttons
+  await page.mouse.move(1200, 780);
+  await page.waitForTimeout(400);
+  const liftBox = await q(() => {
+    const r = document.getElementById('gmdm-widget-host').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + 22 };
+  });
+  await page.mouse.move(liftBox.x, liftBox.y);
+  await page.waitForTimeout(700);
+  const lift = await q(async () => {
+    const sh = document.getElementById('gmdm-widget-host').shadowRoot;
+    const read = (sel) => {
+      const cs = getComputedStyle(sh.querySelector(sel));
+      return { t: cs.transform, s: cs.boxShadow };
+    };
+    return { kofiRest: read('.kofi'), ghRest: read('.gh') };
+  });
+  const kofiBox2 = await q(() => {
+    const r = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.kofi').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  await page.mouse.move(kofiBox2.x, kofiBox2.y);
+  await page.waitForTimeout(600);
+  const kofiHover = await q(() => {
+    const cs = getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.kofi'));
+    return { t: cs.transform, s: cs.boxShadow };
+  });
+  const scaleOf = (m) => { const n = /matrix\(([\d.]+)/.exec(m || ''); return n ? +n[1] : null; };
+  ok('Ko-fi enlarges on hover (GoatApp scale)', scaleOf(kofiHover.t) && scaleOf(kofiHover.t) > 1.02,
+     `rest=${lift.kofiRest.t} hover=${kofiHover.t} (scale ${scaleOf(kofiHover.t)})`);
+  ok('Ko-fi gains the GoatApp hover shadow',
+     kofiHover.s !== lift.kofiRest.s && /44px|18px/.test(kofiHover.s),
+     `hover shadow=${kofiHover.s.slice(0, 90)}`);
+
+  const ghBox2 = await q(() => {
+    const r = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.gh').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  await page.mouse.move(ghBox2.x, ghBox2.y);
+  await page.waitForTimeout(600);
+  const ghHover2 = await q(() => {
+    const cs = getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.gh'));
+    return { t: cs.transform, s: cs.boxShadow };
+  });
+  ok('GitHub button enlarges on hover', scaleOf(ghHover2.t) && scaleOf(ghHover2.t) > 1.02,
+     `rest=${lift.ghRest.t} hover=${ghHover2.t} (scale ${scaleOf(ghHover2.t)})`);
+  ok('GitHub button gains the GoatApp hover shadow',
+     ghHover2.s !== lift.ghRest.s && /44px|18px/.test(ghHover2.s),
+     `hover shadow=${ghHover2.s.slice(0, 90)}`);
+  await page.screenshot({ path: path.join(OUT, '9-hover-lift.png'), clip: { x: 0, y: 0, width: 900, height: 620 } });
 
   // ---- 6. full window, for the record
   await page.mouse.move(box.x, box.y);

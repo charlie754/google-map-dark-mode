@@ -117,12 +117,39 @@ CSS therefore lives in a template literal in that file, not in a
 manifest-registered `.css`.
 
 It positions itself **by measurement, never by selector** — same reason as the
-theme. Two passes: find Google's tall left results column (if open, move onto the
+theme. Two passes: find Google's occupied left column (if occupied, move onto the
 map), then find the lowest painted thing overlapping the column we are about to
 occupy and sit below it. The second pass must include `button` and `a` at a low
 minimum width, because over the map the obstruction is the category chip row —
 individual ~100px buttons in a transparent container. A card-shaped probe misses
 them entirely and lands the panel on top of Google's filters.
+
+**The observer must be `subtree: true`.** It was `subtree: false`, which only
+reports direct children of `<body>`; Maps builds the suggestions dropdown, the
+results list and the place card deep in the tree, so the observer never fired and
+the widget never re-placed — measured sitting at `{l:88, t:184}` with mode
+`top-left` while the results column was open at `{l:72, w:408, h:900}`. The
+placement maths was right the whole time; nothing asked it to run. `focusin` and
+`click` are also wired, because focus precedes the dropdown's DOM by a frame or
+two.
+
+Measured left-column geometry at 1366×900, which is what the thresholds encode:
+
+| overlay | rect | widget response |
+|---|---|---|
+| search field | `l=88 t=12 w=376 h=48` | sit below |
+| weather/traffic card | `l=88 t=72 w=376 h=100` | sit below |
+| search suggestions | `l=88 t=60 w=376 h=246` | **move onto the map** |
+| results / place list | `l=72 t=0 w=408 h=900` | **move onto the map** |
+
+Height is the discriminator (`LEFT_COLUMN_MIN_HEIGHT = 160`): the card is 100,
+the dropdown 246. The earlier `height >= 50% of viewport` test caught only the
+results list, which is why the dropdown was covered.
+
+Cost of the subtree observer, measured rather than feared: Maps' body holds
+**395** matching elements, 90 survive the cheap rect filter, median scan **0.4 ms**.
+A busy session repositions ~1.2×/s; the 220 ms rate limit caps the worst case at
+~1.8 ms per second of main thread. `node test/probe-placement-cost.mjs` re-measures.
 
 **`npm run test:widget` is headed on purpose and parks the physical cursor
 first.** It was written headed, passed 12/12 alone, then failed 5 of 12 inside
