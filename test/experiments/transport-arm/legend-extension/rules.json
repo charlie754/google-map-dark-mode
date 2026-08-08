@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": { "regexSubstitution": "\\1RoadmapDark\\2" }
+    },
+    "condition": {
+      "regexFilter": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)Roadmap(-.*)$",
+      "resourceTypes": ["xmlhttprequest", "image", "other"]
+    }
+  }
+]

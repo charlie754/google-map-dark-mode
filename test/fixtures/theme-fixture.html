@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Maps Noir theme fixture</title>
+
+<!--
+  A synthetic stand-in for Google Maps' app chrome.
+
+  It exists because there is no way to construct the two palettes that matter on
+  live Maps. Findings F2 and F4 both need a page whose token set is under the
+  test's control: an all-dark palette (to prove the already-dark guard fires) and
+  a `:root` alias sheet that lands strictly after the pass that overrode its
+  target (to prove the same value is not inverted twice). Live Maps offers
+  neither on demand, which is exactly why both defects survived.
+
+  What it copies from the real thing, because these are what the theme depends
+  on:
+    - the design tokens are declared on `:root`, from a stylesheet that is
+      appended to <head> AFTER the content script has already run;
+    - most token names are hashes;
+    - some tokens are aliases of other tokens (`var()` chains);
+    - some tokens are not colours at all;
+    - the map surface and photographic content get their colours from outside
+      the token system entirely, so nothing the theme writes can reach them.
+
+  theme.css is linked rather than inlined so the static layer under test is the
+  shipped file, not a copy of it.
+-->
+<link rel="stylesheet" href="../../extension/content/theme.css">
+
+<script>
+  /*
+   * Stands in for the browser injecting the content script at document_start.
+   *
+   * It has to be done here, from inside <head>, and not from Playwright's
+   * addInitScript: that runs before the parser has created <html> at all, and
+   * theme.js -- correctly -- refuses to run without a document element, so it
+   * would silently never start. A <script> element given textContent executes
+   * synchronously the moment it is appended, so this reproduces the real
+   * ordering exactly: the document element and <head> exist, and NOTHING the
+   * page declares has been parsed yet. The token sheet below therefore lands
+   * strictly after the theme's first pass, which is the ordering that makes a
+   * "first pass only" guard unreachable on live Maps.
+   */
+  (function () {
+    var src = window.__themeSource;
+    if (typeof src !== 'string' || src === '') return;
+    var s = document.createElement('script');
+    s.textContent = src;
+    document.head.appendChild(s);
+  })();
+</script>
+
+<style id="fixture-author-sheet">
+  /* Maps' own baseline. Deliberately light, so that "the theme reverted" is a
+     visible white and not merely a different dark. */
+  html { background-color: #ffffff; }
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; }
+
+  /* Chrome: every colour comes from a token. */
+  #panel {
+    background: var(--surface);
+    color: var(--on-surface);
+    padding: 16px;
+    width: 360px;
+  }
+  #body-text { color: var(--on-surface); margin: 0 0 12px; }
+  #secondary-text { color: var(--on-surface-variant); margin: 0 0 12px; }
+  #btn-filled {
+    background: var(--primary);
+    color: var(--on-primary);
+    border: 0;
+    border-radius: 18px;
+    padding: 8px 20px;
+    font: inherit;
+  }
+  #btn-outlined {
+    background: var(--surface-container);
+    color: var(--primary);
+    border: 1px solid var(--outline);
+    border-radius: 18px;
+    padding: 8px 20px;
+    font: inherit;
+  }
+
+  /* The map surface. Its colour comes from the tile layer, never from a token,
+     so nothing the theme writes may move it. */
+  #map {
+    background-color: rgb(36, 54, 76);
+    width: 360px;
+    height: 120px;
+  }
+
+  /* Photographic content. Same contract: untouchable. */
+  #photo { display: block; width: 40px; height: 40px; }
+</style>
+
+<script>
+  /*
+   * Runs at parse time, which is strictly after the content script's
+   * document_start pass -- the same ordering as Maps' first CSS module, and the
+   * ordering that makes a "first pass only" guard unreachable.
+   */
+  (function () {
+    var cfg = window.__mapsNoirFixture || {};
+    var tokens = cfg.tokens || [];
+
+    var lines = [];
+    for (var i = 0; i < tokens.length; i++) {
+      lines.push('  ' + tokens[i][0] + ': ' + tokens[i][1] + ';');
+    }
+    var style = document.createElement('style');
+    style.id = 'fixture-tokens';
+    style.textContent = ':root {\n' + lines.join('\n') + '\n}\n';
+    document.head.appendChild(style);
+
+    window.__fixture = {
+      /**
+       * Append another `:root` sheet, the way Maps lands a lazy CSS module.
+       * @param {string} css
+       * @param {string} [id]
+       */
+      addSheet: function (css, id) {
+        var s = document.createElement('style');
+        if (id) s.id = id;
+        s.textContent = css;
+        document.head.appendChild(s);
+        return document.querySelectorAll('style').length;
+      },
+
+      /**
+       * Every custom property visible on :root, as its computed (substituted)
+       * value. This is what an alias resolves through, so it is the reading
+       * that catches a double inversion.
+       * @returns {Record<string,string>}
+       */
+      tokenValues: function () {
+        var cs = getComputedStyle(document.documentElement);
+        var out = {};
+        for (var i = 0; i < cs.length; i++) {
+          var n = cs.item(i);
+          if (n.charCodeAt(0) === 45 && n.charCodeAt(1) === 45) {
+            out[n] = cs.getPropertyValue(n).trim();
+          }
+        }
+        return out;
+      },
+
+      /**
+       * The colours actually painted, read from the elements rather than from
+       * the tokens. A theme that wrote the right tokens but failed to reach the
+       * UI would pass a token-only assertion.
+       * @returns {Record<string,string>}
+       */
+      paintedColours: function () {
+        var ids = ['panel', 'body-text', 'secondary-text', 'btn-filled', 'btn-outlined', 'map', 'photo'];
+        var out = {};
+        for (var i = 0; i < ids.length; i++) {
+          var el = document.getElementById(ids[i]);
+          if (!el) continue;
+          var cs = getComputedStyle(el);
+          out[ids[i]] = {
+            color: cs.color,
+            backgroundColor: cs.backgroundColor,
+            borderTopColor: cs.borderTopColor,
+            filter: cs.filter,
+            mixBlendMode: cs.mixBlendMode,
+            opacity: cs.opacity,
+          };
+        }
+        out.html = {
+          backgroundColor: getComputedStyle(document.documentElement).backgroundColor,
+          colorScheme: getComputedStyle(document.documentElement).colorScheme,
+        };
+        out.body = { backgroundColor: getComputedStyle(document.body).backgroundColor };
+        return out;
+      },
+    };
+  })();
+</script>
+</head>
+<body>
+  <div id="panel">
+    <p id="body-text">Houston, Texas</p>
+    <p id="secondary-text">Open until 9 PM</p>
+    <button id="btn-filled">Directions</button>
+    <button id="btn-outlined">Save</button>
+  </div>
+  <div id="map"></div>
+  <img id="photo" alt="place photo"
+       src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='40' height='40' fill='%23c8102e'/><circle cx='20' cy='20' r='12' fill='%23ffd100'/></svg>">
+</body>
+</html>

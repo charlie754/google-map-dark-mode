@@ -1,0 +1,306 @@
+/*
+ * Popup styling.
+ *
+ * Deliberately dark in every colour scheme rather than following prefers-color-scheme: this is
+ * a dark-mode extension, and a panel that flashes white when you open it to check on your dark
+ * map is the exact thing it exists to prevent. `color-scheme: dark` is set so the browser's own
+ * widgets (scrollbars, focus rings, form controls) come up dark too.
+ *
+ * Every text/background pair here is measured, not eyeballed — see the popup contrast check in
+ * the lane's harness. Nothing is below 4.5:1.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #16171b;
+  --surface: #1e2026;
+  --surface-2: #272a31;
+  --border: #383c45;
+  --text: #f1f3f6;
+  --muted: #b9bec7;
+  --focus: #8ab4ff;
+
+  --switch-on: #6ea8fe;
+  --switch-off: #4a4f59;
+  --thumb: #e8eaee;
+  --thumb-on: #10131a;
+
+  /* Ko-fi's coral, darkened from their #ff5e5b so white on it clears 4.5:1 — #ff5e5b itself
+     measures 3.00:1 against white, which is a fail on text. Same button, legible. */
+  --kofi: #d2413e;
+  --kofi-hover: #bb322f;
+  --kofi-text: #ffffff;
+
+  --alert-bg: #2b1a1a;
+  --alert-border: #6d3531;
+  --alert-text: #ffb4ad;
+  --warn-bg: #2a2517;
+  --warn-border: #6b5b2b;
+  --warn-text: #ffd694;
+  --info-bg: #1b2430;
+  --info-border: #35485e;
+  --info-text: #aecbea;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  /* Firefox sizes the panel to its content; Chrome needs a width to work from. */
+  width: 300px;
+  margin: 0;
+  padding: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* --------------------------------------------------------------------- head */
+
+.head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.head__icon { flex: none; border-radius: 6px; }
+
+.head__text { min-width: 0; }
+
+.head__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.head__version {
+  margin: 1px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ------------------------------------------------------------------- health */
+
+.health {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--info-border);
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: var(--info-bg);
+}
+
+.health__title {
+  margin: 0 0 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--info-text);
+}
+
+.health__text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.health[data-level="warn"] { border-color: var(--warn-border); background: var(--warn-bg); }
+.health[data-level="warn"] .health__title { color: var(--warn-text); }
+
+.health[data-level="alert"] { border-color: var(--alert-border); background: var(--alert-bg); }
+.health[data-level="alert"] .health__title { color: var(--alert-text); }
+
+/* -------------------------------------------------------------------- rows */
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 2px 12px;
+  margin-bottom: 12px;
+}
+
+/* Hold the layout but hide the state until the real settings have arrived, so the switches
+   never paint "on" for a moment on a machine where the user turned them off. */
+.panel[data-ready="false"] { visibility: hidden; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.row + .row { border-top: 1px solid var(--border); }
+
+.row--master .row__label { font-size: 13.5px; }
+
+.row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.row__label {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.row__hint {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* Master off: the sub-toggles keep their own state but stop being live controls, and say so
+   by going dim. `disabled` is set on the inputs themselves, so they also leave the tab order.
+   0.7, not the 0.45 used on the switch itself: at 0.45 the hint text measured 2.87:1 against
+   the card, which is a contrast failure whatever the WCAG exemption for inactive controls says.
+   At 0.7 the label is 7.84:1 and the hint 5.02:1, and the greyed switch still carries the
+   "this is inert" signal. */
+.row[data-off="true"] .row__label,
+.row[data-off="true"] .row__hint { opacity: 0.7; }
+.row[data-off="true"] .row__label { cursor: default; }
+
+/* ------------------------------------------------------------------ switch */
+
+.switch {
+  flex: none;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--switch-off);
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb);
+  transition: transform 120ms ease-out;
+}
+
+.switch:checked {
+  background: var(--switch-on);
+  border-color: var(--switch-on);
+}
+
+.switch:checked::after {
+  transform: translateX(16px);
+  background: var(--thumb-on);
+}
+
+.switch:disabled { opacity: 0.45; cursor: default; }
+
+/* No animation until the first render has been flushed. Without this the switches visibly
+   slide from off to on every single time the popup is opened, because the markup starts
+   unchecked and the stored state arrives a moment later — measured, not theoretical: a
+   contrast probe caught the track mid-transition at #4d5667. */
+body[data-anim="off"] .switch,
+body[data-anim="off"] .switch::after { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .switch, .switch::after { transition: none; }
+}
+
+/* -------------------------------------------------------------------- error */
+
+.error {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border: 1px solid var(--alert-border);
+  border-radius: 6px;
+  background: var(--alert-bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------- kofi */
+
+.kofi {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--kofi);
+  color: var(--kofi-text);
+  cursor: pointer;
+}
+
+.kofi:hover { background: var(--kofi-hover); }
+
+.kofi:active { transform: translateY(1px); }
+
+.kofi__icon { flex: none; }
+
+.kofi__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.25;
+}
+
+.kofi__handle {
+  /* Inherit the button's size rather than pin a number, so the handle stays as prominent as
+     the line above it on either page. */
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.note {
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* ------------------------------------------------------------------ actions */
+
+.actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.button {
+  flex: 1;
+  font: inherit;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.button:hover { border-color: var(--focus); }
+
+.button--quiet { background: transparent; }
+
+.button:focus-visible,
+.kofi:focus-visible,
+.switch:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

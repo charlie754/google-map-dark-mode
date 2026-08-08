@@ -1,0 +1,259 @@
+LANE E -- what decides the Google Maps rendering transport, and can a client choose
+====================================================================================
+Investigated 2026-08-07. 67 live trials, each on a fresh temp profile unless stated.
+All data under test/experiments/transport-arm/data/. Machine: Windows 11, RTX 5090,
+Playwright 1.62.0 bundled Chromium 151 and Firefox 153, one residential IP, en-US /
+America/Chicago, viewport 1440x900, colorScheme dark, NEVER signed in.
+
+Reproduce:  node run.mjs <variant> [trials] [pauseMs]      (variant list in run.mjs)
+Aggregate:  node analyse.mjs                                -> data/summary.json, data/tally.txt
+DNR bench:  node debug-dnr.mjs                              -> data/dnr-bench.json (no live traffic)
+
+
+--------------------------------------------------------------------------------
+HEADLINE (this is the biggest result and it is not about the arm at all)
+--------------------------------------------------------------------------------
+The vector renderer's palette is NOT in the tile payload and NOT baked into the
+mapcore WASM. It is a separate, static, unauthenticated, style-name-keyed asset:
+
+    https://www.gstatic.com/maps/res/CompactLegend-Roadmap-<32-hex-version>
+
+CompactLegend-RoadmapDark-<same version hash> exists and returns 1 938 292 bytes.
+Substituting one for the other -- a PURE STRING SWAP, no length arithmetic, no
+protobuf -- turns the vector map into Google's real dark cartography.
+
+Proven end to end with a real MV3 extension carrying ONE static declarativeNetRequest
+rule (test/experiments/transport-arm/legend-extension/), 5 fresh profiles, 5/5 dark:
+    map-area mean RGB (36.06, 54.15, 76.30), luminance 51.9   [dark]
+    baseline, same viewport                (223.40, 231.14, 229.66), luminance 229.4 [light]
+Screenshot: data/shots/ext-legend-dark-msjgbg9h-full.png
+
+This works in the proto/vector arm -- the arm the whole project was blocked on.
+
+
+--------------------------------------------------------------------------------
+Q1. WHAT DETERMINES THE ARM?
+--------------------------------------------------------------------------------
+ANSWER: the client. Maps picks a renderer in the page, from client capability and
+from client-supplied hints, and the transport follows the renderer. No evidence of
+server-side A/B assignment was found. Confidence: HIGH.
+
+The tell is which worker bundle Maps loads (path /maps/_/js/k=maps.w.*/m=<modules>)
+and which WASM it pulls (/maps/_/wa/w.<hash>.<name>.O.wasm). Three modes observed:
+
+  mode         worker modules   wasm            base-map transport
+  -----------  ---------------  --------------  ---------------------------------------
+  mapcore      wtd,b,mc + mcl   mapcore         /maps/vt/proto?bpb=<protobuf>   ("proto arm")
+  canvas+lbl   wtd,b,c + sl     createLabeler   /maps/vt/pb= raster + /maps/vt/stream/pb=
+  canvas       wtd,b,c          (none)          /maps/vt/pb= raster + /maps/vt/stream/pb=
+
+The 24 raster /maps/vt/pb= tiles at ~275 ms are present in ALL THREE modes -- they are
+the first-paint <img> grid the Maps HTML itself points at. Counting raster tiles cannot
+distinguish the modes; only what happens after that batch can.
+
+Observed determinants (each varied one at a time):
+
+  variable                                   result                      trials
+  -----------------------------------------  --------------------------  ------
+  WebGL denied via JS getContext hook        canvas mode                 7/7
+  WebGL denied via --disable-webgl flag      canvas mode                 1/1
+  WebAssembly deleted                        canvas mode                 1/1
+  ?force=canvas in the Maps URL              canvas mode                 8/8
+  old/IE11 User-Agent                        canvas mode                 2/2
+  headless Chromium                          canvas mode                 1/1
+  Firefox 153 (WebGL2 present and working)   canvas+labeler mode         5/5 (+1 pre-existing artifact)
+  stock headed Chromium                      mapcore mode                35/36
+
+RULED OUT as determinants (evidence, not inference):
+
+  * The !23i experiment-ID set. Across 67 trials, 21 distinct IDs appear; ZERO are
+    exclusive to one arm. 18 of 21 appear in 100% of both arms. The two IDs a previous
+    lane flagged are noise: 10212434 = 7% of proto trials / 4% of raster; 10212435 =
+    0% of proto / 8% of raster (2 trials out of 25). See summary.json .experimentIds.
+  * g_ep. Byte-identical in every trial and in all five pre-existing gate artifacts,
+    across both arms: EgoyMDI2MDgwNS4xIKXMDSoASAFQAw== (field2="20260805.1").
+  * Cookies. Every trial starts with an empty jar and the arm is already decided;
+    the stickiness probe re-navigates 4x with NID/SOCS/__Secure-STRP present and never
+    changes arm (12/12). Not a positive test of a specific cookie value -- see GAPS.
+  * Locale / timezone: de-DE + Europe/Berlin -> mapcore, same as en-US. 1 trial.
+  * prefers-color-scheme: light -> mapcore, same as dark. 1 trial.
+  * maps.google.com host -> redirects to www, mapcore. 1 trial.
+
+SPECULATION (labelled): the ~1-in-36 stock-Chromium fall into canvas mode is most
+likely a client-side capability probe timing out (GPU/ANGLE not ready on a cold
+profile) rather than a random server roll -- the one occurrence reported identical
+navigator caps and an identical ANGLE renderer string to the 35 mapcore runs, and
+picked the canvas+labeler mode that Firefox picks deterministically. Not proven.
+
+UNRESOLVED: why Firefox 153 gets canvas+labeler despite reporting working WebGL2
+(webgl1/2 true, renderer "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 ...), or similar").
+Maps is evidently checking something Gecko fails that is not plain WebGL presence.
+
+
+--------------------------------------------------------------------------------
+Q2. CAN A CLIENT FORCE THE RASTER ARM?
+--------------------------------------------------------------------------------
+ANSWER: yes, three independent ways, all client-side. Confidence: HIGH.
+BUT READ THE WARNING BELOW -- forcing raster does not by itself give you a
+rewritable map, and it is probably the wrong move now that the legend swap exists.
+
+  (1) ?force=canvas appended to the Maps URL.        8 fresh profiles, 8/8 canvas mode.
+      Variants url-force-canvas (x6), shot-force-canvas, shot-force-canvas-all-dark.
+      An extension can do this with a DNR main_frame redirect. Nothing else needed;
+      WebGL stays available (webgl2=true in all 8) and the map renders correctly.
+
+  (2) Deny WebGL from a MAIN-world content script at document_start.
+      7 fresh profiles, 7/7 canvas mode. The exact script that worked is DENY_WEBGL in
+      run.mjs: wrap HTMLCanvasElement/OffscreenCanvas getContext to return null for
+      webgl/webgl2/experimental-webgl, and delete WebGL(2)RenderingContext.
+      Maps' probe is on the main thread -- a page-world hook is sufficient.
+
+  (3) Spoof an old User-Agent (Chrome 70 or IE11). 2 fresh profiles, 2/2 canvas mode.
+      Not recommended: breaks other feature detection, and is fragile.
+
+WARNING -- forcing raster does NOT give you a rewritable base map:
+      In canvas mode the displayed base map is NOT the /maps/vt/pb= raster tiles.
+      Measured: with WebGL denied and every /maps/vt/pb= tile URL rewritten to
+      RoadmapDark, the tile BODIES arriving over the wire were genuinely dark
+      (sampled 4: rgb(36.9,54.0,74.2), (34.6,50.8,72.0), (34.6,50.3,70.9),
+      (31.0,59.0,76.2)) and the rendered map was still light -- mean RGB
+      (223.67, 231.79, 231.66), byte-identical to the no-rewrite control.
+      The canvas renderer paints from /maps/vt/stream/pb=...!4e1 vector data.
+      Rewriting the style token on THAT endpoint does darken it:
+      shot-nowebgl-stream-only -> rgb(38.77, 55.68, 75.94) dark=true.
+
+RULED OUT, do not retry:
+  * ?force=lite            -> mapcore mode (no effect).           1 trial
+  * ?output=classic        -> mapcore mode (no effect).           1 trial
+  * maps.google.com        -> 302 to www, mapcore mode.           1 trial
+  * Blocking the mapcore WASM (DNR/route abort on /mapcore/ and *.wasm)
+                           -> page produced ZERO base-map requests of either kind.
+                              Broke the map rather than degrading it.  1 trial
+  * Deleting OffscreenCanvas -> mapcore still loaded, zero proto tiles, only the 24
+                              first-paint tiles. Broken map, not a fallback. 1 trial
+
+
+--------------------------------------------------------------------------------
+Q3. IS THE ARM STICKY PER PROFILE, OR RE-ROLLED PER NAVIGATION?
+--------------------------------------------------------------------------------
+ANSWER: it is not a roll at all in the normal case -- it is deterministic for a given
+client configuration, and stable across navigations within a profile.
+Confidence: HIGH for "not re-rolled"; MEDIUM for the residual rate below.
+
+  * Stickiness probe (variant sticky-4): 3 profiles x 4 navigations in the same
+    profile = 12 navigations. Sequence per profile: proto -> proto -> proto -> proto.
+    3/3 profiles, 12/12 navigations, no mode change.
+  * Stock headed Chromium, fresh profile each time: 36 navigations, 35 mapcore,
+    1 canvas. Measured rate of landing the non-mapcore mode = 1/36 = 2.8%.
+    95% Wilson interval roughly 0.5%-14%. Do not plan around this number.
+    (Counting the 7 ext-legend-dark trials, which cannot affect renderer choice:
+     1/43 = 2.3%.)
+  * Firefox: 5 fresh profiles + 1 pre-existing gate artifact = 6/6 canvas+labeler.
+    Deterministic, not a roll.
+  * Headless Chromium: 1/1 canvas. Deterministic-looking but n=1.
+
+So: waiting for a lucky roll is not a strategy. There is nothing to wait for -- a
+stock desktop Chrome user gets mapcore ~97% of the time and gets it every time they
+reload.
+
+
+--------------------------------------------------------------------------------
+Q4. DOES THE VECTOR RENDERER HAVE ITS OWN STYLE SOURCE?  YES.
+--------------------------------------------------------------------------------
+ANSWER: yes -- https://www.gstatic.com/maps/res/CompactLegend-<Style>-<version>.
+Confidence: HIGH (10 fresh profiles dark, 3 independent controls light).
+
+  Fetched once or twice per session, early (319-535 ms in mapcore mode, ~400 ms in
+  canvas mode), resource type fetch/xhr, from www.gstatic.com -- a DIFFERENT ORIGIN
+  from the tiles. Unauthenticated, no cookies, no API key, no signed token.
+
+  Style-name sweep at version 4311471e3660cd049e8ede59d279b3ba:
+     Roadmap           200   2 056 525 B
+     RoadmapDark       200   1 938 292 B
+     Terrain           200   2 023 776 B
+     TerrainDark       200   1 907 717 B
+     RoadmapSatellite  200   1 934 714 B
+     RoadmapNight, Night, Dark, Transit, TransitDark, Bicycling, Traffic,
+     Basemap, Satellite, Hybrid                      404 (~1 620 B HTML)
+  A bad name gives a clean 404, which is a much better health-check signal than the
+  raster endpoint's 178-byte yellow tile. See data/compactlegend-style-sweep.txt.
+
+  EVIDENCE THAT IT IS THE PALETTE (map-area mean RGB, 14-15 s after navigation):
+     control, nothing rewritten,      mapcore mode   (223.40, 231.14, 229.66) light
+     legend swapped only,             mapcore mode   ( 36.06,  54.15,  76.30) dark  x4
+     legend swapped only,             canvas+lbl     ( 38.08,  54.64,  74.90) dark
+     legend swapped only, Firefox,    canvas+lbl     ( 38.17,  54.71,  74.96) dark
+     control, Firefox, nothing swapped               (221.56, 229.68, 229.70) light
+     MV3 DNR rule, real extension,    mapcore mode   ( 36.06,  54.15,  76.30) dark  x5
+  Reference: a real RoadmapDark raster tile averages (38, 57, 77). Same palette.
+
+  NEGATIVE CONTROLS (this is what makes the claim safe):
+     proto `set:` token rewritten to RoadmapDark on all 36 proto tile requests, legend
+     untouched -> (223.40, 231.14, 229.66) LIGHT. The style token in the proto request
+     does not select the client palette, exactly as the brief reported.
+     Legend swapped only, in canvas-without-labeler mode -> LIGHT. That mode does not
+     read the legend for the base map; it takes its colours from the server via the
+     !1sset!2s token on /maps/vt/stream/pb=.
+
+  WHAT THE LEGEND IS NOT: /maps/vt/sxforms?v=<same 32-hex version> (571 KB, 1236
+  entries of {1:int, 2:bytes, 3:bytes}) is fetched in both modes, is NOT keyed by style
+  name, and is therefore not the palette. SPECULATION: it is the shared style-transform
+  program table that the legend indexes into. Not investigated further.
+
+  THE RULE THAT WORKS (verified live, and via testMatchOutcome):
+     regexFilter        ^(https://www\.gstatic\.com/maps/res/CompactLegend-)Roadmap(-.*)$
+     regexSubstitution  \1RoadmapDark\2
+     resourceTypes      ["xmlhttprequest", "image", "other"]
+     host_permissions   https://www.gstatic.com/maps/res/*  AND  https://www.google.com/maps/*
+     No redirect loop: testMatchOutcome on the already-dark URL returns no match,
+     because "Roadmap" there is followed by "Dark", not by "-".
+
+  TRAP THAT COST A CYCLE -- write it into the plan:
+     regexFilter "^(https://www\.gstatic\.com/maps/res/CompactLegend-)Roadmap(-[0-9a-f]{32})$"
+     is REJECTED by Chrome with
+       'Rule with id N was skipped as the "regexFilter" value exceeded the 2KB memory
+        limit when compiled.'
+     The ruleset still reports as enabled, getEnabledRulesets() still returns ["legend"],
+     and the extension loads without error. The only visible symptom is that the map
+     stays light. Two full trials were burned on this before testMatchOutcome exposed
+     it. Any DNR work here must assert testMatchOutcome, not merely that the ruleset
+     loaded. See data/dnr-bench.json for the five regexes benched offline.
+
+
+--------------------------------------------------------------------------------
+WHAT I COULD NOT DETERMINE
+--------------------------------------------------------------------------------
+  * Signed-in behaviour. Forbidden by the brief; never tested. If Google gates the
+    renderer on account state, this investigation would not see it.
+  * Real geography. Only locale/timezone were spoofed; the IP was constant. A genuinely
+    different region or a Google datacentre serving different code was not tested.
+  * Why Firefox deterministically avoids mapcore despite working WebGL2.
+  * Whether the legend swap survives pan/zoom, layer switches, satellite/terrain, or a
+    long session. Every measurement here is a passive 14-15 s observation with NO
+    gestures, by design (the brief asked for arm identification only). The raster-pin
+    lane owns interaction-time verification. Do not read "dark at 15 s" as "dark forever".
+  * Whether the legend version hash rotates independently of the style name. Only one
+    version (4311471e3660cd049e8ede59d279b3ba) was ever observed, so the regex's
+    hash-agnostic tail is untested against a rotation.
+  * First-paint flash. With the legend rule alone, the first ~1 s shows the light
+    server-HTML raster tiles. Not measured precisely here; combining the legend rule
+    with the existing raster tile rewrite should remove it, untested.
+  * Firefox with a real extension. Only harness-side route interception was used on
+    Firefox; the firefox-load lane owns XPI loading.
+  * n=1 on several rule-outs (?force=lite, ?output=classic, geo-de, colorscheme-light,
+    headless, block-mapcore, no-offscreen). Single trials, stated as such.
+
+ONE MORE DEAD END, RECORDED SO NOBODY REPEATS IT
+  /maps/vt/pb=!1m8!3m7!1m2!1u{px}!2u{py}!2m2!1u{w}!2u{h}!3i{z}...!4e4!11m2!1e2!2b1
+  looks like a full-viewport composite image request (1u2048!2u1536). It is not an
+  image. It is a JSON tile-epoch manifest:  [[["m",[12,951,1684],24,[789555512,...
+  Splicing a !12m4!1e68!2m2!1sset!2s<Style> group into it changes nothing -- all three
+  variants return the identical 9 888 bytes. See data/NOTES.txt and data/comp-*.bin.
+
+
+--------------------------------------------------------------------------------
+TRIAL COUNTS
+--------------------------------------------------------------------------------
+67 trials total across 30 variants; per-variant tallies in data/tally.txt and
+data/summary.json. 12 of the 67 are 4-navigation stickiness runs, so ~78 live page
+loads of google.com/maps in total, serial, with 5-8 s between them.

@@ -1,0 +1,40 @@
+What is in this directory
+=========================
+
+trials.ndjson                one slim record per trial, append-only across the whole
+                             investigation. This is the primary record.
+trials-<variant>.json        full records for the LAST run of that variant, including
+                             every request the browser made (allRequests). Large.
+summary.json / tally.txt     produced by ../analyse.mjs from trials.ndjson.
+shots/                       map-area screenshots (634x558 clip) and, where captured,
+                             full 1440x900 window shots. ~17 MB.
+
+dnr-bench.json               offline declarativeNetRequest regex bench (../debug-dnr.mjs).
+                             Shows the [0-9a-f]{32} regex being rejected for exceeding
+                             Chrome's 2 KB compiled-regex limit while the ruleset still
+                             reports as enabled.
+
+compactlegend-style-sweep.txt  HTTP status + byte count for 15 candidate style names on
+                             https://www.gstatic.com/maps/res/CompactLegend-<Style>-<ver>
+
+sxforms.bin                  /maps/vt/sxforms?v=4311471e3660cd049e8ede59d279b3ba
+                             571 KB protobuf, 1236 top-level {1:int,2:bytes,3:bytes}
+                             entries. NOT keyed by style name; fetched identically in
+                             every render mode. Not the palette.
+
+one-raster-light.txt         a real base-map tile URL captured from a live trial, and
+one-raster-dark.txt          the same URL with !1sset!2sRoadmap -> RoadmapDark.
+                             curl: 21 337 B vs 19 870 B, both HTTP 200.
+
+composite-*.txt              the /maps/vt/pb=!1m8!3m7!1m2!1u..!2u..!2m2!1u..!2u..!3i{z}
+comp-*.bin                   ...!4e4!11m2!1e2!2b1 request, and two hand-built variants
+                             with a !12m4!1e68!2m2!1sset!2s<Style> group spliced in.
+                             All three responses are BYTE-IDENTICAL, 9 888 B, and the
+                             payload is JSON, not an image:
+                                 [[["m",[12,951,1684],24,[789555512,...
+                             It is the tile-epoch/version manifest. It ignores the style
+                             selector and it is not a render surface. Do not chase it.
+
+proto-urls-control.txt       73 /maps/vt/proto?bpb= URLs from the pre-existing
+                             result-control.json gate artifact, for offline protobuf work
+                             (see ../dump-proto.mjs).

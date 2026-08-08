@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Google Map Dark Mode</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body data-anim="off">
+  <header class="head">
+    <img class="head__icon" id="icon" src="../icons/icon-48.png" alt="" width="32" height="32">
+    <div class="head__text">
+      <h1 class="head__title" id="name">Google Map Dark Mode</h1>
+      <p class="head__version" id="version"></p>
+    </div>
+  </header>
+
+  <!-- Health. Hidden while everything is working: the map silently reverting to light is the
+       only symptom of a break, and it is indistinguishable from Google having changed something
+       on their side, so this is the one place a user can find out. It is also the reason not to
+       cry wolf here — a banner that is always present is a banner nobody reads. -->
+  <section class="health" id="health" role="status" hidden>
+    <h2 class="health__title" id="healthTitle"></h2>
+    <p class="health__text" id="healthText"></p>
+  </section>
+
+  <div class="panel" id="panel" data-ready="false">
+    <div class="row row--master">
+      <span class="row__text">
+        <label class="row__label" for="enabled">Dark mode</label>
+        <span class="row__hint" id="enabledHint">Google Maps on google.com</span>
+      </span>
+      <input type="checkbox" role="switch" class="switch" id="enabled" aria-describedby="enabledHint">
+    </div>
+
+    <div class="row" id="row-darkMap">
+      <span class="row__text">
+        <label class="row__label" for="darkMap">Map surface</label>
+        <span class="row__hint" id="darkMapHint">Google's own dark cartography</span>
+      </span>
+      <input type="checkbox" role="switch" class="switch" id="darkMap" aria-describedby="darkMapHint">
+    </div>
+
+    <div class="row" id="row-darkChrome">
+      <span class="row__text">
+        <label class="row__label" for="darkChrome">Panels and controls</label>
+        <span class="row__hint" id="darkChromeHint">Search, menus, buttons</span>
+      </span>
+      <input type="checkbox" role="switch" class="switch" id="darkChrome" aria-describedby="darkChromeHint">
+    </div>
+  </div>
+
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <button type="button" id="kofi" class="kofi" data-url="https://ko-fi.com/irp_hongkong">
+    <svg class="kofi__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M4 4h13a4 4 0 0 1 0 8h-1.1A6 6 0 0 1 10 17H8a6 6 0 0 1-6-6V4a0 0 0 0 1 0 0zm12 2v4h1a2 2 0 0 0 0-4h-1z"/>
+      <path fill="currentColor" d="M3 19h14a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2z"/>
+    </svg>
+    <span class="kofi__label">
+      <span class="kofi__title">Support me on Ko-fi</span>
+      <span class="kofi__handle">@IRP_HongKong</span>
+    </span>
+  </button>
+
+  <p class="note">
+    Free and open source, and staying that way. A tip is a one-off — nothing in
+    the extension changes either way.
+  </p>
+
+  <div class="actions">
+    <button type="button" id="settings" class="button">Settings</button>
+    <!-- Starts hidden and is unhidden by popup.js only when data-url is non-empty, so an
+         unpublished build never ships a dead link. The repository now exists, so the URL is
+         filled in and the button shows; the same URL is repeated in options/options.html. -->
+    <button type="button" id="source" class="button button--quiet" data-url="https://github.com/charlie754/google-map-dark-mode" hidden>Source</button>
+  </div>
+
+  <script src="../lib/polyfill.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

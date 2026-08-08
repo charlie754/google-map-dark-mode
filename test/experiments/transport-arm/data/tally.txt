@@ -1,0 +1,71 @@
+LANE E -- transport-arm trial tally
+generated 2026-08-07T21:29:25.764Z
+total trials: 67
+
+variant                          n   arms                          renderer modules            wasm
+chromium-headed                  17  {"proto":17}                  (not recorded) b|mc|mcl|wtd  (none) mapcore
+chromium-no-webgl-flag            1  {"raster":1}                  (not recorded)              (none)
+chromium-no-webgl-js              1  {"raster":1}                  (not recorded)              (none)
+shot-baseline                     1  {"proto":1}                   (not recorded)              (none)
+                                   px rgb(223.4,231.14,229.66) dark=false
+shot-legend-dark                  5  {"proto":4,"raster":1}        (not recorded)              (none)
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(38.08,54.64,74.9) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+shot-proto-dark-only              1  {"proto":1}                   (not recorded)              (none)
+                                   px rgb(223.4,231.14,229.66) dark=false
+shot-nowebgl-dark                 2  {"raster":2}                  (not recorded)              (none)
+                                   px rgb(223.67,231.79,231.66) dark=false
+                                   px rgb(223.67,231.79,231.66) dark=false
+shot-nowebgl-light-bodies         1  {"raster":1}                  (not recorded)              (none)
+                                   px rgb(223.67,231.79,231.66) dark=false
+shot-nowebgl-dark-plus-legend     1  {"raster":1}                  (not recorded)              (none)
+                                   px rgb(38.56,55.39,75.69) dark=true
+shot-nowebgl-legend-only          1  {"raster":1}                  b|c|wtd                     (none)
+                                   px rgb(223.45,231.5,231.41) dark=false
+shot-firefox-baseline             1  {"raster":1}                  b|c|sl|wtd                  createLabeler
+                                   px rgb(221.56,229.68,229.7) dark=false
+shot-firefox-legend-only          1  {"raster":1}                  b|c|sl|wtd                  createLabeler
+                                   px rgb(38.17,54.71,74.96) dark=true
+shot-nowebgl-stream-only          1  {"raster":1}                  b|c|wtd                     (none)
+                                   px rgb(38.77,55.68,75.94) dark=true
+url-force-lite                    1  {"proto":1}                   b|mc|mcl|wtd                mapcore
+url-force-canvas                  6  {"raster":6}                  b|c|wtd                     (none)
+url-output-classic                1  {"proto":1}                   b|mc|mcl|wtd                mapcore
+url-maps-google-com               1  {"proto":1}                   b|mc|mcl|wtd                mapcore
+ua-ie11                           1  {"raster":1}                  b|c|wtd                     (none)
+ua-old-chrome                     1  {"raster":1}                  b|c|wtd                     (none)
+shot-force-canvas                 1  {"raster":1}                  b|c|wtd                     (none)
+                                   px rgb(223.67,231.79,231.66) dark=false
+shot-force-canvas-all-dark        1  {"raster":1}                  b|c|wtd                     (none)
+                                   px rgb(38.56,55.39,75.69) dark=true
+sticky-4                          3  {"proto":3}                   b|mc|mcl|wtd                mapcore
+                                   sticky: proto -> proto -> proto -> proto
+                                   sticky: proto -> proto -> proto -> proto
+                                   sticky: proto -> proto -> proto -> proto
+firefox-headed                    4  {"raster":4}                  b|c|sl|wtd                  createLabeler
+ext-legend-dark                   7  {"proto":7}                   b|mc|mcl|wtd                mapcore
+                                   px rgb(223.4,231.14,229.66) dark=false
+                                   px rgb(223.4,231.14,229.66) dark=false
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+                                   px rgb(36.06,54.15,76.3) dark=true
+geo-de                            1  {"proto":1}                   b|mc|mcl|wtd                mapcore
+colorscheme-light                 1  {"proto":1}                   b|mc|mcl|wtd                mapcore
+chromium-headless                 1  {"raster":1}                  b|c|wtd                     (none)
+chromium-block-mapcore            1  {"none":1}                    (not recorded)              (none)
+chromium-no-wasm-js               1  {"raster":1}                  b|c|wtd                     (none)
+chromium-no-offscreen-js          1  {"raster-firstpaint-only":1}  b|mc|mcl|wtd                mapcore
+
+stock-Chromium navigations: 36, non-proto: 1 (2.8%)
+experiment IDs exclusive to one arm: 0
+pre-existing gate artifacts all share one experiment-ID set: false
+  result-control.json              chromium  arm=proto raster=24 proto=73
+  result-extension.json            chromium  arm=proto raster=49 proto=73
+  result-firefox-extension.json    firefox   arm=raster raster=280 proto=0
+  result-route-rewrite.json        chromium  arm=proto raster=24 proto=73
+  result-selftest.json             chromium  arm=proto raster=48 proto=73

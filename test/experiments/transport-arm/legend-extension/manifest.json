@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Lane E legend probe",
+  "version": "0.0.1",
+  "description": "Single declarativeNetRequest rule: swap Google Maps' CompactLegend-Roadmap style asset for CompactLegend-RoadmapDark. Investigation fixture, not a product.",
+  "permissions": ["declarativeNetRequestWithHostAccess", "declarativeNetRequestFeedback"],
+  "host_permissions": ["https://www.gstatic.com/maps/res/*", "https://www.google.com/maps/*"],
+  "background": { "service_worker": "background.js" },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "legend",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+}

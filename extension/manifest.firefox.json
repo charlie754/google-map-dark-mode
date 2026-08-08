@@ -1,0 +1,154 @@
+{
+  "manifest_version": 3,
+  "name": "Google Map Dark Mode",
+  "version": "1.0.0",
+  "description": "Dark mode for Google Maps on the web: dark map plus recoloured interface. Unofficial; not affiliated with Google.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "google-map-dark-mode@charlie754.github.io",
+      "strict_min_version": "128.0"
+    }
+  },
+  "permissions": [
+    "alarms",
+    "declarativeNetRequestWithHostAccess",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.google.com/*",
+    "https://www.google.co.uk/*",
+    "https://www.google.de/*",
+    "https://www.google.fr/*",
+    "https://www.google.it/*",
+    "https://www.google.es/*",
+    "https://www.google.nl/*",
+    "https://www.google.pl/*",
+    "https://www.google.se/*",
+    "https://www.google.com.tr/*",
+    "https://www.google.ca/*",
+    "https://www.google.com.mx/*",
+    "https://www.google.com.br/*",
+    "https://www.google.co.jp/*",
+    "https://www.google.co.in/*",
+    "https://www.google.co.id/*",
+    "https://www.google.co.kr/*",
+    "https://www.google.com.hk/*",
+    "https://www.google.com.tw/*",
+    "https://www.google.com.sg/*",
+    "https://www.google.com.au/*",
+    "https://maps.google.com/*",
+    "https://www.gstatic.com/maps/res/*"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.google.com/maps",
+        "https://www.google.com/maps/*",
+        "https://www.google.com/maps?*",
+        "https://www.google.co.uk/maps",
+        "https://www.google.co.uk/maps/*",
+        "https://www.google.co.uk/maps?*",
+        "https://www.google.de/maps",
+        "https://www.google.de/maps/*",
+        "https://www.google.de/maps?*",
+        "https://www.google.fr/maps",
+        "https://www.google.fr/maps/*",
+        "https://www.google.fr/maps?*",
+        "https://www.google.it/maps",
+        "https://www.google.it/maps/*",
+        "https://www.google.it/maps?*",
+        "https://www.google.es/maps",
+        "https://www.google.es/maps/*",
+        "https://www.google.es/maps?*",
+        "https://www.google.nl/maps",
+        "https://www.google.nl/maps/*",
+        "https://www.google.nl/maps?*",
+        "https://www.google.pl/maps",
+        "https://www.google.pl/maps/*",
+        "https://www.google.pl/maps?*",
+        "https://www.google.se/maps",
+        "https://www.google.se/maps/*",
+        "https://www.google.se/maps?*",
+        "https://www.google.com.tr/maps",
+        "https://www.google.com.tr/maps/*",
+        "https://www.google.com.tr/maps?*",
+        "https://www.google.ca/maps",
+        "https://www.google.ca/maps/*",
+        "https://www.google.ca/maps?*",
+        "https://www.google.com.mx/maps",
+        "https://www.google.com.mx/maps/*",
+        "https://www.google.com.mx/maps?*",
+        "https://www.google.com.br/maps",
+        "https://www.google.com.br/maps/*",
+        "https://www.google.com.br/maps?*",
+        "https://www.google.co.jp/maps",
+        "https://www.google.co.jp/maps/*",
+        "https://www.google.co.jp/maps?*",
+        "https://www.google.co.in/maps",
+        "https://www.google.co.in/maps/*",
+        "https://www.google.co.in/maps?*",
+        "https://www.google.co.id/maps",
+        "https://www.google.co.id/maps/*",
+        "https://www.google.co.id/maps?*",
+        "https://www.google.co.kr/maps",
+        "https://www.google.co.kr/maps/*",
+        "https://www.google.co.kr/maps?*",
+        "https://www.google.com.hk/maps",
+        "https://www.google.com.hk/maps/*",
+        "https://www.google.com.hk/maps?*",
+        "https://www.google.com.tw/maps",
+        "https://www.google.com.tw/maps/*",
+        "https://www.google.com.tw/maps?*",
+        "https://www.google.com.sg/maps",
+        "https://www.google.com.sg/maps/*",
+        "https://www.google.com.sg/maps?*",
+        "https://www.google.com.au/maps",
+        "https://www.google.com.au/maps/*",
+        "https://www.google.com.au/maps?*",
+        "https://maps.google.com/*"
+      ],
+      "js": [
+        "content/theme.js"
+      ],
+      "css": [
+        "content/theme.css"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Google Map Dark Mode",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "dark_map",
+        "enabled": true,
+        "path": "rules/dark-map.json"
+      }
+    ]
+  }
+}

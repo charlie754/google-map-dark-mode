@@ -1,0 +1,36 @@
+{
+  "name": "maps-noir-harness",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Google Map Dark Mode -- the extension plus its verification harness. `npm test` is the fast offline regression suite (no browser, no network); `npm run test:theme` adds the app-chrome theme suite, which launches a browser but needs no network; the live gate drives real pointer gestures against live Maps and asserts that the dark map survives sustained interaction. The shipped version number lives in extension/manifest.*.json, never here -- tools/package.mjs reads it from there and refuses to build if the two manifests disagree.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "package": "node tools/package.mjs",
+
+    "test": "node --test test/checks/image.test.mjs test/checks/rules.test.mjs",
+    "test:theme": "node --test test/checks/theme.test.mjs",
+    "test:dnr": "node test/checks/dnr-2kb.mjs",
+    "test:liveness": "node test/checks/legend-liveness.mjs",
+    "test:package": "node test/checks/package-install.mjs",
+    "test:full": "npm run build && npm test && npm run test:theme && npm run test:dnr && npm run test:liveness",
+
+    "gate:live": "node test/live-gate.mjs chrome",
+    "gate:live:control": "node test/live-gate.mjs chrome-control",
+    "gate:live:firefox": "node test/live-gate.mjs firefox",
+    "gate:live:firefox:control": "node test/live-gate.mjs firefox-control",
+    "gate:live:all": "node test/live-gate.mjs all",
+
+    "gate": "node test/run-gate.mjs extension",
+    "gate:control": "node test/run-gate.mjs control",
+    "gate:selftest": "node test/run-gate.mjs selftest",
+    "gate:route": "node test/run-gate.mjs route-rewrite",
+    "gate:all": "node test/run-all.mjs",
+    "gate:all:route": "node test/run-all.mjs route-rewrite control",
+    "gate:firefox": "node test/run-gate.mjs firefox-extension"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0",
+    "pngjs": "7.0.0"
+  }
+}

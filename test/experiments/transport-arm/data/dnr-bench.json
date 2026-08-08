@@ -1,0 +1,109 @@
+[
+ {
+  "note": "manifest",
+  "permissions": [
+   "declarativeNetRequestWithHostAccess",
+   "declarativeNetRequestFeedback"
+  ],
+  "host_permissions": [
+   "https://www.gstatic.com/maps/res/*",
+   "https://www.google.com/maps/*"
+  ]
+ },
+ {
+  "note": "staticRulesets",
+  "enabled": [
+   "legend"
+  ]
+ },
+ {
+  "name": "A-anchored-hex",
+  "rx": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)Roadmap(-[0-9a-f]{32})$",
+  "addError": "Error: Rule with id 101 was skipped as the \"regexFilter\" value exceeded the 2KB memory limit when compiled. Learn more: https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#regex-rules",
+  "match": {
+   "https://www.google.com": [],
+   "(no initiator)": []
+  },
+  "loopCheckOnDarkUrl": []
+ },
+ {
+  "name": "B-anchored-any",
+  "rx": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)Roadmap(-.*)$",
+  "addError": null,
+  "match": {
+   "https://www.google.com": [
+    {
+     "ruleId": 102,
+     "rulesetId": "_dynamic"
+    }
+   ],
+   "(no initiator)": [
+    {
+     "ruleId": 102,
+     "rulesetId": "_dynamic"
+    }
+   ]
+  },
+  "loopCheckOnDarkUrl": []
+ },
+ {
+  "name": "C-unanchored",
+  "rx": "(CompactLegend-)Roadmap(-)",
+  "addError": null,
+  "match": {
+   "https://www.google.com": [
+    {
+     "ruleId": 103,
+     "rulesetId": "_dynamic"
+    }
+   ],
+   "(no initiator)": [
+    {
+     "ruleId": 103,
+     "rulesetId": "_dynamic"
+    }
+   ]
+  },
+  "loopCheckOnDarkUrl": []
+ },
+ {
+  "name": "D-dotstar",
+  "rx": "^(.*CompactLegend-)Roadmap(-.*)$",
+  "addError": null,
+  "match": {
+   "https://www.google.com": [
+    {
+     "ruleId": 104,
+     "rulesetId": "_dynamic"
+    }
+   ],
+   "(no initiator)": [
+    {
+     "ruleId": 104,
+     "rulesetId": "_dynamic"
+    }
+   ]
+  },
+  "loopCheckOnDarkUrl": []
+ },
+ {
+  "name": "E-no-escape",
+  "rx": "^(https://www.gstatic.com/maps/res/CompactLegend-)Roadmap(-.*)$",
+  "addError": null,
+  "match": {
+   "https://www.google.com": [
+    {
+     "ruleId": 105,
+     "rulesetId": "_dynamic"
+    }
+   ],
+   "(no initiator)": [
+    {
+     "ruleId": 105,
+     "rulesetId": "_dynamic"
+    }
+   ]
+  },
+  "loopCheckOnDarkUrl": []
+ }
+]

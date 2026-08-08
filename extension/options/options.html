@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google Map Dark Mode — Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body data-anim="off">
+  <main class="page">
+    <header class="head">
+      <img class="head__icon" id="icon" src="../icons/icon-48.png" alt="" width="40" height="40">
+      <div>
+        <h1 class="head__title" id="name">Google Map Dark Mode</h1>
+        <p class="head__version" id="version"></p>
+        <p class="head__lede">
+          Gives Google Maps the dark cartography Google already draws for its own night mode,
+          and darkens the panels and controls around it to match. Nothing is inverted and
+          nothing is filtered.
+        </p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2 class="card__title">Dark mode</h2>
+
+      <div class="panel" id="panel" data-ready="false">
+        <div class="row row--master">
+          <span class="row__text">
+            <label class="row__label" for="enabled">Dark mode</label>
+            <span class="row__hint" id="enabledHint">
+              The master switch. Off leaves Google Maps exactly as it comes: the redirect rules
+              are switched off in the browser, not merely ignored, so nothing of this extension
+              is in the way of a page load.
+            </span>
+          </span>
+          <input type="checkbox" role="switch" class="switch" id="enabled" aria-describedby="enabledHint">
+        </div>
+
+        <div class="row" id="row-darkMap">
+          <span class="row__text">
+            <label class="row__label" for="darkMap">Dark map surface</label>
+            <span class="row__hint" id="darkMapHint">
+              Roads, water, parks and labels — the map itself. Turn this off if you want the
+              normal map with dark panels around it.
+            </span>
+          </span>
+          <input type="checkbox" role="switch" class="switch" id="darkMap" aria-describedby="darkMapHint">
+        </div>
+
+        <div class="row" id="row-darkChrome">
+          <span class="row__text">
+            <label class="row__label" for="darkChrome">Dark panels and controls</label>
+            <span class="row__hint" id="darkChromeHint">
+              The search box, the results list, the menus and the buttons. Turn this off if you
+              want a dark map inside the ordinary light interface.
+            </span>
+          </span>
+          <input type="checkbox" role="switch" class="switch" id="darkChrome" aria-describedby="darkChromeHint">
+        </div>
+      </div>
+
+      <p class="error" id="error" role="alert" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2 class="card__title">Status</h2>
+
+      <div class="status" id="status" role="status">
+        <p class="status__headline">
+          <span class="status__dot" id="statusDot" aria-hidden="true"></span>
+          <span class="status__verdict" id="statusVerdict">Checking…</span>
+        </p>
+        <p class="status__text" id="statusText">
+          Reading the last self-check.
+        </p>
+      </div>
+
+      <dl class="detail" id="detail" hidden>
+        <div class="detail__pair">
+          <dt>Redirect rules</dt>
+          <dd id="detailRules">—</dd>
+        </div>
+        <div class="detail__pair">
+          <dt>Dark palette on Google’s servers</dt>
+          <dd id="detailLegend">—</dd>
+        </div>
+        <div class="detail__pair">
+          <dt>First-paint tiles</dt>
+          <dd id="detailRaster">—</dd>
+        </div>
+        <div class="detail__pair">
+          <dt>Last checked</dt>
+          <dd id="detailCheckedAt">—</dd>
+        </div>
+      </dl>
+
+      <div class="actions">
+        <button type="button" id="recheck" class="button">Check again</button>
+      </div>
+
+      <p class="card__foot">
+        This is here because a broken extension and a working one look identical from the map:
+        both give you the map Google would have given you anyway. The check runs against Google’s
+        own servers, and it is the only network request this extension makes on its own account.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="card__title">How this works</h2>
+
+      <p class="prose">
+        Google draws its base map from a palette file it publishes itself, in a light version and
+        a dark one. With dark mode on, the extension redirects the browser’s request for the light
+        palette to Google’s own dark file. That is the whole trick for the map: what you see is
+        Google’s real night cartography, drawn by Google’s renderer, not an inversion or a filter
+        laid over the top. It is also why the map does not go muddy or turn photographs
+        into negatives.
+      </p>
+
+      <p class="prose">
+        The panels around the map are a different problem. Maps colours them from a few hundred
+        CSS custom properties whose names are machine-generated and change on every Google
+        release, so a theme written against names or class selectors would break within weeks.
+        Instead the extension reads the properties out of the page as they are, converts each
+        colour to a darker one in OKLCH — a colour space where changing the lightness leaves the
+        hue where it was — and writes them back. It never touches the map canvas, and it leaves
+        photographs, avatars and shadows alone.
+      </p>
+
+      <p class="prose">
+        There is no account, no server of the extension’s own, and no analytics. The only requests
+        it makes are to google.com and gstatic.com, the same servers Maps is already talking to,
+        and only to check that the dark palette is still being served.
+      </p>
+
+      <p class="prose" id="sourceLine" hidden>
+        Source code:
+        <button type="button" id="source" class="link" data-url="https://github.com/charlie754/google-map-dark-mode">view the repository</button>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="card__title">Known limitations</h2>
+
+      <ul class="limits">
+        <li>
+          <strong>Satellite and Street View are not darkened.</strong> They are photographs.
+          Darkening a photograph does not produce a night view, it produces a broken one, so the
+          extension leaves them exactly as they are.
+        </li>
+        <li>
+          <strong>The Google account bar in the top right stays light.</strong> That strip is
+          drawn outside the colour system the rest of Maps uses, with its colours written into
+          the page directly, so there is nothing there to remap. The Sign-in button in particular
+          stays bright against the dark interface.
+        </li>
+        <li>
+          <strong>Terrain is untested.</strong> There are rules covering the terrain base map as
+          well as the ordinary road one, but the terrain view has never been driven through a
+          real session on either browser. Treat it as unverified rather than supported: it may
+          look right, it may not, and it may behave differently in Chrome and Firefox.
+        </li>
+        <li>
+          <strong>Not every Google address is covered.</strong> Maps is served from dozens of
+          country domains, and this extension carries a fixed list of the most used ones. On an
+          address outside that list it does nothing at all, and no setting here will change that.
+          <span class="limits__hosts" id="hosts" hidden>
+            Covered right now: <span id="hostList"></span>.
+          </span>
+        </li>
+        <li>
+          <strong>This depends on Google internals that Google does not document and has never
+          promised to keep.</strong> A change on their side can stop it working overnight, and no
+          setting here would fix it — a new version of the extension would be needed. That is
+          what the status section above is for: it is the only way to tell the difference between
+          “Google changed something” and “I turned it off and forgot”.
+        </li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="card__title">Support</h2>
+      <div class="support">
+        <p class="support__text">
+          This is free and open source, and stays that way. If it saved you some time, you can
+          buy me a coffee — it is a one-off, and nothing in the extension changes either way.
+        </p>
+        <button type="button" id="kofi" class="kofi" data-url="https://ko-fi.com/irp_hongkong">
+          <svg class="kofi__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M4 4h13a4 4 0 0 1 0 8h-1.1A6 6 0 0 1 10 17H8a6 6 0 0 1-6-6V4a0 0 0 0 1 0 0zm12 2v4h1a2 2 0 0 0 0-4h-1z"/>
+            <path fill="currentColor" d="M3 19h14a1 1 0 0 1 0 2H3a1 1 0 0 1 0-2z"/>
+          </svg>
+          <span class="kofi__label">
+            <span class="kofi__title">Support me on Ko-fi</span>
+            <span class="kofi__handle">@IRP_HongKong</span>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <button type="button" id="reset" class="button">Restore defaults</button>
+      <span id="flash" class="foot__flash" role="status" aria-live="polite"></span>
+    </footer>
+  </main>
+
+  <!-- polyfill.js first, so the page establishes the `browser` namespace itself rather than
+       relying on the host providing one. A no-op where it already exists. -->
+  <script src="../lib/polyfill.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

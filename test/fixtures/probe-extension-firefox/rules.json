@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1RoadmapDark\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/pb=.*!2s)Roadmap(!.*)$",
+      "resourceTypes": [
+        "image",
+        "xmlhttprequest",
+        "media",
+        "sub_frame",
+        "other"
+      ]
+    }
+  }
+]

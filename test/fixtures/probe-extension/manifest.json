@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "M0 harness probe (NOT the shipping extension)",
+  "version": "0.0.1",
+  "description": "Harness self-test fixture. Rewrites the Google Maps base-map style token so the gate's own assertions can be proven capable of passing. The product extension is built by tools/build.mjs into dist/chrome.",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback"
+  ],
+  "host_permissions": [
+    "https://www.google.com/maps/*",
+    "https://maps.google.com/maps/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "roadmap-dark",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "harness-probe@local.test",
+      "strict_min_version": "128.0"
+    }
+  }
+}

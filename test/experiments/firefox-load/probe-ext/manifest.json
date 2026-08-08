@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "LANE D traffic logger",
+  "version": "1.0",
+  "description": "Diagnostic only. Logs every network request Gecko makes, including ones issued from Web Workers that Playwright's request event does not surface.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "lane-d-logger@local.test"
+    }
+  },
+  "permissions": ["webRequest", "<all_urls>"],
+  "background": {
+    "scripts": ["bg.js"],
+    "persistent": true
+  }
+}

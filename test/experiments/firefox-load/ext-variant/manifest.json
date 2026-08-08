@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Maps Noir (M0 spike) [LANE D stream-rule variant]",
+  "version": "0.0.1",
+  "description": "M0 feasibility spike: rewrites google.com/maps base-map tile requests to Google's dark cartography style.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "maps-noir@local.test",
+      "strict_min_version": "128.0"
+    }
+  },
+  "permissions": [
+    "declarativeNetRequestWithHostAccess",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.google.com/*",
+    "https://maps.google.com/*"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_title": "Maps Noir (M0 spike)",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "dark_tiles",
+        "enabled": true,
+        "path": "rules/dark-tiles.json"
+      }
+    ]
+  }
+}

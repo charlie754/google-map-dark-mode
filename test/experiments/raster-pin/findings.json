@@ -1,0 +1,260 @@
+{
+  "lane": "C — raster-pin",
+  "date": "2026-08-07",
+  "question": "Can Google Maps be pinned to the raster transport so the RoadmapDark raster layer becomes the permanent renderer?",
+  "answer": "CONDITIONALLY YES — the map can be pinned permanently dark and stays interactive, but the same condition that triggers the raster fallback also prevents most of Maps' UI chrome from mounting, and breaks search results.",
+  "transportModel": {
+    "correction": "This project's model of two transports (raster pb= vs proto) is wrong. There are FOUR base-map transports, and only ONE of them honours the style token in its pixels.",
+    "transports": [
+      {
+        "id": "pb-4e0",
+        "url": "/maps/vt/pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m3!1e0!2sm!3i{ver}!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2s{Style}!4e0!5m1!1e0!23i…",
+        "payload": "image/png, 256x256, server-painted",
+        "styleTokenHonoured": true,
+        "rewritableByDnr": true,
+        "note": "The ONLY transport where set:RoadmapDark changes what the user sees. Rendered as DOM <img> elements in pinned mode."
+      },
+      {
+        "id": "pb-4e1",
+        "url": "same prefix, but !4e1!5m4!1e4!8m2!1e0!1e1!6m14!1e12!2i2!…",
+        "payload": "vector tile data",
+        "styleTokenHonoured": false,
+        "rewritableByDnr": true,
+        "note": "Carries the identical !1sset!2s group, so this repo's classifier calls it a 'raster base-map tile'. It is not. Styling is applied client-side, so rewriting the token here changes nothing on screen. This is why a run can report '100% RoadmapDark base-map tiles' and render fully light."
+      },
+      {
+        "id": "vt-stream",
+        "url": "/maps/vt/stream/pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i{n}!3x{mask}!2m3!1e0!2sm!3i{ver}!3m8!…!1sset!2sRoadmap!4e1!…",
+        "payload": "application/vnd.google.octet-stream-compressible, chunked, a BATCH of vector tiles per response",
+        "styleTokenHonoured": false,
+        "rewritableByDnr": "blockable yes; restyling pointless",
+        "note": "Previously unknown to this project. test/lib/tiles.mjs vtBucket() files it under 'vt-other' and baseMapKind() returns null for it, so it is invisible to every existing count. It is what actually paints the map in the non-WASM arm."
+      },
+      {
+        "id": "proto",
+        "url": "/maps/vt/proto?bpb=<base64url protobuf>",
+        "payload": "vector tile data",
+        "styleTokenHonoured": false,
+        "rewritableByDnr": false,
+        "note": "Style token present as nested protobuf; a DNR regexSubstitution provably cannot re-length-prefix it. Even when the harness DID rewrite it correctly (test/artifacts/result-route-rewrite.json: 73/73 proto requests carried RoadmapDark), the settled map was light — confirming client-side styling."
+      }
+    ]
+  },
+  "correctionsToPriorFindings": [
+    {
+      "claim": "In the raster arm a previous run observed 164/280 raster tiles across zooms 10-14 and zero proto requests, so the raster layer is the live interactive map at every zoom and Maps has a fully functional raster rendering mode.",
+      "status": "FALSE as stated",
+      "evidence": "Re-reading test/artifacts/result-firefox-extension.json: of its 280 'raster' rows, 24 are !4e0 PNG (zoom 12, first paint only) and 256 are !4e1 vector data (zooms 10-14). That arm was the JS vector renderer, not a raster renderer. The observation did not establish a working raster mode.",
+      "replacement": "A working raster mode does exist, but it is only reachable by starving the vector transport at bootstrap — which is what E1/E2 in this lane did, and which is a different and stronger claim."
+    }
+  ],
+  "experiments": {
+    "E1": {
+      "objective": "Block the /maps/vt/proto transport with the raster rewrite active.",
+      "verdict": "WORKS. Map is dark at every sampled instant and through every gesture; pan and zoom function; fresh RoadmapDark PNG tiles arrive at new zoom levels.",
+      "flavours": {
+        "abort": {
+          "label": "e1-abort",
+          "result": "dark, lum 53.26 at 500/900/1400/2000/3000/4500/6000/9000 ms and 44.78–52.47 through pan and zoom",
+          "png4e0": 216,
+          "png4e0Zooms": [
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "png4e0Tokens": {
+            "RoadmapDark": 216
+          },
+          "protoBlocked": 331,
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "recommendation": "BEST. Silent: mapcore treats a failed tile fetch as transient and simply repaints from raster."
+        },
+        "empty200": {
+          "label": "e1-empty200",
+          "result": "pixel-identical to abort",
+          "consoleErrors": "200+ (harness cap) of `tile_fetcher_impl.cc:839 FAILED_PRECONDITION: Mismatch between the # of requests and the number of PaintedRegions returned`",
+          "recommendation": "AVOID. Generates a continuous internal-error firehose and ships each one to Google via /maps/preview/log204."
+        },
+        "dnrBlock": {
+          "label": "e1-blocked",
+          "mechanism": "route.abort('blockedbyclient') -> net::ERR_BLOCKED_BY_CLIENT, the exact failure a declarativeNetRequest block rule produces",
+          "result": "identical to e1-abort in every measured quantity: 216 !4e0 tiles all RoadmapDark at zooms 12-18, 331 proto blocked, luminance 53.26 across the whole time series and 44.78-52.47 across gestures",
+          "consoleErrors": 0,
+          "pageErrors": 0,
+          "chrome": {
+            "zoomIn": 0,
+            "zoomOut": 0,
+            "pegman": 0,
+            "layers": 0,
+            "myLocation": 0,
+            "searchBox": 1,
+            "directions": 1,
+            "categoryChips": 0,
+            "signIn": 0,
+            "attribution": 0,
+            "menu": 1,
+            "tileImgs": 35
+          },
+          "recommendation": "Confirms the shippable DNR block behaves exactly like the clean abort flavour. Still a real DNR rule was never loaded; this reproduces the wire-level failure, not the extension."
+        }
+      },
+      "flavoursRun": [
+        "abort",
+        "blocked (ERR_BLOCKED_BY_CLIENT)",
+        "empty200"
+      ]
+    },
+    "E2": {
+      "objective": "Block the mapcore WASM renderer.",
+      "label": "e2-wasm-abort",
+      "verdict": "WORKS, and is a truer pin than E1: the client never issues a single proto request.",
+      "png4e0": 288,
+      "png4e0Zooms": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "png4e0Tokens": {
+        "RoadmapDark": 288
+      },
+      "pb4e1": 506,
+      "proto": 0,
+      "consoleErrors": 20,
+      "pageErrors": 8,
+      "cost": "8 uncaught page errors during bootstrap, and Google is told about every one of them via /maps/preview/log204 error beacons. 20 wasm fetch attempts (retry storm, bounded).",
+      "wasmUrlsObserved": [
+        "https://www.google.com/maps/_/wa/w.UIr6w7y8tLE.mapcore.O.wasm",
+        "https://www.google.com/maps/_/wa/w.EW7yEMi9-dQ.createLabeler.O.wasm"
+      ],
+      "harnessBugFound": "The first E2 matcher tested the whole URL for /mapcore.*\\.wasm/, which also matched Google's /maps/preview/log204 beacon because the beacon percent-encodes the failing wasm filename. That silently widened the intervention to include telemetry suppression. Fixed to match on URL path only; the numbers above are from the run made BEFORE the fix, so its wasmKilled=20 includes at least one log204 beacon."
+    },
+    "E3": {
+      "objective": "Find the minimal intervention.",
+      "minimal": {
+        "intervention": "rewrite /maps/vt/pb=…!2sRoadmap!4e0… -> RoadmapDark, and block /maps/vt/proto",
+        "label": "e1-abort / e3-proto-only",
+        "blockedResourceCount": 1,
+        "note": "Blocking pb!4e1 and /maps/vt/stream in addition changes nothing in this arm — e3-pin-all-vectors is byte-identical to e1-abort (216 PNG, 331 proto, same luminances). They are only needed if a session lands in the non-WASM arm, where they make things worse (blank map), so they should NOT be shipped."
+      },
+      "capabilityRoute": {
+        "objective": "Instead of breaking the renderer's network, stop the app choosing it: delete WebAssembly at document_start (shippable as an MV3 world:MAIN content script).",
+        "labels": [
+          "e3-nowasm-init",
+          "e3-nowasm-block4e1",
+          "e3-nowasm-block4e1-nosw",
+          "e3-nowasm-pin"
+        ],
+        "verdict": "DEAD END for darkness, but it isolates the mechanism.",
+        "observations": [
+          "Removing WebAssembly reliably moves the session into the JS vector arm: 0 proto requests, tiles over pb!4e1 + /maps/vt/stream.",
+          "That arm keeps the FULL UI chrome (zoom buttons, pegman, layers, my-location, sign-in, attribution; textLength 232 vs control 248).",
+          "But its renderer styles client-side, so the map is light (lum 228.08) no matter what the style token says.",
+          "Blocking every vector transport in that arm (stream + pb4e1 + proto) yields a BLANK map — flat lum 240.68, Google's no-data land colour — with the chrome still intact. The JS renderer has NO PNG fallback.",
+          "Verified with serviceWorkers:'block' so no service worker could be serving tiles behind the harness's back (e3-nowasm-block4e1-nosw: identical result, pageServiceWorkers=[])."
+        ]
+      },
+      "mechanismOfChromeLoss": {
+        "label": "diag-delayed-block",
+        "design": "Let the app boot untouched, then arm the blocking at +54s.",
+        "result": "Chrome fully intact (zoomIn 2, pegman 1, layers 1, attribution 1, textLength 337) — AND the raster fallback never engaged: 37 proto requests blocked, ZERO !4e0 tiles fetched, map stayed light and kept working from already-cached vector tiles.",
+        "conclusion": "The raster fallback only engages when the vector transport is dead from the first request. That same bootstrap-time failure is what stops the rest of the application mounting. On the evidence gathered, you cannot have both."
+      }
+    },
+    "E4": {
+      "objective": "Honest degradation audit of the winning intervention.",
+      "labels": {
+        "treatment": "e4-degradation",
+        "control": "e4-baseline"
+      },
+      "works": {
+        "darkness": "Permanent. lum 53.26 at 500/1400/3000/6000 ms and 45.95–52.77 across all 11 phases including after every gesture.",
+        "pan": "Works. Drag-pan moves the map and fetches fresh RoadmapDark tiles.",
+        "zoomIn": "Works. urlZoom 12 -> 15 -> 18; tiles fetched at zooms 12,13,14,15,16,17,18.",
+        "zoomOut": "Works. urlZoom returns to 12/14.",
+        "poiIconsAndLabels": "Present and correctly dark-styled — they are baked into the server-painted tile.",
+        "searchSubmission": "The search box exists, accepts text, and navigates to /maps/search/coffee/@…",
+        "hamburgerMenu": "Present."
+      },
+      "broken": {
+        "searchResults": "BROKEN. URL navigates but the results panel renders empty (`Saved | Recents | Get app` only). Control shows real results (`Price | Rating | Hours | All filters | Results | Slow Drip TX 4.8…`).",
+        "zoomButtons": "ABSENT. [aria-label=\"Zoom in\"]/[\"Zoom out\"] count 0 (control: 2/3).",
+        "streetViewPegman": "ABSENT. count 0 (control: 2, and clicking it in the control worked — lum dropped to 194.57 as the coverage overlay appeared).",
+        "layersAndSatelliteToggle": "ABSENT. count 0 (control: 1, 'Show imagery').",
+        "myLocationButton": "ABSENT. count 0 (control: 1).",
+        "directionsButton": "ABSENT in e4-degradation (count 0; control 3, and clicking it in the control navigated to /maps/dir/). NOT stable: the same intervention in e1-blocked and e3-block-both-vectors left the search-bar directions icon present (count 1). So the directions entry point is sometimes there and sometimes not; the directions FLOW was never exercised under the intervention either way.",
+        "signInAndGoogleApps": "ABSENT (control: present).",
+        "categoryChips": "ABSENT — no Restaurants/Hotels/Things to do row (control: present in body text).",
+        "attributionBar": "ABSENT. No 'Map data ©2026 Google', no Terms/Privacy/Send feedback, no scale bar (control: present). This is a legal and store-review hazard, not just a cosmetic one.",
+        "poiClickSidePanel": "No place panel appeared on clicking the map centre. NOT a clean result — the control did not produce one either, because the click landed on empty map rather than a POI. UNVERIFIED either way.",
+        "smoothZoom": "DEGRADED. Pinned raster snaps to integer zoom levels (3 wheel notches: 12 -> 15). Control zooms continuously (12 -> 12.93). Fractional/animated zoom is lost.",
+        "accessibleControlInventory": "5 named controls in treatment vs 22 in control."
+      },
+      "notVerified": {
+        "rotateTilt": "Ctrl+drag changed nothing beyond a pan in EITHER arm, so the gesture used was probably not Maps' rotate binding. No conclusion.",
+        "satelliteToggle": "clickByName failed in BOTH arms (control's 'Show imagery' element was present but not visible to Playwright). The ABSENCE of the control in treatment is solid; the behaviour of switching to satellite under the intervention is untested.",
+        "directionsFlow": "Only the button's absence was measured; the directions panel itself was never exercised under the intervention.",
+        "transitTrafficBicyclingTerrain": "Not exercised at all.",
+        "embeddedMaps": "/maps/embed not tested."
+      }
+    }
+  },
+  "repeatability": {
+    "runs": [
+      "rep1-e1-abort",
+      "rep2-e1-abort",
+      "rep3-e1-abort"
+    ],
+    "profiles": "three fresh mkdtemp profiles in os.tmpdir(), sequential",
+    "result": "identical in every measured quantity: 216 !4e0 tiles all RoadmapDark at zooms 12-18, 331 proto blocked, luminance 53.26/52.47/45.95/48.31/44.78 across phases",
+    "caveat": "All three landed in the SAME (WASM/proto) arm, as did every other Chromium run in this lane. This demonstrates determinism, NOT independence across Google's A/B assignment. The non-WASM arm was never observed naturally in Chromium here — only induced by deleting WebAssembly. What the shipped rule does to a user naturally assigned that arm is inferred, not observed: proto is never requested there, so the block is a no-op and the user simply gets the ordinary light map with an intact UI. That inference is untested."
+  },
+  "shippableShape": {
+    "rule1": {
+      "action": "redirect",
+      "from": "^(https://[^/]+/maps/vt/pb=.*!2s)Roadmap(!4e0!.*)$",
+      "to": "\\1RoadmapDark\\2",
+      "note": "The currently shipped rule in dist/chrome/rules/dark-tiles.json matches `Roadmap(!.*)$` and therefore also rewrites the !4e1 vector requests, where it accomplishes nothing. Anchoring on !4e0 makes the rule mean what it says and halves the requests it touches."
+    },
+    "rule2": {
+      "action": "block",
+      "urlFilter": "||google.com/maps/vt/proto",
+      "note": "This is the whole intervention. Everything else measured here is either inert or harmful."
+    },
+    "resourceTypes": [
+      "image",
+      "xmlhttprequest",
+      "other",
+      "media"
+    ],
+    "healthCheck": "In pinned mode the base map is DOM <img> tiles; a 178-byte yellow error tile would be directly visible. Every !4e0 response observed here was a real 10-25 KB PNG."
+  },
+  "harnessLimitations": [
+    "Playwright's context.route does NOT intercept requests issued by a page service worker. Maps registers /maps/preview/sw roughly a minute into a HEALTHY session (observed in diag-delayed-block and e4-baseline). In every run where blocking was armed from t=0 the service worker never registered (pageServiceWorkers=[]), so those results are sound; the decisive no-WASM runs were additionally re-run with serviceWorkers:'block'. A shipped extension's declarativeNetRequest sits below the service worker and does not have this blind spot.",
+    "No real declarativeNetRequest rule was exercised in this lane. Every intervention was harness-side routing. The DNR equivalence argument is reasoning, not measurement.",
+    "Only Chromium, only one geography (Houston z12), only one viewport (1440x900), only one locale.",
+    "Screenshot mean-RGB over the map clip cannot distinguish 'correct dark map' from 'dark-coloured garbage'; that judgement was made by eye on the full-window PNGs, which do show correct cartography.",
+    "Proto blocking produces roughly 4.5x the proto request volume of an untouched session (331 vs 73) because mapcore retries. Bounded, but it is extra load on Google and extra battery on the client."
+  ],
+  "artifacts": {
+    "dir": "test/experiments/raster-pin/artifacts/",
+    "perRun": "result-<label>.json  (full request log, luminance series, chrome inventory, console/page errors, intervention stats)",
+    "crossRun": "analysis.json  (produced by analyse.mjs)",
+    "probe": "result-probe-composite.json  (no-browser style-injection probe against the !4e4 endpoint; that endpoint returns a JSON tile-version manifest, not an image)",
+    "keyScreenshots": [
+      "e1-abort-fullwindow.png — permanently dark, complete cartography, missing chrome",
+      "e4-degradation-fullwindow.png — same, after a search that produced no results",
+      "control-fullwindow.png / e4-baseline-fullwindow.png — light control with full chrome",
+      "e3-nowasm-block4e1-nosw-t09000.png — non-WASM arm: light map, full chrome, every vector request blocked",
+      "e1-abort-zoom-in-2.png — z18 dark tile detail"
+    ]
+  }
+}

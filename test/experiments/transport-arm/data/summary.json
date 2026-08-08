@@ -1,0 +1,906 @@
+{
+ "generatedAt": "2026-08-07T21:29:25.764Z",
+ "totalTrials": 67,
+ "byVariant": {
+  "chromium-headed": {
+   "trials": 17,
+   "arms": {
+    "proto": 17
+   },
+   "modules": {
+    "(not recorded)": 1,
+    "b|mc|mcl|wtd": 16
+   },
+   "wasm": {
+    "(none)": 1,
+    "mapcore": 16
+   },
+   "pixels": []
+  },
+  "chromium-no-webgl-flag": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "chromium-no-webgl-js": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "shot-baseline": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 223.4,
+     "g": 231.14,
+     "b": 229.66,
+     "dark": false
+    }
+   ]
+  },
+  "shot-legend-dark": {
+   "trials": 5,
+   "arms": {
+    "proto": 4,
+    "raster": 1
+   },
+   "modules": {
+    "(not recorded)": 5
+   },
+   "wasm": {
+    "(none)": 5
+   },
+   "pixels": [
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 38.08,
+     "g": 54.64,
+     "b": 74.9,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    }
+   ]
+  },
+  "shot-proto-dark-only": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 223.4,
+     "g": 231.14,
+     "b": 229.66,
+     "dark": false
+    }
+   ]
+  },
+  "shot-nowebgl-dark": {
+   "trials": 2,
+   "arms": {
+    "raster": 2
+   },
+   "modules": {
+    "(not recorded)": 2
+   },
+   "wasm": {
+    "(none)": 2
+   },
+   "pixels": [
+    {
+     "r": 223.67,
+     "g": 231.79,
+     "b": 231.66,
+     "dark": false
+    },
+    {
+     "r": 223.67,
+     "g": 231.79,
+     "b": 231.66,
+     "dark": false
+    }
+   ]
+  },
+  "shot-nowebgl-light-bodies": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 223.67,
+     "g": 231.79,
+     "b": 231.66,
+     "dark": false
+    }
+   ]
+  },
+  "shot-nowebgl-dark-plus-legend": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 38.56,
+     "g": 55.39,
+     "b": 75.69,
+     "dark": true
+    }
+   ]
+  },
+  "shot-nowebgl-legend-only": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 223.45,
+     "g": 231.5,
+     "b": 231.41,
+     "dark": false
+    }
+   ]
+  },
+  "shot-firefox-baseline": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|sl|wtd": 1
+   },
+   "wasm": {
+    "createLabeler": 1
+   },
+   "pixels": [
+    {
+     "r": 221.56,
+     "g": 229.68,
+     "b": 229.7,
+     "dark": false
+    }
+   ]
+  },
+  "shot-firefox-legend-only": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|sl|wtd": 1
+   },
+   "wasm": {
+    "createLabeler": 1
+   },
+   "pixels": [
+    {
+     "r": 38.17,
+     "g": 54.71,
+     "b": 74.96,
+     "dark": true
+    }
+   ]
+  },
+  "shot-nowebgl-stream-only": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 38.77,
+     "g": 55.68,
+     "b": 75.94,
+     "dark": true
+    }
+   ]
+  },
+  "url-force-lite": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 1
+   },
+   "wasm": {
+    "mapcore": 1
+   },
+   "pixels": []
+  },
+  "url-force-canvas": {
+   "trials": 6,
+   "arms": {
+    "raster": 6
+   },
+   "modules": {
+    "b|c|wtd": 6
+   },
+   "wasm": {
+    "(none)": 6
+   },
+   "pixels": []
+  },
+  "url-output-classic": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 1
+   },
+   "wasm": {
+    "mapcore": 1
+   },
+   "pixels": []
+  },
+  "url-maps-google-com": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 1
+   },
+   "wasm": {
+    "mapcore": 1
+   },
+   "pixels": []
+  },
+  "ua-ie11": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "ua-old-chrome": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "shot-force-canvas": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 223.67,
+     "g": 231.79,
+     "b": 231.66,
+     "dark": false
+    }
+   ]
+  },
+  "shot-force-canvas-all-dark": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": [
+    {
+     "r": 38.56,
+     "g": 55.39,
+     "b": 75.69,
+     "dark": true
+    }
+   ]
+  },
+  "sticky-4": {
+   "trials": 3,
+   "arms": {
+    "proto": 3
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 3
+   },
+   "wasm": {
+    "mapcore": 3
+   },
+   "pixels": [],
+   "passSequences": [
+    "proto -> proto -> proto -> proto",
+    "proto -> proto -> proto -> proto",
+    "proto -> proto -> proto -> proto"
+   ]
+  },
+  "firefox-headed": {
+   "trials": 4,
+   "arms": {
+    "raster": 4
+   },
+   "modules": {
+    "b|c|sl|wtd": 4
+   },
+   "wasm": {
+    "createLabeler": 4
+   },
+   "pixels": []
+  },
+  "ext-legend-dark": {
+   "trials": 7,
+   "arms": {
+    "proto": 7
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 7
+   },
+   "wasm": {
+    "mapcore": 7
+   },
+   "pixels": [
+    {
+     "r": 223.4,
+     "g": 231.14,
+     "b": 229.66,
+     "dark": false
+    },
+    {
+     "r": 223.4,
+     "g": 231.14,
+     "b": 229.66,
+     "dark": false
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    },
+    {
+     "r": 36.06,
+     "g": 54.15,
+     "b": 76.3,
+     "dark": true
+    }
+   ]
+  },
+  "geo-de": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 1
+   },
+   "wasm": {
+    "mapcore": 1
+   },
+   "pixels": []
+  },
+  "colorscheme-light": {
+   "trials": 1,
+   "arms": {
+    "proto": 1
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 1
+   },
+   "wasm": {
+    "mapcore": 1
+   },
+   "pixels": []
+  },
+  "chromium-headless": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "chromium-block-mapcore": {
+   "trials": 1,
+   "arms": {
+    "none": 1
+   },
+   "modules": {
+    "(not recorded)": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "chromium-no-wasm-js": {
+   "trials": 1,
+   "arms": {
+    "raster": 1
+   },
+   "modules": {
+    "b|c|wtd": 1
+   },
+   "wasm": {
+    "(none)": 1
+   },
+   "pixels": []
+  },
+  "chromium-no-offscreen-js": {
+   "trials": 1,
+   "arms": {
+    "raster-firstpaint-only": 1
+   },
+   "modules": {
+    "b|mc|mcl|wtd": 1
+   },
+   "wasm": {
+    "mapcore": 1
+   },
+   "pixels": []
+  }
+ },
+ "stockChromium": {
+  "navigations": 36,
+  "nonProto": 1,
+  "rate": 0.0278,
+  "stockDetail": [
+   "chromium-headed proto",
+   "shot-baseline proto",
+   "shot-legend-dark proto",
+   "shot-legend-dark raster",
+   "shot-legend-dark proto",
+   "shot-legend-dark proto",
+   "shot-legend-dark proto",
+   "shot-proto-dark-only proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "sticky-4/pass proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto",
+   "chromium-headed proto"
+  ]
+ },
+ "experimentIds": {
+  "armExclusive": [],
+  "table": [
+   {
+    "id": 1368782,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 1368785,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 1381938,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 4861626,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 10211310,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 10211515,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 10212434,
+    "protoSeen": 2,
+    "protoOf": 38,
+    "rasterSeen": 1,
+    "rasterOf": 29
+   },
+   {
+    "id": 10212435,
+    "protoSeen": 0,
+    "protoOf": 38,
+    "rasterSeen": 3,
+    "rasterOf": 29
+   },
+   {
+    "id": 47029525,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 47054629,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 72272233,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 72272234,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 72272236,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 72458815,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 72549439,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 72860224,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 94243289,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 94255677,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 94260020,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   },
+   {
+    "id": 100799651,
+    "protoSeen": 35,
+    "protoOf": 38,
+    "rasterSeen": 24,
+    "rasterOf": 29
+   },
+   {
+    "id": 100818990,
+    "protoSeen": 38,
+    "protoOf": 38,
+    "rasterSeen": 28,
+    "rasterOf": 29
+   }
+  ]
+ },
+ "preExistingArtifacts": [
+  {
+   "file": "result-control.json",
+   "browser": "chromium",
+   "raster": 24,
+   "proto": 73,
+   "arm": "proto",
+   "gEp": "EgoyMDI2MDgwNS4xIKXMDSoASAFQAw%3D%3D",
+   "experimentIds": [
+    1368782,
+    1368785,
+    1381938,
+    4861626,
+    10211310,
+    10211515,
+    47029525,
+    47054629,
+    72272233,
+    72272234,
+    72272236,
+    72458815,
+    72549439,
+    72860224,
+    94243289,
+    94255677,
+    94260020,
+    100799651,
+    100818990
+   ]
+  },
+  {
+   "file": "result-extension.json",
+   "browser": "chromium",
+   "raster": 49,
+   "proto": 73,
+   "arm": "proto",
+   "gEp": "EgoyMDI2MDgwNS4xIKXMDSoASAFQAw%3D%3D",
+   "experimentIds": [
+    1368782,
+    1368785,
+    1381938,
+    4861626,
+    10211310,
+    10211515,
+    47029525,
+    47054629,
+    72272233,
+    72272234,
+    72272236,
+    72458815,
+    72549439,
+    72860224,
+    94243289,
+    94255677,
+    94260020,
+    100799651,
+    100818990
+   ]
+  },
+  {
+   "file": "result-firefox-extension.json",
+   "browser": "firefox",
+   "raster": 280,
+   "proto": 0,
+   "arm": "raster",
+   "gEp": "EgoyMDI2MDgwNS4xIKXMDSoASAFQAw%3D%3D",
+   "experimentIds": [
+    1368782,
+    1368785,
+    1381938,
+    4861626,
+    10211310,
+    10211515,
+    10213173,
+    47029525,
+    47054629,
+    72272233,
+    72272234,
+    72272236,
+    72458815,
+    72549439,
+    72860224,
+    94243289,
+    94255677,
+    94260020,
+    100760148,
+    100799651,
+    100818990
+   ]
+  },
+  {
+   "file": "result-route-rewrite.json",
+   "browser": "chromium",
+   "raster": 24,
+   "proto": 73,
+   "arm": "proto",
+   "gEp": "EgoyMDI2MDgwNS4xIKXMDSoASAFQAw%3D%3D",
+   "experimentIds": [
+    1368782,
+    1368785,
+    1381938,
+    4861626,
+    10211310,
+    10211515,
+    47029525,
+    47054629,
+    72272233,
+    72272234,
+    72272236,
+    72458815,
+    72549439,
+    72860224,
+    94243289,
+    94255677,
+    94260020,
+    100799651,
+    100818990
+   ]
+  },
+  {
+   "file": "result-selftest.json",
+   "browser": "chromium",
+   "raster": 48,
+   "proto": 73,
+   "arm": "proto",
+   "gEp": "EgoyMDI2MDgwNS4xIKXMDSoASAFQAw%3D%3D",
+   "experimentIds": [
+    1368782,
+    1368785,
+    1381938,
+    4861626,
+    10211310,
+    10211515,
+    47029525,
+    47054629,
+    72272233,
+    72272234,
+    72272236,
+    72458815,
+    72549439,
+    72860224,
+    94243289,
+    94255677,
+    94260020,
+    100799651,
+    100818990
+   ]
+  }
+ ],
+ "preExistingArtifactsShareOneExperimentIdSet": false
+}

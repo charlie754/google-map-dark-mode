@@ -1,0 +1,213 @@
+{
+  "lane": "E",
+  "topic": "Google Maps rendering transport: what decides it, and can a client choose",
+  "date": "2026-08-07",
+  "environment": {
+    "os": "Windows 11",
+    "gpu": "NVIDIA RTX 5090 (ANGLE/D3D11)",
+    "playwright": "1.62.0",
+    "chromium": "151.0.0.0 (bundled)",
+    "firefox": "153.0 (bundled)",
+    "viewport": "1440x900",
+    "locale": "en-US",
+    "timezone": "America/Chicago",
+    "colorScheme": "dark",
+    "signedIn": false,
+    "trials": 67,
+    "livePageLoads": "approx 78"
+  },
+
+  "renderModes": [
+    {
+      "name": "mapcore",
+      "workerModules": ["wtd", "b", "mc", "mcl"],
+      "wasm": "/maps/_/wa/w.<hash>.mapcore.O.wasm",
+      "baseMapTransport": "/maps/vt/proto?bpb=<protobuf>",
+      "paletteSource": "gstatic CompactLegend asset",
+      "seenIn": "stock headed Chromium, 35/36 navigations"
+    },
+    {
+      "name": "canvas+labeler",
+      "workerModules": ["wtd", "b", "c", "sl"],
+      "wasm": "/maps/_/wa/w.<hash>.createLabeler.O.wasm",
+      "baseMapTransport": "/maps/vt/pb= raster + /maps/vt/stream/pb=...!4e1",
+      "paletteSource": "gstatic CompactLegend asset",
+      "seenIn": "Firefox 153 always (6/6); stock Chromium 1/36"
+    },
+    {
+      "name": "canvas",
+      "workerModules": ["wtd", "b", "c"],
+      "wasm": null,
+      "baseMapTransport": "/maps/vt/pb= raster + /maps/vt/stream/pb=...!4e1",
+      "paletteSource": "server, via !1sset!2s<Style> on /maps/vt/stream/pb=",
+      "seenIn": "WebGL denied, ?force=canvas, old UA, headless Chromium"
+    }
+  ],
+  "note_firstPaintTiles": "The ~24 raster /maps/vt/pb= tiles at ~275ms appear in ALL modes; they are the server-HTML first-paint <img> grid and cannot be used to classify the mode.",
+
+  "q1_whatDeterminesTheArm": {
+    "answer": "The client. Maps selects a renderer in-page from client capability and client-supplied hints; the transport follows the renderer. No server-side A/B assignment was observed.",
+    "confidence": "high",
+    "positiveDeterminants": [
+      { "variable": "WebGL denied (MAIN-world getContext hook)", "result": "canvas", "trials": 7 },
+      { "variable": "WebGL denied (--disable-webgl flag)", "result": "canvas", "trials": 1 },
+      { "variable": "WebAssembly deleted", "result": "canvas", "trials": 1 },
+      { "variable": "?force=canvas", "result": "canvas", "trials": 8 },
+      { "variable": "old Chrome 70 / IE11 User-Agent", "result": "canvas", "trials": 2 },
+      { "variable": "headless Chromium", "result": "canvas", "trials": 1 },
+      { "variable": "Firefox 153 (WebGL2 working)", "result": "canvas+labeler", "trials": 6 },
+      { "variable": "stock headed Chromium", "result": "mapcore", "trials": 36, "exceptions": 1 }
+    ],
+    "ruledOut": [
+      {
+        "candidate": "!23i experiment-ID set",
+        "evidence": "21 distinct IDs across 67 trials; 0 exclusive to either arm; 18 of 21 present in 100% of both. 10212434: 7% proto / 4% raster. 10212435: 0% proto / 8% raster (2 of 25).",
+        "confidence": "high"
+      },
+      {
+        "candidate": "g_ep URL parameter",
+        "evidence": "byte-identical in every trial and in all 5 pre-existing gate artifacts across both arms: EgoyMDI2MDgwNS4xIKXMDSoASAFQAw==",
+        "confidence": "high"
+      },
+      {
+        "candidate": "cookies (NID / SOCS / AEC / __Secure-*)",
+        "evidence": "arm already decided with an empty jar; 12/12 re-navigations inside one profile with cookies present never changed mode",
+        "confidence": "medium",
+        "caveat": "not a positive test of a specific cookie value"
+      },
+      { "candidate": "locale / timezone (de-DE, Europe/Berlin)", "evidence": "mapcore, same as en-US", "trials": 1, "confidence": "low" },
+      { "candidate": "prefers-color-scheme", "evidence": "light -> mapcore, same as dark", "trials": 1, "confidence": "low" },
+      { "candidate": "maps.google.com host", "evidence": "302 to www, mapcore", "trials": 1, "confidence": "low" }
+    ],
+    "speculation": "The 1-in-36 stock-Chromium canvas fall is more likely a capability-probe timeout on a cold profile than a random server roll: identical navigator caps and identical ANGLE renderer string to the 35 mapcore runs, and it landed in the same canvas+labeler mode Firefox picks deterministically. NOT PROVEN."
+  },
+
+  "q2_canAClientForceRaster": {
+    "answer": "Yes, three independent client-side ways.",
+    "confidence": "high",
+    "mechanisms": [
+      {
+        "mechanism": "?force=canvas appended to the Maps URL",
+        "freshProfiles": 8,
+        "result": "8/8 canvas mode",
+        "notes": "WebGL remains available (webgl2=true in all 8). An extension can do this with a DNR main_frame redirect."
+      },
+      {
+        "mechanism": "MAIN-world document_start script denying WebGL",
+        "freshProfiles": 7,
+        "result": "7/7 canvas mode",
+        "notes": "Wrap HTMLCanvasElement/OffscreenCanvas getContext to return null for webgl/webgl2/experimental-webgl and delete WebGL(2)RenderingContext. Maps' probe is main-thread."
+      },
+      {
+        "mechanism": "old User-Agent (Chrome 70 or IE11)",
+        "freshProfiles": 2,
+        "result": "2/2 canvas mode",
+        "notes": "not recommended; breaks unrelated feature detection"
+      }
+    ],
+    "warning": {
+      "claim": "Forcing raster does NOT by itself give a rewritable base map.",
+      "evidence": "WebGL denied + every /maps/vt/pb= tile URL rewritten to RoadmapDark: the tile bodies on the wire were genuinely dark (sampled 4: rgb(36.9,54.0,74.2) (34.6,50.8,72.0) (34.6,50.3,70.9) (31.0,59.0,76.2)) yet the rendered map was light, mean RGB (223.67,231.79,231.66) - byte-identical to the no-rewrite control. The canvas renderer paints from /maps/vt/stream/pb=...!4e1.",
+      "whatDoesWork": "Rewriting !1sset!2sRoadmap -> RoadmapDark on /maps/vt/stream/pb= : mean RGB (38.77,55.68,75.94), dark."
+    },
+    "ruledOutDoNotRetry": [
+      { "candidate": "?force=lite", "result": "mapcore, no effect", "trials": 1 },
+      { "candidate": "?output=classic", "result": "mapcore, no effect", "trials": 1 },
+      { "candidate": "maps.google.com", "result": "302 to www, mapcore", "trials": 1 },
+      { "candidate": "blocking the mapcore WASM (abort /mapcore/ and *.wasm)", "result": "zero base-map requests of either kind; broke the map", "trials": 1 },
+      { "candidate": "deleting OffscreenCanvas", "result": "mapcore still loaded, zero proto tiles, only first-paint tiles; broken map", "trials": 1 }
+    ]
+  },
+
+  "q3_stickiness": {
+    "answer": "Not a per-navigation roll. Deterministic for a given client configuration and stable across navigations within a profile.",
+    "confidence": "high for 'not re-rolled'; medium for the residual rate",
+    "stickyProbe": { "profiles": 3, "navigationsPerProfile": 4, "sequences": ["proto -> proto -> proto -> proto", "proto -> proto -> proto -> proto", "proto -> proto -> proto -> proto"] },
+    "stockChromiumFreshProfileRate": { "navigations": 36, "nonMapcore": 1, "rate": 0.0278, "wilson95": "approx 0.005 to 0.14" },
+    "stockChromiumIncludingExtensionTrials": { "navigations": 43, "nonMapcore": 1, "rate": 0.023 },
+    "firefox": { "freshProfiles": 6, "canvasPlusLabeler": 6, "rate": 1.0 },
+    "headlessChromium": { "trials": 1, "result": "canvas" },
+    "implication": "Waiting for a lucky roll is not a strategy; a stock desktop Chrome user gets mapcore ~97% of the time and gets it again on every reload."
+  },
+
+  "q4_vectorStyleSource": {
+    "answer": "Yes. https://www.gstatic.com/maps/res/CompactLegend-<Style>-<32-hex-version>",
+    "confidence": "high",
+    "properties": {
+      "origin": "www.gstatic.com (different origin from the tiles)",
+      "fetchedPerSession": "1-2 times, at 319-535 ms (mapcore) or ~400 ms (canvas)",
+      "resourceType": ["fetch", "xhr"],
+      "auth": "none - no cookies, no API key, no signed token",
+      "versionHashObserved": "4311471e3660cd049e8ede59d279b3ba (same hash as /maps/vt/sxforms?v=)"
+    },
+    "styleNameSweep": {
+      "http200": {
+        "Roadmap": 2056525,
+        "RoadmapDark": 1938292,
+        "Terrain": 2023776,
+        "TerrainDark": 1907717,
+        "RoadmapSatellite": 1934714
+      },
+      "http404": ["RoadmapNight", "Night", "Dark", "Transit", "TransitDark", "Bicycling", "Traffic", "Basemap", "Satellite", "Hybrid"],
+      "healthCheckSignal": "clean 404 (~1620 B HTML) for a bad name - better than the raster endpoint's 178-byte yellow tile"
+    },
+    "evidence": [
+      { "condition": "control, nothing rewritten, mapcore", "meanRgb": [223.4, 231.14, 229.66], "dark": false },
+      { "condition": "legend swapped only, mapcore", "meanRgb": [36.06, 54.15, 76.3], "dark": true, "trials": 4 },
+      { "condition": "legend swapped only, canvas+labeler (Chromium)", "meanRgb": [38.08, 54.64, 74.9], "dark": true, "trials": 1 },
+      { "condition": "legend swapped only, canvas+labeler (Firefox)", "meanRgb": [38.17, 54.71, 74.96], "dark": true, "trials": 1 },
+      { "condition": "control, Firefox, nothing swapped", "meanRgb": [221.56, 229.68, 229.7], "dark": false },
+      { "condition": "real MV3 extension, one static DNR rule, mapcore", "meanRgb": [36.06, 54.15, 76.3], "dark": true, "trials": 5 }
+    ],
+    "negativeControls": [
+      { "condition": "proto set: token rewritten to RoadmapDark on all 36 proto requests, legend untouched", "meanRgb": [223.4, 231.14, 229.66], "dark": false, "meaning": "the proto request's style token does not select the client palette" },
+      { "condition": "legend swapped only, canvas mode without labeler", "meanRgb": [223.45, 231.5, 231.41], "dark": false, "meaning": "that mode takes its colours from the server stream, not the legend" }
+    ],
+    "notThePalette": {
+      "url": "/maps/vt/sxforms?v=<same version hash>",
+      "bytes": 571000,
+      "shape": "1236 top-level entries of {1:int, 2:bytes, 3:bytes}",
+      "reason": "not keyed by style name; fetched identically in both arms",
+      "speculation": "probably the shared style-transform program table the legend indexes into - NOT investigated"
+    },
+    "workingDnrRule": {
+      "regexFilter": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)Roadmap(-.*)$",
+      "regexSubstitution": "\\1RoadmapDark\\2",
+      "resourceTypes": ["xmlhttprequest", "image", "other"],
+      "hostPermissions": ["https://www.gstatic.com/maps/res/*", "https://www.google.com/maps/*"],
+      "redirectLoopSafe": true,
+      "loopEvidence": "testMatchOutcome on CompactLegend-RoadmapDark-<hash> returns no matched rules",
+      "verifiedLive": "5 fresh profiles, 5/5 dark, ruleset enabled and testMatchOutcome matched in each",
+      "fixturePath": "test/experiments/transport-arm/legend-extension/"
+    },
+    "trap": {
+      "badRegex": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)Roadmap(-[0-9a-f]{32})$",
+      "chromeError": "Rule with id N was skipped as the \"regexFilter\" value exceeded the 2KB memory limit when compiled.",
+      "whyDangerous": "the extension loads cleanly, getEnabledRulesets() still returns the ruleset, and the only symptom is that the map stays light",
+      "mitigation": "assert chrome.declarativeNetRequest.testMatchOutcome() in tests, never just that the ruleset loaded",
+      "bench": "data/dnr-bench.json (5 regexes, offline, no live traffic)"
+    }
+  },
+
+  "couldNotDetermine": [
+    "signed-in behaviour (forbidden by the brief, never tested)",
+    "real geography / different egress IP",
+    "why Firefox 153 deterministically avoids mapcore despite working WebGL2",
+    "whether the legend swap survives pan/zoom, layer switches, satellite/terrain or a long session - every measurement is a passive 14-15 s observation with NO gestures",
+    "whether the legend version hash rotates independently of the style name (only one version ever observed)",
+    "precise size of the first-paint light flash with the legend rule alone (~1 s of server-HTML raster tiles)",
+    "Firefox with a real extension (harness route interception only; the firefox-load lane owns XPI loading)",
+    "n=1 rule-outs: ?force=lite, ?output=classic, geo-de, colorscheme-light, headless, block-mapcore, no-offscreen"
+  ],
+
+  "artifacts": {
+    "code": ["run.mjs", "lib/trial.mjs", "analyse.mjs", "debug-dnr.mjs", "dump-proto.mjs", "legend-extension/"],
+    "data": ["data/trials.ndjson", "data/summary.json", "data/tally.txt", "data/dnr-bench.json", "data/compactlegend-style-sweep.txt", "data/shots/"],
+    "keyScreenshots": [
+      "data/shots/ext-legend-dark-msjgbg9h-full.png (real MV3 extension, mapcore arm, dark)",
+      "data/shots/shot-legend-dark-msjf8d0z.png (harness route, mapcore arm, dark)",
+      "data/shots/shot-nowebgl-dark-plus-legend-msjfj3hd-full.png (canvas arm, dark)",
+      "data/shots/shot-baseline-msjf7vqu.png (control, light)"
+    ]
+  }
+}

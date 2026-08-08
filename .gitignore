@@ -1,0 +1,50 @@
+# Google Map Dark Mode — ignore rules for this project subtree.
+#
+# NOTE: the git root is F:\, not this directory, and it is shared with unrelated
+# projects. These rules are scoped by their paths, not by their location.
+
+node_modules/
+
+# Build output and the store artifacts built from it. `node tools/build.mjs`
+# writes dist/chrome/ and dist/firefox/; `node tools/package.mjs` writes
+# dist/google-map-dark-mode-<target>-<version>.{zip,xpi} beside them. All of it
+# is reproducible from extension/ in one command, and a committed archive is a
+# thing that can silently disagree with the source it was built from.
+dist/
+
+# Belt and braces for the archives, wherever anyone puts them.
+*.xpi
+*.zip
+*.crx
+
+# Harness output.
+test/artifacts/
+
+# The experiment lanes left ~120 MB of captures on disk. They are evidence, not
+# source. Two conventions are in play because the lanes were written weeks apart:
+#
+#   artifacts/  the later convention (firefox-load, raster-pin)
+#   data/       transport-arm, which predates it
+#
+# Only the BULK of data/ is ignored. The small text captures beside it —
+# one-raster-light.txt, proto-urls-control.txt, dnr-bench.json, NOTES.txt,
+# tally.txt, summary.json — are quoted verbatim as provenance by
+# test/fixtures/url-corpus.mjs and test/checks/dnr-2kb.mjs, and a reviewer has to
+# be able to check the corpus against the capture. Those stay in the repo.
+test/experiments/*/artifacts/
+test/experiments/*/data/shots/
+test/experiments/*/data/trials*.json
+test/experiments/*/data/*.bin
+
+# Throwaway browser profiles. test/.profiles/ is where every harness mkdtemps
+# them; the rest are older names and Playwright's own defaults.
+test/.profiles/
+.playwright-profile*/
+playwright-report/
+test-results/
+
+# Chrome writes indexed DNR rulesets into an unpacked extension directory when
+# it loads it. Never source, and tools/package.mjs refuses to archive it.
+_metadata/
+
+npm-debug.log*

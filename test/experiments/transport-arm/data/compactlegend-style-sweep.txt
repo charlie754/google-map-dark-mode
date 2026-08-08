@@ -1,0 +1,15 @@
+Roadmap            http=200 bytes=2056525
+RoadmapDark        http=200 bytes=1938292
+RoadmapNight       http=404 bytes=1629
+Night              http=404 bytes=1622
+Dark               http=404 bytes=1621
+Terrain            http=200 bytes=2023776
+TerrainDark        http=200 bytes=1907717
+Transit            http=404 bytes=1624
+TransitDark        http=404 bytes=1628
+Bicycling          http=404 bytes=1626
+Traffic            http=404 bytes=1624
+Basemap            http=404 bytes=1624
+RoadmapSatellite   http=200 bytes=1934714
+Satellite          http=404 bytes=1626
+Hybrid             http=404 bytes=1623

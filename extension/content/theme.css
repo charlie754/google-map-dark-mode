@@ -1,0 +1,73 @@
+/*
+ * Google Map Dark Mode -- app-chrome dark theme, static layer.
+ *
+ * Injected at document_start, before Google Maps' own stylesheets exist. Its
+ * only job is to make sure the very first paint is dark, so the user never sees
+ * a white flash while theme.js waits for the CSS custom properties it rewrites.
+ *
+ * Everything else -- panels, cards, chips, buttons, text -- is re-coloured at
+ * runtime by theme.js, which rewrites Maps' Material 3 design tokens. This file
+ * deliberately contains NO Google class selectors: they are obfuscated and
+ * rotate on every rebuild, so a selector-based theme is a maintenance treadmill.
+ *
+ * It also contains no `filter`, `invert()`, `hue-rotate()` or `mix-blend-mode`.
+ * Those are what make generic dark-mode extensions mangle photos, Street View,
+ * satellite imagery and avatars. Nothing here can reach photographic content.
+ *
+ * THE GATE
+ * --------
+ * `:not([data-mapsnoir="off"])` is the off switch. Content-script CSS cannot be
+ * un-injected once the browser has applied it, so an attribute gate is the only
+ * way to make this file reversible at all.
+ *
+ * theme.js drives the attribute through three values:
+ *
+ *   (absent)   the browser has applied this file but has not run theme.js yet,
+ *              which on a content script is a window of microseconds
+ *   "pending"  theme.js is running and is waiting for storage.local to say
+ *              whether the user wants the theme
+ *   "on"/"off" the answer
+ *
+ * Only "off" disables these rules, so the first two states paint dark. That is
+ * a deliberate choice and not an oversight: settings default to enabled, the
+ * read that resolves them is asynchronous and cannot be made otherwise from a
+ * content script, and of the two possible wrong frames a white one on a user
+ * who asked for dark is far worse than a dark one on a user who did not. The
+ * full argument, including the timeout that stops "pending" from lasting
+ * forever, is in section 10 of theme.js.
+ *
+ * Because "off" also has to be able to arrive *later* -- the user flicks the
+ * switch on an open tab -- these rules are written so that removing them
+ * restores Maps' own appearance exactly: two background colours and a
+ * `color-scheme`, no inherited text colour, no layout, nothing that another
+ * rule would have to undo.
+ */
+
+html:not([data-mapsnoir="off"]) {
+  /* Tells the engine to render UA-supplied surfaces dark: scrollbars, form
+     control internals, the canvas behind the document, spellcheck underlines.
+     This is what prevents a white scrollbar gutter next to a dark panel. */
+  color-scheme: dark !important;
+
+  /* The paint that lands before Maps' first stylesheet arrives. Slightly
+     darker than the surface colour theme.js derives for Maps' `#ffffff`
+     surface token (which lands near #181818), so it reads as the page
+     underneath the app rather than as another panel. */
+  background-color: #131314 !important;
+}
+
+html:not([data-mapsnoir="off"]) > body {
+  background-color: #131314 !important;
+}
+
+/*
+ * Deliberately NOT set here:
+ *
+ *   - a global `color`. Any element Maps leaves on an inherited colour over a
+ *     hard-coded light surface would become invisible. Text colour is driven
+ *     from Maps' own tokens instead, which theme.js rewrites in place.
+ *   - anything touching the map container or its canvases. The map surface is
+ *     already dark by other means (the tile-style rewrite); styling it here
+ *     would be a regression, not an improvement.
+ *   - image/media rules of any kind.
+ */
