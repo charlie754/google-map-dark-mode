@@ -102,6 +102,21 @@ test('the "none" declaration matches reality: no network egress and no analytics
   assert.deepEqual(synced, [], `these use storage.sync while the manifest declares "none": ${synced}`);
 });
 
+test('the version floors are at or above where data_collection_permissions is supported', () => {
+  // Desktop Firefox understands the key from 140, Firefox for Android from 142.
+  // Declaring it under an older floor is accepted but produces an AMO warning on
+  // every submission ("requires Firefox 128, which was released before version
+  // 140 introduced support for ..."), and worse, means the key silently does
+  // nothing on the versions the floor claims to support.
+  const bss = firefox.browser_specific_settings;
+  const floor = (s) => Number(String(s).split('.')[0]);
+  assert.ok(floor(bss.gecko.strict_min_version) >= 140, 'gecko.strict_min_version must be >= 140');
+  assert.ok(
+    floor(bss.gecko_android?.strict_min_version) >= 142,
+    'gecko_android.strict_min_version must be >= 142',
+  );
+});
+
 test('both manifests agree on name and version (the store artifacts are keyed off it)', () => {
   assert.equal(chrome.version, firefox.version);
   assert.equal(chrome.name, firefox.name);
