@@ -17,18 +17,32 @@ also keep the old id deliberately — they are recorded evidence, not inputs.
 ```bash
 node tools/build.mjs        # assemble extension/ -> dist/chrome/ and dist/firefox/
 node tools/package.mjs      # build + emit the store ZIP and XPI into dist/
-npm test                    # 35 offline checks, ~120 ms, no network, no browser
+npm test                    # 42 offline checks, ~150 ms, no network, no browser
 npm run test:theme          # 28 theme-layer checks (browser, no network)
-npm run test:widget         # 20 in-page widget checks (browser + live Maps)
+npm run test:widget         # 36 in-page widget checks (browser + live Maps)
 npm run test:dnr            # 2 KB DNR-trap detector (launches a browser)
 npm run test:liveness       # CompactLegend token canary (network)
+npm run test:amo            # addons-linter, AMO's own validator (network: npx)
 npm run test:package        # installs the built ZIP and XPI in real browsers
 npm run test:full           # build + offline + theme + dnr + liveness
 npm run gate:live:all       # the live gate: Chrome + Firefox + both controls
 ```
 
-`npm test` names its two files explicitly rather than globbing — `node --test` over-collects
+`npm test` names its files explicitly rather than globbing — `node --test` over-collects
 everything under a path containing `test/`, which would launch browsers from the "offline" suite.
+
+**Run `npm run test:amo` before every AMO upload.** A manifest can load perfectly and still be
+rejected at submission: AMO refused the first 1.0.0 XPI outright for a missing
+`data_collection_permissions`, then passed the next one with three warnings. All four findings were
+reproducible locally with `addons-linter` — AMO's own validator, one npx away — and all four were
+instead discovered by uploading. `test/checks/manifest.test.mjs` pins the parts that can be checked
+offline, including that the Firefox version floors stay at or above where the manifest keys they
+declare actually exist (140 desktop / 142 Android for `data_collection_permissions`).
+
+Related: **never write `innerHTML` in this extension**, even from a string constant. The widget's
+markup is a module-level literal with no dynamic input, and the linter still flags it
+`UNSAFE_VAR_ASSIGNMENT`, which puts a security warning in front of a human reviewer. Parse with
+`DOMParser` into an inert document and `importNode` the result — it handles the inline SVG too.
 
 Load unpacked from `dist/chrome/`. Firefox cannot side-load an XPI from a profile directory any
 more; use DevTools RDP `installTemporaryAddon` (a working client is at
