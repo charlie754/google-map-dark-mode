@@ -1,6 +1,6 @@
 # Privacy policy — Google Map Dark Mode
 
-**Last updated: 2026-08-07. Applies to version 1.0.0.**
+**Last updated: 2026-08-20. Applies to versions 1.0.0, 1.0.1 and 1.0.2.**
 
 ## The short version
 

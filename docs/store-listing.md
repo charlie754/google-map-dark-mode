@@ -1,4 +1,4 @@
-# Store listing copy — Google Map Dark Mode 1.0.0
+# Store listing copy — Google Map Dark Mode 1.0.2
 
 Everything a reviewer or a submission form will ask for, written out. Nothing
 here can be submitted by an assistant: both stores need an account holder to sign
@@ -9,11 +9,20 @@ registration fee.
 
 | Store | File |
 | --- | --- |
-| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.0.zip` |
-| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.0.xpi` |
+| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.2.zip` |
+| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.2.xpi` |
 
 The version in both file names comes from the manifests and is checked against
 the archived manifest at package time; it is never typed in twice.
+
+**1.0.2** (2026-08-20) — same Goat lockup as 1.0.1, plus panel hover polish:
+toggle pills enlarge on hover (not the whole row); the Dark Mode header lifts
+while the panel is open. Dark-mode behaviour is unchanged. 1.0.0 and 1.0.1
+archives stay in `dist/`. AMO already published 1.0.1, so this is the next
+Firefox upload.
+
+**1.0.1** (2026-08-19) — in-page panel carries the GOATPROJECT lockup and two
+campaign lines under StarGithub. Dark-mode behaviour is unchanged from 1.0.0.
 
 ---
 

@@ -194,7 +194,7 @@ try {
   });
   ok('all three switches render and read On', bodyRows.length === 3 && bodyRows.every(r => r.checked === 'true' && +r.op > 0.9),
      JSON.stringify(bodyRows));
-  await page.screenshot({ path: path.join(OUT, '2-expanded.png'), clip: { x: 0, y: 0, width: 560, height: 560 } });
+  await page.screenshot({ path: path.join(OUT, '2-expanded.png'), clip: { x: 0, y: 0, width: 560, height: 720 } });
 
   // ---- 4. Ko-fi steam animates on hover
   const kofiBox = await q(() => {
@@ -274,6 +274,122 @@ try {
   const ghHover = await q(() => getComputedStyle(document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.gh__star')).transform);
   ok('GitHub star reacts to hover', ghRest !== ghHover, `rest=${ghRest} hover=${ghHover}`);
   await page.screenshot({ path: path.join(OUT, '3b-github-hover.png'), clip: { x: 0, y: 0, width: 480, height: 620 } });
+
+  // ---- 4c. Goat lockup: sentences on top, gap under StarGithub, hover-only motion
+  await page.mouse.move(...Object.values(await hostPoint()));
+  await page.waitForTimeout(400);
+  const goat = await q(() => {
+    const sh = document.getElementById('gmdm-widget-host').shadowRoot;
+    const g = sh.querySelector('.goat');
+    const ghBtn = sh.querySelector('.gh');
+    const lockup = sh.querySelector('.goat-lockup');
+    if (!g || !ghBtn || !lockup) return null;
+    const rg = g.getBoundingClientRect();
+    const rgh = ghBtn.getBoundingClientRect();
+    const copyEl = g.querySelector('.goat__copy');
+    const copy = [...g.querySelectorAll('.goat__line')].map((el) => el.textContent.trim());
+    const mark = lockup.querySelector('.goat-lockup__svg');
+    const rm = mark ? mark.getBoundingClientRect() : { width: 0, height: 0, top: 0, right: 0 };
+    const line0 = g.querySelector('.goat__line');
+    const rl = line0 ? line0.getBoundingClientRect() : { bottom: 0 };
+    const meteors = sh.querySelector('.goat-lockup__meteors');
+    const thumb = sh.querySelector('.gl-thumb');
+    const bg = getComputedStyle(lockup).backgroundColor;
+    const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg);
+    const tag = lockup.querySelector('.goat-lockup__tag');
+    const name = lockup.querySelector('.goat-lockup__name');
+    const rt = tag ? tag.getBoundingClientRect() : { width: 0, height: 0 };
+    const rn = name ? name.getBoundingClientRect() : { left: 0, bottom: 0 };
+    const rLock = lockup.getBoundingClientRect();
+    return {
+      copy,
+      href: lockup.getAttribute('href'),
+      lockupTag: lockup.tagName,
+      copyInsideLink: Boolean(copyEl && copyEl.closest('a')),
+      goatIsLink: g.tagName === 'A',
+      belowGh: rg.top >= rgh.bottom - 1,
+      gap: +(rg.top - rgh.bottom).toFixed(1),
+      markW: +rm.width.toFixed(1),
+      markH: +rm.height.toFixed(1),
+      copyAboveMark: rl.bottom <= rm.top + 1,
+      paths: mark ? mark.querySelectorAll('path').length : 0,
+      restMeteors: meteors ? getComputedStyle(meteors).opacity : null,
+      restThumb: thumb ? getComputedStyle(thumb).opacity : null,
+      paper: lockup.classList.contains('goat-lockup--paper'),
+      bg,
+      bgR: rgb ? +rgb[1] : -1,
+      bgG: rgb ? +rgb[2] : -1,
+      bgB: rgb ? +rgb[3] : -1,
+      tag: tag ? tag.textContent.trim() : '',
+      tagVisible: rt.width > 40 && rt.height >= 5 && rt.right <= rLock.right + 1.5,
+      tagOneRow: rt.height > 0 && rt.height < 16,
+      tagUnderName: rt.top >= rn.bottom - 2 && Math.abs(rt.left - rn.left) < 3,
+      tagRightOfMark: rt.left >= rm.right - 4,
+    };
+  });
+  ok('Goat banner sits under StarGithub with a gap',
+     goat && goat.belowGh && goat.gap >= 12 && goat.href === 'https://dagoat.io',
+     goat ? `gap=${goat.gap}px href=${goat.href}` : 'absent');
+  ok('only the lockup is the Goat link, not the sentences',
+     goat && goat.lockupTag === 'A' && goat.goatIsLink === false && goat.copyInsideLink === false,
+     goat ? JSON.stringify({ lockupTag: goat.lockupTag, goatIsLink: goat.goatIsLink, copyInsideLink: goat.copyInsideLink, href: goat.href }) : 'absent');
+  ok('Goat sentences sit on top of the lockup',
+     goat && goat.copyAboveMark &&
+     /Goat Project - Help fight Cancer/.test(goat.copy[0] || '') &&
+     /COVID-19, Dengue, Hepatitis C etc/.test(goat.copy[0] || '') &&
+     goat.copy[1] === 'Contribute your idle compute to Earn GOAT.',
+     goat ? JSON.stringify(goat.copy) : 'absent');
+  ok('Goat lockup is painted',
+     goat && goat.paths >= 6 && goat.markW > 40 && goat.markH > 30,
+     goat ? `mark=${goat.markW}x${goat.markH} paths=${goat.paths}` : 'absent');
+  ok('People\'s Compute Commons sits under Goatproject on one row',
+     goat && goat.tagVisible && goat.tagOneRow && goat.tagUnderName && goat.tagRightOfMark && /COMMONS/i.test(goat.tag),
+     goat ? JSON.stringify({ tag: goat.tag, tagVisible: goat.tagVisible, tagOneRow: goat.tagOneRow, tagUnderName: goat.tagUnderName, tagRightOfMark: goat.tagRightOfMark }) : 'absent');
+  ok('Goat lockup is idle until hover (panel open is not enough)',
+     goat && +goat.restMeteors === 0 && +goat.restThumb === 0,
+     goat ? `rest meteors=${goat.restMeteors} thumb=${goat.restThumb}` : 'absent');
+  ok('lockup uses the black plate while Dark mode is On',
+     goat && goat.paper === false && goat.bgR < 30 && goat.bgG < 30 && goat.bgB < 30,
+     goat ? `paper=${goat.paper} bg=${goat.bg}` : 'absent');
+  await q(() => {
+    document.getElementById('gmdm-widget-host').shadowRoot
+      .querySelector('.goat-lockup').classList.add('goat-lockup--paper');
+  });
+  const paperBg = await q(() => {
+    const lockup = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.goat-lockup');
+    const bg = getComputedStyle(lockup).backgroundColor;
+    const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg);
+    return { bg, r: rgb ? +rgb[1] : -1, g: rgb ? +rgb[2] : -1, b: rgb ? +rgb[3] : -1 };
+  });
+  ok('paper plate is the light lockup ground',
+     paperBg && paperBg.r > 220 && paperBg.g > 210 && paperBg.b > 200,
+     JSON.stringify(paperBg));
+  await page.screenshot({ path: path.join(OUT, '3c-goat-banner-paper.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
+  await q(() => {
+    document.getElementById('gmdm-widget-host').shadowRoot
+      .querySelector('.goat-lockup').classList.remove('goat-lockup--paper');
+  });
+  await page.screenshot({ path: path.join(OUT, '3c-goat-banner.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
+
+  const lockupBox = await q(() => {
+    const r = document.getElementById('gmdm-widget-host').shadowRoot
+      .querySelector('.goat-lockup').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  await page.mouse.move(lockupBox.x, lockupBox.y);
+  await page.waitForTimeout(750);
+  const goatHover = await q(() => {
+    const sh = document.getElementById('gmdm-widget-host').shadowRoot;
+    return {
+      meteors: getComputedStyle(sh.querySelector('.goat-lockup__meteors')).opacity,
+      thumb: getComputedStyle(sh.querySelector('.gl-thumb')).opacity,
+      face: getComputedStyle(sh.querySelector('.gl-seal-face')).fill,
+    };
+  });
+  ok('Goat lockup animates on hover',
+     goatHover && +goatHover.meteors > 0.4 && +goatHover.thumb > 0.4,
+     JSON.stringify(goatHover));
+  await page.screenshot({ path: path.join(OUT, '3d-goat-lockup-hover.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
 
   // ---- 5. a switch actually drives the engine
   // Toggling darkMap now reloads the tab on purpose: the map surface is painted
@@ -501,7 +617,12 @@ try {
     return { rest, settled, scales, mid: scales.filter((n) => n > 1.004 && n < 1.046).length };
   };
 
-  for (const [label, sel] of [['Ko-fi', '.kofi'], ['GitHub button', '.gh']]) {
+  for (const [label, sel, wantShadow] of [
+    ['Ko-fi', '.kofi', true],
+    ['GitHub button', '.gh', true],
+    ['Goat lockup', '.goat-lockup', true],
+    ['Dark mode switch', '.track[data-key="enabled"]', false],
+  ]) {
     const m = await measureLift(sel);
     ok(`${label} enlarges on hover (GoatApp scale 1.05)`,
        scaleOf(m.settled.t) && scaleOf(m.settled.t) > 1.02,
@@ -511,9 +632,11 @@ try {
     ok(`${label} has no leftover stagger delay on hover`,
        /^0s(, 0s)*$/.test(m.settled.d.trim()),
        `transition-delay while hovered = "${m.settled.d}" (must be 0s, or the lift waits before starting)`);
-    ok(`${label} gains the GoatApp hover shadow`,
-       m.settled.s !== m.rest.s && /44px|18px/.test(m.settled.s),
-       `hover shadow=${m.settled.s.slice(0, 90)}`);
+    if (wantShadow) {
+      ok(`${label} gains the GoatApp hover shadow`,
+         m.settled.s !== m.rest.s && /44px|18px/.test(m.settled.s),
+         `hover shadow=${m.settled.s.slice(0, 90)}`);
+    }
   }
   await page.screenshot({ path: path.join(OUT, '9-hover-lift.png'), clip: { x: 0, y: 0, width: 900, height: 620 } });
 

@@ -41,6 +41,8 @@
   const KOFI_URL = 'https://ko-fi.com/irp_hongkong';
   const KOFI_HANDLE = '@IRP_HongKong';
   const GITHUB_URL = 'https://github.com/charlie754/google-map-dark-mode';
+  const GOAT_URL = 'https://dagoat.io';
+  const GOAT_LOCKUP_CSS = "/* ==========================================================================\n   GOATPROJECT - animated lockup\n\n   Hover or focus: the stamp warms and blooms - it never moves or changes size.\n   Inside it the seal glyph cross-fades to a solid thumbs-up, and a spark fires\n   above the tip. Meteors run behind the mark continuously; hovering only fades\n   them in. Leaving reverses everything, faster than it arrived.\n\n   No dependencies. No JavaScript required. Scale it with font-size.\n   ========================================================================== */\n\n.goat-lockup {\n  /* ---- scale knob: everything derives from font-size ---- */\n  font-size: 20px;\n\n  /* ---- palette ---- */\n  --gl-cream: #ece7db;\n  --gl-glyph: #f6efe6;\n  --gl-seal: #b3382c;\n  --gl-seal-lit: #c8412f;\n  --gl-name: #f2f3f5;\n  --gl-tag: #9b9da4;\n  --gl-spark: #f7ead6;\n  --gl-focus: rgba(246, 239, 230, 0.72);\n  --gl-meteor-tail: rgba(236, 231, 219, 0);\n  --gl-meteor-head: rgba(236, 231, 219, 0.68);\n  --gl-meteor-halo: rgba(236, 231, 219, 0.55);\n\n  /* ---- motion ---- */\n  --gl-in: cubic-bezier(0.16, 1, 0.3, 1);\n  --gl-out: cubic-bezier(0.4, 0, 0.2, 1);\n  --gl-t-out: 360ms;          /* leaving is always faster than arriving */\n  --gl-t-fade: 450ms;         /* the length of the glyph cross-fade */\n\n  /* ---- type floors: below these the wordmark stops scaling with the mark ---- */\n  --gl-name-min: 20px;\n  --gl-tag-min: 10px;\n\n  /* ---- stamp: 1 keeps the brand lockup's own proportion. Raise it on small\n          lockups, where 36 of 250 viewBox units renders under ~12px and the\n          thumbs-up inside stops reading. Static - it never changes on hover. ---- */\n  --gl-seal-scale: 1;\n\n  position: relative;\n  display: inline-flex;\n  align-items: center;\n  gap: 2em;\n  isolation: isolate;\n  overflow: hidden;            /* fallback for browsers without `clip` */\n  overflow: clip;              /* the meteor layer is inset past the lockup on\n                                  every side; without this it can push page-level\n                                  horizontal scroll when the lockup sits near the\n                                  viewport edge. `clip` does not create a scroll\n                                  container and does not clip the focus ring. */\n  color: var(--gl-name);\n  text-decoration: none;\n  -webkit-tap-highlight-color: transparent;\n}\n\n.goat-lockup--paper {\n  --gl-cream: #1a1917;\n  --gl-glyph: #f6efe6;\n  --gl-name: #1a1917;\n  --gl-tag: #4f4a42;\n  --gl-spark: #b3382c;\n  --gl-focus: rgba(26, 25, 23, 0.72);\n  --gl-meteor-tail: rgba(26, 25, 23, 0);\n  --gl-meteor-head: rgba(26, 25, 23, 0.42);\n  --gl-meteor-halo: rgba(179, 56, 44, 0.4);\n}\n\n.goat-lockup:focus-visible {\n  outline: 1px solid var(--gl-focus);\n  outline-offset: 0.6em;\n  border-radius: 2px;\n}\n\n.goat-lockup ::selection { background: var(--gl-seal); color: #f6efe6; }\n\n/* --------------------------------------------------------------------------\n   Mark\n   -------------------------------------------------------------------------- */\n\n.goat-lockup__mark {\n  position: relative;\n  z-index: 1;\n  display: block;\n  height: 5.4em;\n  flex: none;\n}\n\n.goat-lockup__svg {\n  display: block;\n  height: 100%;\n  width: auto;\n  overflow: visible;\n}\n\n.gl-head > * { fill: var(--gl-cream); }\n\n/* --------------------------------------------------------------------------\n   Seal - fixed size. Hover lights it: the face warms and a soft bloom appears\n   behind it. Nothing in here moves or scales.\n   -------------------------------------------------------------------------- */\n\n.gl-seal {\n  transform-box: fill-box;      /* bbox is exactly the 36x36 stamp square */\n  transform-origin: 50% 50%;\n  transform: scale(var(--gl-seal-scale, 1));\n}\n\n.gl-seal-face { fill: var(--gl-seal); transition: fill var(--gl-t-out) var(--gl-out); }\n\n.gl-seal-glow {\n  fill: var(--gl-seal);\n  opacity: 0;\n  filter: blur(5px);\n  transition: opacity var(--gl-t-out) var(--gl-out);\n}\n\n.gl-glyph { overflow: visible; }\n\n/* --------------------------------------------------------------------------\n   The glyph cross-fade: character out, thumbs-up in.\n   The character is the real 羊 outline taken from SimSun - the font the brand\n   lockup's own stack (goat-mark-cream.svg) resolves to - baked to a path so it\n   needs no CJK font installed and renders identically inside an <img>.\n   The thumb is a solid silhouette with no internal detail, which is what keeps\n   it readable at stamp size - roughly 20px wide on a hero lockup.\n   -------------------------------------------------------------------------- */\n\n.gl-char {\n  fill: var(--gl-glyph);\n  opacity: 1;\n  transition: opacity var(--gl-t-out) var(--gl-out);\n}\n\n.gl-thumb {\n  fill: var(--gl-glyph);\n  opacity: 0;\n  transition: opacity var(--gl-t-out) var(--gl-out);\n}\n\n/* --------------------------------------------------------------------------\n   Spark above the thumb tip\n   -------------------------------------------------------------------------- */\n\n.gl-burst { opacity: 0; }\n\n.gl-ray {\n  stroke: var(--gl-spark);\n  stroke-width: 3.2;\n  stroke-linecap: round;\n  stroke-dasharray: 9 32;\n  stroke-dashoffset: 9;\n  opacity: 0;\n}\n\n.gl-ring {\n  fill: none;\n  stroke: var(--gl-spark);\n  stroke-width: 3;\n  opacity: 0;\n  transform-box: fill-box;\n  transform-origin: 50% 50%;\n}\n\n.gl-ember {\n  fill: var(--gl-spark);\n  opacity: 0;\n  transform-box: fill-box;\n  transform-origin: 50% 50%;\n}\n\n/* --------------------------------------------------------------------------\n   Wordmark\n   -------------------------------------------------------------------------- */\n\n.goat-lockup__word {\n  position: relative;\n  z-index: 1;\n  display: flex;\n  flex-direction: column;\n  gap: 0.62em;\n  font-family: \"Inter\", \"Helvetica Neue\", \"Segoe UI\", Arial, sans-serif;\n  font-weight: 300;\n}\n\n.goat-lockup__name {\n  font-size: max(var(--gl-name-min), 1em);\n  line-height: 1;\n  letter-spacing: 0.24em;\n  text-transform: uppercase;\n  text-indent: 0.24em;         /* recentre against the trailing tracking */\n  color: var(--gl-name);\n  white-space: nowrap;\n}\n\n.goat-lockup__tag {\n  font-size: max(var(--gl-tag-min), 0.43em);\n  font-weight: 500;\n  line-height: 1;\n  letter-spacing: 0.28em;\n  text-transform: uppercase;\n  text-indent: 0.28em;\n  color: var(--gl-tag);\n  white-space: nowrap;\n  transition: color var(--gl-t-out) var(--gl-out);\n}\n\n/* --------------------------------------------------------------------------\n   Meteors - always in motion. Hover only fades the layer in, so the streaks\n   are already mid-flight when they appear rather than starting from a standstill.\n   -------------------------------------------------------------------------- */\n\n.goat-lockup__meteors {\n  position: absolute;\n  inset: -22% -12%;\n  z-index: 0;\n  overflow: hidden;\n  pointer-events: none;\n  opacity: 0;\n  transition: opacity var(--gl-t-out) var(--gl-out);\n  -webkit-mask-image: radial-gradient(120% 100% at 62% 40%, #000 34%, transparent 78%);\n  mask-image: radial-gradient(120% 100% at 62% 40%, #000 34%, transparent 78%);\n}\n\n.goat-lockup__meteors i {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 1px;\n  height: var(--gl-m-h, 4.4em);\n  border-radius: 1px;\n  background: linear-gradient(to bottom, var(--gl-meteor-tail), var(--gl-meteor-head));\n  rotate: 34deg;               /* long axis aligned to the fall direction */\n  translate: 3.2em -4.8em;\n  animation: gl-meteor var(--gl-m-d, 3.3s) linear var(--gl-m-delay, 0s) infinite;\n}\n\n.goat-lockup__meteors i::after {\n  content: \"\";\n  position: absolute;\n  left: 50%;\n  bottom: 0;\n  width: 2.5px;\n  height: 2.5px;\n  border-radius: 50%;\n  background: var(--gl-cream);\n  box-shadow: 0 0 7px 1px var(--gl-meteor-halo);\n  translate: -50% 40%;\n}\n\n.goat-lockup__meteors i:nth-child(1) { left: 74%; top: 6%;  --gl-m-h: 5.2em; --gl-m-d: 2.85s; --gl-m-delay: 0s; }\n.goat-lockup__meteors i:nth-child(2) { left: 52%; top: -4%; --gl-m-h: 3.4em; --gl-m-d: 3.9s;  --gl-m-delay: -.48s; }\n.goat-lockup__meteors i:nth-child(3) { left: 89%; top: 22%; --gl-m-h: 4.6em; --gl-m-d: 3.15s; --gl-m-delay: -1.11s; }\n.goat-lockup__meteors i:nth-child(4) { left: 33%; top: 12%; --gl-m-h: 2.8em; --gl-m-d: 4.65s; --gl-m-delay: -1.65s; }\n.goat-lockup__meteors i:nth-child(5) { left: 64%; top: 38%; --gl-m-h: 3.9em; --gl-m-d: 3.6s;  --gl-m-delay: -.27s; }\n.goat-lockup__meteors i:nth-child(6) { left: 18%; top: -8%; --gl-m-h: 4.1em; --gl-m-d: 4.2s;  --gl-m-delay: -1.43s; }\n.goat-lockup__meteors i:nth-child(7) { left: 97%; top: -2%; --gl-m-h: 3.1em; --gl-m-d: 3.45s; --gl-m-delay: -2.18s; }\n.goat-lockup__meteors i:nth-child(8) { left: 44%; top: 30%; --gl-m-h: 5.6em; --gl-m-d: 2.55s; --gl-m-delay: -.87s; }\n.goat-lockup__meteors i:nth-child(9) { left: 82%; top: 48%; --gl-m-h: 2.6em; --gl-m-d: 5.1s;  --gl-m-delay: -2.7s; }\n\n@keyframes gl-meteor {\n  0%   { translate: 3.2em -4.8em; opacity: 0; }\n  9%   { opacity: 1; }\n  68%  { opacity: 1; }\n  100% { translate: -3.4em 5.1em; opacity: 0; }\n}\n\n/* ==========================================================================\n   ACTIVE STATE\n   ========================================================================== */\n\n.goat-lockup:hover .goat-lockup__meteors,\n.goat-lockup:focus-visible .goat-lockup__meteors,\n.goat-lockup.is-active .goat-lockup__meteors {\n  opacity: 1;\n  transition-duration: 630ms;\n}\n\n.goat-lockup:hover .goat-lockup__tag,\n.goat-lockup:focus-visible .goat-lockup__tag,\n.goat-lockup.is-active .goat-lockup__tag {\n  color: var(--gl-name);\n  transition-duration: 630ms;\n}\n\n.goat-lockup:hover .gl-seal-face,\n.goat-lockup:focus-visible .gl-seal-face,\n.goat-lockup.is-active .gl-seal-face {\n  fill: var(--gl-seal-lit);\n  transition-duration: 690ms;\n}\n\n.goat-lockup:hover .gl-seal-glow,\n.goat-lockup:focus-visible .gl-seal-glow,\n.goat-lockup.is-active .gl-seal-glow {\n  opacity: 0.7;\n  transition: opacity 690ms var(--gl-in);\n}\n\n/* ---- the cross-fade ---- */\n\n.goat-lockup:hover .gl-char,\n.goat-lockup:focus-visible .gl-char,\n.goat-lockup.is-active .gl-char {\n  opacity: 0;\n  transition: opacity var(--gl-t-fade) linear;\n}\n\n.goat-lockup:hover .gl-thumb,\n.goat-lockup:focus-visible .gl-thumb,\n.goat-lockup.is-active .gl-thumb {\n  opacity: 1;\n  transition: opacity var(--gl-t-fade) linear 180ms;\n}\n\n/* ---- the spark ---- */\n\n.goat-lockup:hover .gl-burst,\n.goat-lockup:focus-visible .gl-burst,\n.goat-lockup.is-active .gl-burst { opacity: 1; }\n\n.goat-lockup:hover .gl-ray,\n.goat-lockup:focus-visible .gl-ray,\n.goat-lockup.is-active .gl-ray {\n  animation: gl-ray 690ms var(--gl-in) var(--gl-ray-lag, 0ms) both;\n}\n\n.gl-ray--1 { --gl-ray-lag: 720ms; }\n.gl-ray--2 { --gl-ray-lag: 765ms; }\n.gl-ray--3 { --gl-ray-lag: 738ms; }\n.gl-ray--4 { --gl-ray-lag: 792ms; }\n.gl-ray--5 { --gl-ray-lag: 752ms; }\n.gl-ray--6 { --gl-ray-lag: 816ms; }\n\n.goat-lockup:hover .gl-ring,\n.goat-lockup:focus-visible .gl-ring,\n.goat-lockup.is-active .gl-ring {\n  animation: gl-ring 930ms var(--gl-in) 705ms both;\n}\n\n.goat-lockup:hover .gl-ember,\n.goat-lockup:focus-visible .gl-ember,\n.goat-lockup.is-active .gl-ember {\n  animation: gl-ember 1350ms var(--gl-in) var(--gl-ember-lag, 840ms) both;\n}\n\n.gl-ember--a { --gl-ember-lag: 840ms; --gl-ex: -13px; --gl-ey: -28px; }\n.gl-ember--b { --gl-ember-lag: 975ms; --gl-ex: 15px;  --gl-ey: -21px; }\n.gl-ember--c { --gl-ember-lag: 908ms; --gl-ex: 3px;   --gl-ey: -34px; }\n\n@keyframes gl-ray {\n  0%   { stroke-dashoffset: 9; opacity: 0; }\n  22%  { opacity: 1; }\n  100% { stroke-dashoffset: -32; opacity: 0; }\n}\n\n@keyframes gl-ring {\n  0%   { transform: scale(0.3); opacity: 0; }\n  18%  { opacity: 0.85; }\n  100% { transform: scale(1.9); opacity: 0; }\n}\n\n@keyframes gl-ember {\n  0%   { transform: translate(0, 0) scale(0.4); opacity: 0; }\n  25%  { opacity: 0.9; }\n  100% { transform: translate(var(--gl-ex, 6px), var(--gl-ey, -16px)) scale(1); opacity: 0; }\n}\n\n/* ==========================================================================\n   REDUCED MOTION - the cross-fade survives, the travelling parts do not\n   ========================================================================== */\n\n@media (prefers-reduced-motion: reduce) {\n  .goat-lockup__meteors i {\n    animation: none;\n    translate: 0 0;\n    opacity: 0.5;\n  }\n\n  .goat-lockup:hover .gl-ray,\n  .goat-lockup:focus-visible .gl-ray,\n  .goat-lockup.is-active .gl-ray,\n  .goat-lockup:hover .gl-ember,\n  .goat-lockup:focus-visible .gl-ember,\n  .goat-lockup.is-active .gl-ember { animation: none; opacity: 0; }\n\n  .goat-lockup:hover .gl-ring,\n  .goat-lockup:focus-visible .gl-ring,\n  .goat-lockup.is-active .gl-ring {\n    animation: none;\n    opacity: 0.5;\n    transform: scale(1.15);\n    transition: opacity 330ms linear 300ms;\n  }\n}\n";
 
   /** Gap between Google's lowest top-left card and our pill. */
   const STACK_GAP = 12;
@@ -135,8 +137,17 @@
   padding: 0 13px;
   cursor: pointer;
   box-sizing: border-box;
+  transition: transform var(--dur-base) var(--ease);
 }
 .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: var(--glass-radius); }
+/* Inset when open so 1.05 fits inside the shell's overflow:hidden. */
+.shell.is-open .pill {
+  width: calc(100% - 16px);
+  margin: 2px 8px 0;
+  border-radius: 10px;
+}
+.shell.is-open .pill:hover { transform: scale(1.05); }
+.shell.is-open .pill:active { transform: scale(0.96); }
 
 .moon {
   flex: 0 0 20px;
@@ -183,7 +194,7 @@
 /* Rows fade and rise in, staggered, so the panel assembles rather than
    appearing. Delays are only on the way in; closing is immediate so the panel
    never appears to hesitate when the pointer leaves. */
-.row, .kofi, .gh {
+.row, .kofi, .gh, .goat {
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity var(--dur-fast) var(--ease), transform var(--dur-base) var(--ease),
@@ -191,7 +202,8 @@
 }
 .shell.is-open .row,
 .shell.is-open .kofi,
-.shell.is-open .gh { opacity: 1; transform: none; }
+.shell.is-open .gh,
+.shell.is-open .goat { opacity: 1; transform: none; }
 /* Keyed by data-row, not :nth-of-type -- the rows share a parent with a rule
    and two paragraphs, so type counting would silently address the wrong ones. */
 .shell.is-open .row[data-row="enabled"]    { transition-delay: 60ms; }
@@ -199,6 +211,7 @@
 .shell.is-open .row[data-row="darkChrome"] { transition-delay: 160ms; }
 .shell.is-open .kofi { transition-delay: 210ms; }
 .shell.is-open .gh   { transition-delay: 250ms; }
+.shell.is-open .goat { transition-delay: 290ms; }
 
 /* ---- switch rows ---- */
 
@@ -223,7 +236,8 @@
   background: var(--switch-off);
   position: relative;
   cursor: pointer;
-  transition: background var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+  transition: background var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease),
+              transform var(--dur-base) var(--ease);
 }
 .track.on { background: var(--accent); box-shadow: 0 0 14px rgba(62, 207, 142, 0.35); }
 .track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -280,9 +294,13 @@
    at none at the same specificity -- unscoped, whichever came last would win
    and the lift would be a coin flip. */
 .shell.is-open .kofi:hover,
-.shell.is-open .gh:hover { transform: scale(1.05); }
+.shell.is-open .gh:hover,
+.shell.is-open .goat-lockup:hover { transform: scale(1.05); }
 .shell.is-open .kofi:active,
-.shell.is-open .gh:active { transform: scale(0.96); }
+.shell.is-open .gh:active,
+.shell.is-open .goat-lockup:active { transform: scale(0.96); }
+.shell.is-open .track:not(:disabled):hover { transform: scale(1.15); }
+.shell.is-open .track:not(:disabled):active { transform: scale(0.96); }
 
 /* The entry stagger above parks a 210ms/250ms transition-delay on these two
    buttons, and a delay set in one rule keeps applying in every other state.
@@ -291,10 +309,13 @@
    assertion that only samples the final transform. Clear it for the pointer
    states so the lift starts on the same frame as the pointer arrives. */
 .shell.is-open .kofi:hover, .shell.is-open .kofi:active,
-.shell.is-open .gh:hover,   .shell.is-open .gh:active { transition-delay: 0s; }
+.shell.is-open .gh:hover,   .shell.is-open .gh:active,
+.shell.is-open .goat-lockup:hover, .shell.is-open .goat-lockup:active,
+.shell.is-open .track:hover, .shell.is-open .track:active { transition-delay: 0s; }
 
 .kofi:hover { box-shadow: var(--glass-shadow-hover), 0 10px 26px rgba(210, 65, 62, 0.45); }
-.gh:hover { box-shadow: var(--glass-shadow-hover); }
+.gh:hover,
+.goat-lockup:hover { box-shadow: var(--glass-shadow-hover); }
 /* Title over handle, matching the toolbar popup. Laying them side by side
    fits at 272px on paper but wraps the title the moment the font falls back. */
 .kofi__label { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
@@ -402,9 +423,71 @@
   to   { opacity: 0.45; transform: translate(-50%, -50%) scale(1.2); }
 }
 
-/* The GitHub button is the last thing in the panel; nothing follows it, so it
-   carries the closing margin itself. */
-.gh { margin-bottom: 2px; }
+.gh { margin-bottom: 0; }
+
+/* ---- Goat lockup banner ----
+ * Hover component from brand/lockup-hover, not the looping SVG. The two
+ * campaign lines sit above the lockup. Animation is :hover on .goat-lockup
+ * only -- hovering the sentences or StarGithub must not play it. */
+
+.goat {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 16px;
+  margin-bottom: 2px;
+  color: var(--ink-cream);
+}
+.goat__copy { display: flex; flex-direction: column; gap: 4px; margin: 0 0 8px; }
+.goat__line { margin: 0; font-size: 10.5px; line-height: 1.4; font-weight: 500; }
+.goat__line--ask { color: var(--ink-muted); font-weight: 400; }
+.goat .goat-lockup {
+  font-size: 10px;
+  --gl-seal-scale: 1.36;
+  --gl-name-min: 13px;
+  --gl-tag-min: 7px;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  gap: 0.65em;
+  box-sizing: border-box;
+  padding: 10px 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0b0b0d;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+.goat .goat-lockup:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.goat .goat-lockup__word {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.4em;
+}
+.goat .goat-lockup__name,
+.goat .goat-lockup__tag {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  text-indent: 0;
+  white-space: nowrap;
+}
+.goat .goat-lockup__name { letter-spacing: 0.18em; }
+.goat .goat-lockup__tag { letter-spacing: 0.12em; }
+.goat .goat-lockup.goat-lockup--paper {
+  background: #f6efe6;
+}
 
 /* ---- health notice, only rendered when something is actually wrong ---- */
 .warn {
@@ -421,7 +504,7 @@
 .shell.has-warning .warn { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
-  .shell, .shell:hover, .body, .row, .kofi, .gh, .moon, .chev, .thumb, .track {
+  .shell, .shell:hover, .body, .row, .pill, .kofi, .gh, .goat, .goat-lockup, .moon, .chev, .thumb, .track {
     transition: none !important;
     transform: none !important;
   }
@@ -429,9 +512,11 @@
   .gh__sweep, .gh__bar, .gh__star svg, .gh__glow { animation: none !important; }
   .gh:hover .gh__star, .gh:hover .gh__label { transform: none !important; }
   /* Without the rise animation the rows still need to be visible when open. */
-  .shell.is-open .row, .shell.is-open .kofi, .shell.is-open .gh { opacity: 1; }
+  .shell.is-open .row, .shell.is-open .kofi, .shell.is-open .gh, .shell.is-open .goat { opacity: 1; }
 }
 `;
+
+  const CSS_ALL = CSS + "\n" + GOAT_LOCKUP_CSS;
 
   /* ---------------------------------------------------------------- markup */
 
@@ -532,6 +617,13 @@
     '<span class="gh__star">' + SVG_STAR + '<span class="gh__glow"></span></span>' +
     '<span class="gh__label">Star Project on Github</span>' +
     '</span></button>' +
+    '<div class="goat">' +
+    '<div class="goat__copy">' +
+    '<span class="goat__line">Goat Project - Help fight Cancer, Alzheimer&rsquo;s, Parkinson&rsquo;s, COVID-19, Dengue, Hepatitis C etc.</span>' +
+    '<span class="goat__line goat__line--ask">Contribute your idle compute to Earn GOAT.</span>' +
+    '</div>' +
+    '<a class="goat-lockup" href="' + GOAT_URL + '" target="_blank" rel="noopener noreferrer" data-goat-mark><span class="goat-lockup__meteors" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="goat-lockup__mark" aria-hidden="true"><svg class="goat-lockup__svg" viewBox="46 -16 220 250" xmlns="http://www.w3.org/2000/svg" focusable="false"><g class="gl-head"><path d="M62 210 C74 148 120 98 190 80 C152 106 106 150 82 216 Z"/><path d="M186 84 C214 62 226 32 210 8 C216 36 200 62 174 80 Z"/><path d="M170 82 C190 60 194 34 180 16 C186 40 172 62 156 78 Z"/><path d="M188 82 C206 90 218 104 222 122 C212 106 200 94 182 90 Z"/><path d="M206 122 C215 134 217 149 209 160 C212 147 208 133 200 127 Z"/><circle cx="197" cy="99" r="3.6"/></g><g class="gl-seal"><rect class="gl-seal-glow" x="214" y="182" width="36" height="36" rx="4"/><rect class="gl-seal-face" x="214" y="182" width="36" height="36" rx="4"/><svg class="gl-glyph" x="214" y="182" width="36" height="36" viewBox="0 0 100 100"><path class="gl-thumb" d="M30 50 C26 50 24 52 24 56 L24 87 C24 91 26 93 30 93 L73 93 C79 93 84 90 85 84 L89 55 C90 49 86 44 80 44 L63 44 C65 38 67 25 65 18 C63 12 55 12 53 18 C51 24 53 33 51 42 C50 47 47 50 42 50 Z" transform="translate(-5 -3)"/><path class="gl-char" d="M33.5 18.12Q39.14 21.51 41.54 23.62Q43.93 25.74 43.65 27.85Q43.37 29.97 42.24 30.96Q41.11 31.94 40.55 31.94Q39.42 31.94 38.57 29.12Q37.45 25.17 32.93 18.97ZM20.52 33.07H52.68Q58.89 23.76 60.86 16.99L66.79 20.66Q63.96 22.07 61.14 25.74Q58.04 29.41 54.37 33.07H68.2L72.43 28.84L77.79 34.77H51.55V47.46H63.96L68.2 43.79L72.99 49.15H51.55V62.13H71.58L76.1 57.9L81.46 63.82H51.55V73.7Q51.55 76.8 51.83 81.32L47.04 83.01Q47.32 78.78 47.32 63.82H27.85Q24.19 63.82 21.08 64.67L18.54 62.13H47.32V49.15H35.47Q31.8 49.15 28.7 50L26.16 47.46H47.32V34.77H29.83Q26.16 34.77 23.06 35.61Z"/><g class="gl-burst" transform="translate(53 0)" fill="none"><circle class="gl-ring" cx="0" cy="0" r="12"/><line class="gl-ray gl-ray--1" transform="rotate(-168)" x1="10" y1="0" x2="40" y2="0"/><line class="gl-ray gl-ray--2" transform="rotate(-138)" x1="10" y1="0" x2="40" y2="0"/><line class="gl-ray gl-ray--3" transform="rotate(-108)" x1="10" y1="0" x2="40" y2="0"/><line class="gl-ray gl-ray--4" transform="rotate(-76)" x1="10" y1="0" x2="40" y2="0"/><line class="gl-ray gl-ray--5" transform="rotate(-44)" x1="10" y1="0" x2="40" y2="0"/><line class="gl-ray gl-ray--6" transform="rotate(-14)" x1="10" y1="0" x2="40" y2="0"/><circle class="gl-ember gl-ember--a" cx="-7" cy="-2" r="2.2"/><circle class="gl-ember gl-ember--b" cx="8" cy="-5" r="1.9"/><circle class="gl-ember gl-ember--c" cx="0" cy="-9" r="1.6"/></g></svg></g></svg></span><span class="goat-lockup__word"><span class="goat-lockup__name">Goatproject</span><span class="goat-lockup__tag">The People&rsquo;s Compute Commons</span></span></a>' +
+    '</div>' +
     '</div></div></div></div>';
 
   /* ------------------------------------------------------------------ state */
@@ -718,6 +810,9 @@
     const on = Boolean(settings.enabled);
     shell.classList.toggle('is-on', on);
 
+    const lockup = shadow.querySelector('.goat-lockup');
+    if (lockup) lockup.classList.toggle('goat-lockup--paper', !on);
+
     const state = shadow.querySelector('[data-state]');
     if (state) state.textContent = on ? 'On' : 'Off';
 
@@ -791,7 +886,7 @@
 
     shadow = host.attachShadow({ mode: 'open' });
     const style = doc.createElement('style');
-    style.textContent = CSS;
+    style.textContent = CSS_ALL;
     // Parsed, not assigned to innerHTML. HTML is a module-level constant built
     // entirely from string literals -- nothing from the page, storage or the
     // network reaches it -- so the two are equivalent here. But AMO's linter
@@ -853,7 +948,20 @@
     shadow.querySelector('.gh').addEventListener('click', function () {
       window.open(GITHUB_URL, '_blank', 'noopener,noreferrer');
     });
-
+    const lockup = shadow.querySelector('.goat-lockup');
+    if (lockup) {
+      lockup.addEventListener('focusin', function () { lockup.classList.add('is-active'); });
+      lockup.addEventListener('focusout', function () { lockup.classList.remove('is-active'); });
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        lockup.addEventListener('click', function (event) {
+          if (lockup.classList.contains('is-active')) return;
+          event.preventDefault();
+          lockup.classList.add('is-active');
+          clearTimeout(lockup._glTimer);
+          lockup._glTimer = setTimeout(function () { lockup.classList.remove('is-active'); }, 2400);
+        });
+      }
+    }
     render();
     place();
     loadSettings();

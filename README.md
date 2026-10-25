@@ -114,7 +114,7 @@ node tools/package.mjs
 ```
 
 then open `about:debugging#/runtime/this-firefox`, click **Load Temporary
-Add-on…**, and choose `dist/google-map-dark-mode-firefox-1.0.0.xpi`. A temporary
+Add-on…**, and choose `dist/google-map-dark-mode-firefox-1.0.2.xpi`. A temporary
 add-on is removed when Firefox closes.
 
 Dark mode is **on by default**. The toolbar button has three switches: a master

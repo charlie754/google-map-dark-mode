@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Google Map Dark Mode** — a Chrome + Firefox MV3 extension that gives `google.com/maps` a real
-dark mode. v1.0.0, packaged for both stores: dark map surface *and* dark app chrome, on by
+dark mode. v1.0.2, packaged for both stores: dark map surface *and* dark app chrome, on by
 default, verified under sustained interaction on both browsers.
 
 Internals still carry the old code name `maps-noir` in one place on purpose — the
