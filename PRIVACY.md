@@ -1,6 +1,8 @@
 # Privacy policy — Google Map Dark Mode
 
-**Last updated: 2026-08-20. Applies to versions 1.0.0, 1.0.1 and 1.0.2.**
+**Last updated: 2026-10-25. Applies to versions 1.0.0, 1.0.1, 1.0.2 and 1.0.3.**
+The GOAT Cam banner described below is in 1.0.3 only. 1.0.1 and 1.0.2 showed a
+Goat Project banner linking to dagoat.io instead, and 1.0.0 showed no banner.
 
 ## The short version
 
@@ -78,6 +80,14 @@ The popup and options page have two buttons: Ko-fi and Source. Nothing is
 requested from either site until you click one, and clicking one just opens a
 normal browser tab. Those sites then apply their own privacy policies, exactly as
 if you had typed the address yourself.
+
+The panel on the map works the same way. Besides Ko-fi and "Star Project on
+Github", it carries a banner for the author's own app, GOAT Cam. The banner's
+photo and its QR code are part of the extension itself, so showing the banner
+requests nothing from anywhere. Clicking it opens https://goatcam.dagoat.io in a
+new tab, with nothing about you added to the address. The QR code is only a
+picture of an App Store link: the extension never opens it, and it goes
+somewhere only if you point your phone's camera at it.
 
 ## Permissions, in one line each
 

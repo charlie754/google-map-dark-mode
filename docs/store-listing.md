@@ -1,4 +1,4 @@
-# Store listing copy — Google Map Dark Mode 1.0.2
+# Store listing copy — Google Map Dark Mode 1.0.3
 
 Everything a reviewer or a submission form will ask for, written out. Nothing
 here can be submitted by an assistant: both stores need an account holder to sign
@@ -9,11 +9,20 @@ registration fee.
 
 | Store | File |
 | --- | --- |
-| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.2.zip` |
-| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.2.xpi` |
+| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.3.zip` |
+| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.3.xpi` |
 
 The version in both file names comes from the manifests and is checked against
 the archived manifest at package time; it is never typed in twice.
+
+**1.0.3** (2026-10-25) — the banner under StarGithub now promotes the author's
+own app, GOAT Cam (it turns an iPhone into a webcam for a Windows 11 PC),
+replacing the Goat Project lockup. Same place and layout (two lines of copy,
+now new sentences, above a plate that is the only link), same hover-only animation and reduced-motion
+behaviour; the plate now carries a coffee photo and an App Store QR code, and
+opens https://goatcam.dagoat.io in a new tab. The photo and the QR code are
+embedded in the extension, so showing the banner makes no network request, and
+no permission changed. Dark-mode behaviour is unchanged.
 
 **1.0.2** (2026-08-20) — same Goat lockup as 1.0.1, plus panel hover polish:
 toggle pills enlarge on hover (not the whole row); the Dark Mode header lifts
@@ -66,6 +75,9 @@ campaign lines under StarGithub. Dark-mode behaviour is unchanged from 1.0.0.
 > • Dark map and dark interface, on by default
 > • Three switches: master, dark map, dark interface — turn any of them off
 > • Nothing collected, nothing transmitted, no analytics, no accounts, no servers
+> • The panel also shows a small banner for the author's own iPhone app, GOAT Cam.
+>   It is part of the extension (no ad network, nothing requested to show it);
+>   clicking it opens goatcam.dagoat.io, and its QR code links to the App Store.
 > • Free and open source under the MIT licence
 >
 > It checks its own health: if Google stops serving the dark map style, the
@@ -205,6 +217,18 @@ checking.
 > the only available signal. If the answer is that the dark style is gone, the
 > extension disables its own rules.
 
+**"The panel shows a banner for another product."**
+
+> It is the author's own app, GOAT Cam, and nothing else: there is no ad network
+> and no third-party advertising. The only third-party asset is the CC0 photo
+> credited below. The banner's photo is a `data:` image and its QR
+> code is inline SVG, both inside the package, so showing it requests nothing —
+> the extension never contacts goatcam.dagoat.io or the App Store. Clicking the
+> banner opens `https://goatcam.dagoat.io` in a new tab (`rel="noopener
+> noreferrer"`, no query string), exactly like the Ko-fi and GitHub buttons. The
+> QR code is a picture of an App Store link; only a phone camera can follow it.
+> The photo is CC0 ("White cup and MacBook", Alex Knight).
+
 **"Is any of the code minified, bundled or obfuscated?"**
 
 > No. There is no build step beyond copying files and swapping in the
@@ -237,6 +261,8 @@ these lines:
   behaviour, and the listing says so.
 - Do **not** describe the health check as "monitoring" or "diagnostics" in a way
   that could read as collecting anything. It checks a Google URL, not the user.
+- Do **not** describe GOAT Cam as a microphone (version 1 is camera-only) or
+  quote a price for it, here or in the banner.
 
 ---
 

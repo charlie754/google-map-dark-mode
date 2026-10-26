@@ -114,7 +114,7 @@ node tools/package.mjs
 ```
 
 then open `about:debugging#/runtime/this-firefox`, click **Load Temporary
-Add-on…**, and choose `dist/google-map-dark-mode-firefox-1.0.2.xpi`. A temporary
+Add-on…**, and choose `dist/google-map-dark-mode-firefox-1.0.3.xpi`. A temporary
 add-on is removed when Firefox closes.
 
 Dark mode is **on by default**. The toolbar button has three switches: a master
@@ -143,12 +143,24 @@ It lives in a shadow root. That is not incidental: the sibling content script
 rewrites every colour-valued custom property on `:root`, and without the shadow
 boundary this panel's own palette would be transformed along with Maps'.
 
+At the bottom of the panel is a banner for the author's own iPhone app,
+[GOAT Cam](https://goatcam.dagoat.io), which turns the phone into a webcam for a
+Windows 11 PC. It is self-promotion, not an ad network. Its coffee photo and its
+App Store QR code are embedded in the extension, so showing the banner makes no
+network request. Clicking it opens goatcam.dagoat.io in a new tab. It animates
+only while the pointer or keyboard focus is on it, and in reduced-motion mode it
+only cross-fades.
+
 Credits: the GitHub button is [fuzzy-warthog-48 by
 Itskrish01](https://uiverse.io/Itskrish01/fuzzy-warthog-48) from uiverse.io,
 rewritten from Tailwind utilities into plain CSS so it works inside the shadow
 root. The four keyframes it references are not published on that page — they
 live in the author's own Tailwind config — so those are reconstructed from how
-each one is used. The rest of the panel follows the glass/accent vocabulary of
+each one is used. The banner's photo is "White cup and MacBook" by
+[Alex Knight](https://unsplash.com/@agkdesign)
+([source](https://unsplash.com/photos/j4uuKnN43_M)), released under
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/); it is cropped and
+colour-graded here. The rest of the panel follows the glass/accent vocabulary of
 the GOAT desktop app.
 
 ---

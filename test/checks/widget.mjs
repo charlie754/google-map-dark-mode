@@ -301,8 +301,16 @@ try {
     const rt = tag ? tag.getBoundingClientRect() : { width: 0, height: 0 };
     const rn = name ? name.getBoundingClientRect() : { left: 0, bottom: 0 };
     const rLock = lockup.getBoundingClientRect();
+    const qrTile = lockup.querySelector('.gc-qr__tile');
+    const qrSvg = qrTile ? qrTile.querySelector('svg') : null;
+    const rq = qrTile ? qrTile.getBoundingClientRect() : { width: 0, height: 0 };
+    const img = lockup.querySelector('.gc-photo__img');
     return {
       copy,
+      qrViewBox: qrSvg ? qrSvg.getAttribute('viewBox') : null,
+      qrW: +rq.width.toFixed(1),
+      qrH: +rq.height.toFixed(1),
+      photo: img ? { complete: img.complete, w: img.naturalWidth, h: img.naturalHeight, data: img.currentSrc.startsWith('data:image/webp;base64,') } : null,
       href: lockup.getAttribute('href'),
       lockupTag: lockup.tagName,
       copyInsideLink: Boolean(copyEl && copyEl.closest('a')),
@@ -327,48 +335,37 @@ try {
       tagRightOfMark: rt.left >= rm.right - 4,
     };
   });
-  ok('Goat banner sits under StarGithub with a gap',
-     goat && goat.belowGh && goat.gap >= 12 && goat.href === 'https://dagoat.io',
+  ok('GOAT Cam banner sits under StarGithub with a gap',
+     goat && goat.belowGh && goat.gap >= 12 && goat.href === 'https://goatcam.dagoat.io',
      goat ? `gap=${goat.gap}px href=${goat.href}` : 'absent');
   ok('only the lockup is the Goat link, not the sentences',
      goat && goat.lockupTag === 'A' && goat.goatIsLink === false && goat.copyInsideLink === false,
      goat ? JSON.stringify({ lockupTag: goat.lockupTag, goatIsLink: goat.goatIsLink, copyInsideLink: goat.copyInsideLink, href: goat.href }) : 'absent');
-  ok('Goat sentences sit on top of the lockup',
+  ok('GOAT Cam sentences sit on top of the lockup',
      goat && goat.copyAboveMark &&
-     /Goat Project - Help fight Cancer/.test(goat.copy[0] || '') &&
-     /COVID-19, Dengue, Hepatitis C etc/.test(goat.copy[0] || '') &&
-     goat.copy[1] === 'Contribute your idle compute to Earn GOAT.',
+     goat.copy[0] === 'GOAT Cam — your iPhone, NOW your PC’s webcam.' &&
+     goat.copy[1] === 'Free Windows 11 app · USB or Wi‑Fi · Scan for the iPhone app.',
      goat ? JSON.stringify(goat.copy) : 'absent');
-  ok('Goat lockup is painted',
-     goat && goat.paths >= 6 && goat.markW > 40 && goat.markH > 30,
+  // The panel mark is 5.4em at 7.2px: 34.2 x 38.9 measured headless
+  // (test/checks/widget-banner-shots.mjs), smaller than the old 10px lockup.
+  ok('GOAT Cam lockup is painted',
+     goat && goat.paths >= 6 && goat.markW > 30 && goat.markH > 35,
      goat ? `mark=${goat.markW}x${goat.markH} paths=${goat.paths}` : 'absent');
-  ok('People\'s Compute Commons sits under Goatproject on one row',
-     goat && goat.tagVisible && goat.tagOneRow && goat.tagUnderName && goat.tagRightOfMark && /COMMONS/i.test(goat.tag),
+  ok('App Store QR (37 modules, 72px) and the coffee photo are in the plate',
+     goat && goat.qrViewBox === '0 0 37 37' && goat.qrW === 72 && goat.qrH === 72 &&
+     goat.photo && goat.photo.complete && goat.photo.w === 264 && goat.photo.h === 222 && goat.photo.data,
+     goat ? JSON.stringify({ qrViewBox: goat.qrViewBox, qr: `${goat.qrW}x${goat.qrH}`, photo: goat.photo }) : 'absent');
+  ok('the App Store tagline sits under GOAT Cam on one row',
+     goat && goat.tagVisible && goat.tagOneRow && goat.tagUnderName && goat.tagRightOfMark && goat.tag === 'iPhone app · On the App Store',
      goat ? JSON.stringify({ tag: goat.tag, tagVisible: goat.tagVisible, tagOneRow: goat.tagOneRow, tagUnderName: goat.tagUnderName, tagRightOfMark: goat.tagRightOfMark }) : 'absent');
   ok('Goat lockup is idle until hover (panel open is not enough)',
      goat && +goat.restMeteors === 0 && +goat.restThumb === 0,
      goat ? `rest meteors=${goat.restMeteors} thumb=${goat.restThumb}` : 'absent');
-  ok('lockup uses the black plate while Dark mode is On',
-     goat && goat.paper === false && goat.bgR < 30 && goat.bgG < 30 && goat.bgB < 30,
+  // 1.0.3: the plate is the GOAT Cam espresso (#140d08) whatever the switch
+  // says. The light "paper" plate of the Goat Project lockup is gone.
+  ok('lockup uses the espresso plate, and no paper plate',
+     goat && goat.paper === false && goat.bgR === 20 && goat.bgG === 13 && goat.bgB === 8,
      goat ? `paper=${goat.paper} bg=${goat.bg}` : 'absent');
-  await q(() => {
-    document.getElementById('gmdm-widget-host').shadowRoot
-      .querySelector('.goat-lockup').classList.add('goat-lockup--paper');
-  });
-  const paperBg = await q(() => {
-    const lockup = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.goat-lockup');
-    const bg = getComputedStyle(lockup).backgroundColor;
-    const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg);
-    return { bg, r: rgb ? +rgb[1] : -1, g: rgb ? +rgb[2] : -1, b: rgb ? +rgb[3] : -1 };
-  });
-  ok('paper plate is the light lockup ground',
-     paperBg && paperBg.r > 220 && paperBg.g > 210 && paperBg.b > 200,
-     JSON.stringify(paperBg));
-  await page.screenshot({ path: path.join(OUT, '3c-goat-banner-paper.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
-  await q(() => {
-    document.getElementById('gmdm-widget-host').shadowRoot
-      .querySelector('.goat-lockup').classList.remove('goat-lockup--paper');
-  });
   await page.screenshot({ path: path.join(OUT, '3c-goat-banner.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
 
   const lockupBox = await q(() => {
