@@ -147,9 +147,10 @@ At the bottom of the panel is a banner for the author's own iPhone app,
 [GOAT Cam](https://goatcam.dagoat.io), which turns the phone into a webcam for a
 Windows 11 PC. It is self-promotion, not an ad network. Its coffee photo and its
 App Store QR code are embedded in the extension, so showing the banner makes no
-network request. Clicking it opens goatcam.dagoat.io in a new tab. It animates
-only while the pointer or keyboard focus is on it, and in reduced-motion mode it
-only cross-fades.
+network request. Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
+keyboard-focusing the QR code enlarges it so a phone can scan it. The banner
+animates only while the pointer or keyboard focus is on it; in reduced-motion
+mode nothing travels and the QR code enlarges instantly.
 
 Credits: the GitHub button is [fuzzy-warthog-48 by
 Itskrish01](https://uiverse.io/Itskrish01/fuzzy-warthog-48) from uiverse.io,
@@ -159,8 +160,8 @@ live in the author's own Tailwind config — so those are reconstructed from how
 each one is used. The banner's photo is "White cup and MacBook" by
 [Alex Knight](https://unsplash.com/@agkdesign)
 ([source](https://unsplash.com/photos/j4uuKnN43_M)), released under
-[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/); it is cropped and
-colour-graded here. The rest of the panel follows the glass/accent vocabulary of
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/); it is resized and
+colour-graded here, as on the GOAT Cam website. The rest of the panel follows the glass/accent vocabulary of
 the GOAT desktop app.
 
 ---

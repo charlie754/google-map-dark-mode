@@ -275,7 +275,8 @@ try {
   ok('GitHub star reacts to hover', ghRest !== ghHover, `rest=${ghRest} hover=${ghHover}`);
   await page.screenshot({ path: path.join(OUT, '3b-github-hover.png'), clip: { x: 0, y: 0, width: 480, height: 620 } });
 
-  // ---- 4c. Goat lockup: sentences on top, gap under StarGithub, hover-only motion
+  // ---- 4c. GOAT Cam banner (v2): the headline on top, gap under StarGithub,
+  //      the site photo across the plate, hover-only motion, the QR zoom
   await page.mouse.move(...Object.values(await hostPoint()));
   await page.waitForTimeout(400);
   const goat = await q(() => {
@@ -288,12 +289,8 @@ try {
     const rgh = ghBtn.getBoundingClientRect();
     const copyEl = g.querySelector('.goat__copy');
     const copy = [...g.querySelectorAll('.goat__line')].map((el) => el.textContent.trim());
-    const mark = lockup.querySelector('.goat-lockup__svg');
-    const rm = mark ? mark.getBoundingClientRect() : { width: 0, height: 0, top: 0, right: 0 };
     const line0 = g.querySelector('.goat__line');
     const rl = line0 ? line0.getBoundingClientRect() : { bottom: 0 };
-    const meteors = sh.querySelector('.goat-lockup__meteors');
-    const thumb = sh.querySelector('.gl-thumb');
     const bg = getComputedStyle(lockup).backgroundColor;
     const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg);
     const tag = lockup.querySelector('.goat-lockup__tag');
@@ -301,12 +298,14 @@ try {
     const rt = tag ? tag.getBoundingClientRect() : { width: 0, height: 0 };
     const rn = name ? name.getBoundingClientRect() : { left: 0, bottom: 0 };
     const rLock = lockup.getBoundingClientRect();
-    const qrTile = lockup.querySelector('.gc-qr__tile');
-    const qrSvg = qrTile ? qrTile.querySelector('svg') : null;
-    const rq = qrTile ? qrTile.getBoundingClientRect() : { width: 0, height: 0 };
+    const qr = lockup.querySelector('.gc-qr');
+    const qrSvg = qr ? qr.querySelector('svg') : null;
+    const rq = qr ? qr.getBoundingClientRect() : { width: 0, height: 0 };
     const img = lockup.querySelector('.gc-photo__img');
+    const steam = lockup.querySelector('.gc-steam');
     return {
       copy,
+      removed: g.querySelectorAll('.goat__line--ask, .goat-lockup__mark, .goat-lockup__meteors, [class^="gl-"], [class*=" gl-"]').length,
       qrViewBox: qrSvg ? qrSvg.getAttribute('viewBox') : null,
       qrW: +rq.width.toFixed(1),
       qrH: +rq.height.toFixed(1),
@@ -317,12 +316,9 @@ try {
       goatIsLink: g.tagName === 'A',
       belowGh: rg.top >= rgh.bottom - 1,
       gap: +(rg.top - rgh.bottom).toFixed(1),
-      markW: +rm.width.toFixed(1),
-      markH: +rm.height.toFixed(1),
-      copyAboveMark: rl.bottom <= rm.top + 1,
-      paths: mark ? mark.querySelectorAll('path').length : 0,
-      restMeteors: meteors ? getComputedStyle(meteors).opacity : null,
-      restThumb: thumb ? getComputedStyle(thumb).opacity : null,
+      copyAbovePlate: rl.bottom <= rLock.top + 1,
+      restSteam: steam ? getComputedStyle(steam).opacity : null,
+      restFrame: getComputedStyle(lockup.querySelector('.gc-photo__frame')).transform,
       paper: lockup.classList.contains('goat-lockup--paper'),
       bg,
       bgR: rgb ? +rgb[1] : -1,
@@ -332,61 +328,78 @@ try {
       tagVisible: rt.width > 40 && rt.height >= 5 && rt.right <= rLock.right + 1.5,
       tagOneRow: rt.height > 0 && rt.height < 16,
       tagUnderName: rt.top >= rn.bottom - 2 && Math.abs(rt.left - rn.left) < 3,
-      tagRightOfMark: rt.left >= rm.right - 4,
+      tagClearOfQr: rt.bottom <= rq.top || rt.right <= rq.left,
     };
   });
   ok('GOAT Cam banner sits under StarGithub with a gap',
      goat && goat.belowGh && goat.gap >= 12 && goat.href === 'https://goatcam.dagoat.io',
      goat ? `gap=${goat.gap}px href=${goat.href}` : 'absent');
-  ok('only the lockup is the Goat link, not the sentences',
+  ok('only the plate is the GOAT Cam link, not the headline',
      goat && goat.lockupTag === 'A' && goat.goatIsLink === false && goat.copyInsideLink === false,
      goat ? JSON.stringify({ lockupTag: goat.lockupTag, goatIsLink: goat.goatIsLink, copyInsideLink: goat.copyInsideLink, href: goat.href }) : 'absent');
-  ok('GOAT Cam sentences sit on top of the lockup',
-     goat && goat.copyAboveMark &&
-     goat.copy[0] === 'GOAT Cam — your iPhone, NOW your PC’s webcam.' &&
-     goat.copy[1] === 'Free Windows 11 app · USB or Wi‑Fi · Scan for the iPhone app.',
-     goat ? JSON.stringify(goat.copy) : 'absent');
-  // The panel mark is 5.4em at 7.2px: 34.2 x 38.9 measured headless
-  // (test/checks/widget-banner-shots.mjs), smaller than the old 10px lockup.
-  ok('GOAT Cam lockup is painted',
-     goat && goat.paths >= 6 && goat.markW > 30 && goat.markH > 35,
-     goat ? `mark=${goat.markW}x${goat.markH} paths=${goat.paths}` : 'absent');
-  ok('App Store QR (37 modules, 72px) and the coffee photo are in the plate',
+  ok('the one GOAT Cam headline sits on top of the plate (no ask line, no DaGoat lockup)',
+     goat && goat.copyAbovePlate && goat.copy.length === 1 &&
+     goat.copy[0] === 'GOAT Cam — your iPhone, NOW your PC’s webcam.' && goat.removed === 0,
+     goat ? JSON.stringify({ copy: goat.copy, removed: goat.removed }) : 'absent');
+  ok('App Store QR (37 modules, 72px) and the site hero photo (800x498) are in the plate',
      goat && goat.qrViewBox === '0 0 37 37' && goat.qrW === 72 && goat.qrH === 72 &&
-     goat.photo && goat.photo.complete && goat.photo.w === 264 && goat.photo.h === 222 && goat.photo.data,
+     goat.photo && goat.photo.complete && goat.photo.w === 800 && goat.photo.h === 498 && goat.photo.data,
      goat ? JSON.stringify({ qrViewBox: goat.qrViewBox, qr: `${goat.qrW}x${goat.qrH}`, photo: goat.photo }) : 'absent');
-  ok('the App Store tagline sits under GOAT Cam on one row',
-     goat && goat.tagVisible && goat.tagOneRow && goat.tagUnderName && goat.tagRightOfMark && goat.tag === 'iPhone app · On the App Store',
-     goat ? JSON.stringify({ tag: goat.tag, tagVisible: goat.tagVisible, tagOneRow: goat.tagOneRow, tagUnderName: goat.tagUnderName, tagRightOfMark: goat.tagRightOfMark }) : 'absent');
-  ok('Goat lockup is idle until hover (panel open is not enough)',
-     goat && +goat.restMeteors === 0 && +goat.restThumb === 0,
-     goat ? `rest meteors=${goat.restMeteors} thumb=${goat.restThumb}` : 'absent');
-  // 1.0.3: the plate is the GOAT Cam espresso (#140d08) whatever the switch
-  // says. The light "paper" plate of the Goat Project lockup is gone.
-  ok('lockup uses the espresso plate, and no paper plate',
+  ok('the App Store tagline sits under GOAT Cam on one row, clear of the QR',
+     goat && goat.tagVisible && goat.tagOneRow && goat.tagUnderName && goat.tagClearOfQr && goat.tag === 'iPhone app·On the App Store',
+     goat ? JSON.stringify({ tag: goat.tag, tagVisible: goat.tagVisible, tagOneRow: goat.tagOneRow, tagUnderName: goat.tagUnderName, tagClearOfQr: goat.tagClearOfQr }) : 'absent');
+  ok('GOAT Cam banner is idle until hover (panel open is not enough)',
+     goat && +goat.restSteam === 0 && goat.restFrame === 'none',
+     goat ? `rest steam=${goat.restSteam} photo=${goat.restFrame}` : 'absent');
+  // 1.0.3: the plate ground is the GOAT Cam espresso (#140d08) whatever the
+  // switch says. The light "paper" plate of the Goat Project lockup is gone.
+  ok('plate uses the espresso ground, and no paper plate',
      goat && goat.paper === false && goat.bgR === 20 && goat.bgG === 13 && goat.bgB === 8,
      goat ? `paper=${goat.paper} bg=${goat.bg}` : 'absent');
   await page.screenshot({ path: path.join(OUT, '3c-goat-banner.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
 
-  const lockupBox = await q(() => {
+  // pointer on the photo (left third of the plate), not on the QR
+  const photoPoint = await q(() => {
     const r = document.getElementById('gmdm-widget-host').shadowRoot
       .querySelector('.goat-lockup').getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    return { x: r.left + 60, y: r.top + r.height - 36 };
   });
-  await page.mouse.move(lockupBox.x, lockupBox.y);
-  await page.waitForTimeout(750);
+  await page.mouse.move(photoPoint.x, photoPoint.y);
+  await page.waitForTimeout(1200);
   const goatHover = await q(() => {
     const sh = document.getElementById('gmdm-widget-host').shadowRoot;
     return {
-      meteors: getComputedStyle(sh.querySelector('.goat-lockup__meteors')).opacity,
-      thumb: getComputedStyle(sh.querySelector('.gl-thumb')).opacity,
-      face: getComputedStyle(sh.querySelector('.gl-seal-face')).fill,
+      steam: getComputedStyle(sh.querySelector('.gc-steam')).opacity,
+      photo: getComputedStyle(sh.querySelector('.gc-photo__frame')).transform,
+      plate: getComputedStyle(sh.querySelector('.goat-lockup')).transform,
     };
   });
-  ok('Goat lockup animates on hover',
-     goatHover && +goatHover.meteors > 0.4 && +goatHover.thumb > 0.4,
+  ok('GOAT Cam banner animates on hover (steam, photo push-in, 2px lift)',
+     goatHover && +goatHover.steam > 0.9 && /^matrix\(1\.0[5-6]/.test(goatHover.photo) && goatHover.plate === 'matrix(1, 0, 0, 1, 0, -2)',
      JSON.stringify(goatHover));
   await page.screenshot({ path: path.join(OUT, '3d-goat-lockup-hover.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
+
+  // the QR zoom: hover the tile; it must reach >= 150px inside the panel's clip and be on top
+  const qrPoint = await q(() => {
+    const r = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.gc-qr').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  await page.mouse.move(qrPoint.x, qrPoint.y);
+  await page.waitForTimeout(400);
+  const qrZoom = await q(() => {
+    const sh = document.getElementById('gmdm-widget-host').shadowRoot;
+    const qr = sh.querySelector('.gc-qr');
+    const b = qr.getBoundingClientRect();
+    const shell = sh.querySelector('.shell').getBoundingClientRect();
+    const inner = sh.querySelector('.body__inner').getBoundingClientRect();
+    const room = Math.min(...[shell, inner].map((a) => Math.min(b.left - a.left, a.right - b.right, b.top - a.top, a.bottom - b.bottom)));
+    const top = sh.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+    return { w: +b.width.toFixed(1), h: +b.height.toFixed(1), room: +room.toFixed(1), onTop: Boolean(top && top.closest('.gc-qr')) };
+  });
+  ok('QR zooms to >= 150px on hover, unclipped and on top',
+     qrZoom && qrZoom.w >= 150 && qrZoom.h >= 150 && qrZoom.room >= 0 && qrZoom.onTop,
+     JSON.stringify(qrZoom));
+  await page.screenshot({ path: path.join(OUT, '3e-goat-qr-zoom.png'), clip: { x: 0, y: 0, width: 480, height: 720 } });
 
   // ---- 5. a switch actually drives the engine
   // Toggling darkMap now reloads the tab on purpose: the map surface is painted

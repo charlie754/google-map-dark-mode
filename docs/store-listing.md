@@ -17,10 +17,13 @@ the archived manifest at package time; it is never typed in twice.
 
 **1.0.3** (2026-10-25) — the banner under StarGithub now promotes the author's
 own app, GOAT Cam (it turns an iPhone into a webcam for a Windows 11 PC),
-replacing the Goat Project lockup. Same place and layout (two lines of copy,
-now new sentences, above a plate that is the only link), same hover-only animation and reduced-motion
-behaviour; the plate now carries a coffee photo and an App Store QR code, and
-opens https://goatcam.dagoat.io in a new tab. The photo and the QR code are
+replacing the Goat Project lockup. Same place: one line of copy above a plate
+that is the only link. The plate is the GOAT Cam site's own coffee photo, edge to
+edge, with the GOAT Cam wordmark on it and an App Store QR code that enlarges
+when hovered or keyboard-focused so a phone can scan it; the goat mark, seal,
+meteors and the second line of copy are gone. Motion plays only on hover or
+focus, and reduced-motion mode keeps nothing that travels. The plate opens
+https://goatcam.dagoat.io in a new tab. The photo and the QR code are
 embedded in the extension, so showing the banner makes no network request, and
 no permission changed. Dark-mode behaviour is unchanged.
 
