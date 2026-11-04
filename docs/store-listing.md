@@ -23,9 +23,10 @@ edge, with the GOAT Cam wordmark on it and an App Store QR code that enlarges
 when hovered or keyboard-focused so a phone can scan it; the goat mark, seal,
 meteors and the second line of copy are gone. Motion plays only on hover or
 focus, and reduced-motion mode keeps nothing that travels. The plate opens
-https://goatcam.dagoat.io in a new tab. The photo and the QR code are
-embedded in the extension, so showing the banner makes no network request, and
-no permission changed. Dark-mode behaviour is unchanged.
+https://goatcam.dagoat.io in a new tab. A default photo and QR code are bundled
+with the extension, and while the panel is open the extension may download a
+signed promo update from goatcam.dagoat.io (in Firefox, only if the optional
+technical and interaction data permission is enabled). Dark-mode behaviour is unchanged.
 
 **1.0.2** (2026-08-20) — same Goat lockup as 1.0.1, plus panel hover polish:
 toggle pills enlarge on hover (not the whole row); the Dark Mode header lifts
@@ -46,7 +47,7 @@ campaign lines under StarGithub. Dark-mode behaviour is unchanged from 1.0.0.
 | Chrome extension ID | assigned on first upload | Chrome ignores the gecko id and assigns its own. |
 | `homepage_url` | not set | Optional. Both stores show it. `https://github.com/charlie754/google-map-dark-mode` is the obvious value. |
 | Author | not set | Optional; shown on both stores. |
-| Privacy policy URL | `PRIVACY.md` in the repo | Neither store requires one when nothing is collected, but pointing at a real document makes review faster. Chrome's data-usage tab wants an explicit "no data collected" declaration either way. |
+| Privacy policy URL | `PRIVACY.md` in the repo | Pointing at `PRIVACY.md` documents the local storage keys, the Google palette self-check, and the signed promo banner download from `goatcam.dagoat.io` so store review and the data-usage declaration match. |
 | Screenshots | none yet | Chrome requires at least one at 1280×800 or 640×400. AMO does not require any but shows them if present. A side-by-side of Maps with and without the extension is the obvious shot. |
 
 ---
@@ -77,10 +78,11 @@ campaign lines under StarGithub. Dark-mode behaviour is unchanged from 1.0.0.
 >
 > • Dark map and dark interface, on by default
 > • Three switches: master, dark map, dark interface — turn any of them off
-> • Nothing collected, nothing transmitted, no analytics, no accounts, no servers
-> • The panel also shows a small banner for the author's own iPhone app, GOAT Cam.
->   It is part of the extension (no ad network, nothing requested to show it);
->   clicking it opens goatcam.dagoat.io, and its QR code links to the App Store.
+> • No account, no analytics, no tracking, and settings stored locally on your device
+> • The panel also shows a small first-party banner for the author's own iPhone app, GOAT Cam.
+>   There is no ad network; while the panel is open, the extension may download a
+>   signed promo card and image from goatcam.dagoat.io (in Firefox, only if you
+>   opt in), and clicking it opens goatcam.dagoat.io while its QR code links to the App Store.
 > • Free and open source under the MIT licence
 >
 > It checks its own health: if Google stops serving the dark map style, the
@@ -99,10 +101,11 @@ AMO — *Appearance*.
 
 **Chrome "single purpose" statement:**
 
-> Renders the Google Maps website in dark colours: the map surface, by asking
+> Renders the Google Maps website in dark colours — the map surface, by asking
 > Google Maps for Google's own dark map palette instead of its light one, and the
 > surrounding interface, by darkening the colour values the page already
-> declares.
+> declares — with an in-page control panel that includes a first-party promo for
+> the developer's own app (GOAT Cam).
 
 ---
 
@@ -137,11 +140,12 @@ checking.
 ### `storage`
 
 > Stores the user's three on/off switches, the result of the extension's own
-> last self-check, and whether the extension has disabled itself because it
-> detected a fault. `chrome.storage.local` only — `storage.sync` is deliberately
+> last self-check, whether the extension has disabled itself because it
+> detected a fault, and the cached GOAT Cam promo record, image set and display
+> choice. `chrome.storage.local` only — `storage.sync` is deliberately
 > not used, because that area would place extension data on a remote server via
-> the user's Google account. Nothing user-identifying is stored and nothing is
-> transmitted.
+> the user's Google account. All stored values stay in local extension storage
+> on the device, with no user account or tracking identifier.
 
 ### `alarms`
 
@@ -171,8 +175,10 @@ checking.
 > map-tile rules described above, and it runs one content script on `/maps`
 > pages that recolours the page's own CSS custom properties. That script reads
 > colour values and writes colour values. It does not read page text, search
-> queries, location, saved places, form input or cookies, and it transmits
-> nothing.
+> queries, location, saved places, form input or cookies, and it never sends map
+> activity or page content anywhere; while the in-page panel is open, it may ask
+> the background script to refresh the signed GOAT Cam promo card from
+> `goatcam.dagoat.io`.
 >
 > The full list is 22 Google origins plus `gstatic.com/maps/res/*`:
 > `google.com`, `maps.google.com`, `google.co.uk`,
@@ -183,11 +189,11 @@ checking.
 
 ### Data usage declaration (Chrome's privacy tab)
 
-> Discloses **no** data collection of any category. The extension has no server,
-> no analytics, no telemetry, no identifiers and no remote logging. Its only
-> outbound requests are two `HEAD` requests and one fixed map-tile `GET` to
-> Google's own servers, all with credentials omitted, whose sole purpose is to
-> check that the dark map style is still available. Full statement:
+> The extension has no user account, no analytics, no tracking, no telemetry,
+> and stores settings locally. For its dark-palette self-check, it makes two
+> `HEAD` requests and one fixed map-tile `GET` to Google's own servers, all with
+> credentials omitted, whose sole purpose is to check that the dark map style is
+> still available. To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. In Firefox this happens only if you turn on the optional technical and interaction data permission. Full statement:
 > https://github.com/charlie754/google-map-dark-mode/blob/main/PRIVACY.md
 
 ---
@@ -210,27 +216,31 @@ checking.
 > (`rules/dark-map.json`) and can be read in full in under a minute; each is
 > anchored to a Google host and each rewrites one style name.
 
-**"Why does the code make network requests at all if it collects nothing?"**
+**"Why does the code make network requests at all?"**
 
-> Three requests, on a six-hour timer, all to Google and all with credentials
-> omitted, all containing nothing derived from the user: two `HEAD`s that ask
-> whether the dark palette is still being served, and one `GET` of a single fixed
-> map tile over Houston — the same tile for every user — because that endpoint
-> returns HTTP 200 with a 178-byte error image rather than a 404, so its size is
-> the only available signal. If the answer is that the dark style is gone, the
-> extension disables its own rules.
+> For dark-mode health checks, it makes three requests on a six-hour timer, all
+> to Google and all with credentials omitted, containing nothing derived from the
+> user: two `HEAD`s that ask whether the dark palette is still being served, and
+> one `GET` of a single fixed map tile over Houston — the same tile for every
+> user — because that endpoint returns HTTP 200 with a 178-byte error image
+> rather than a 404, so its size is the only available signal. If the answer is
+> that the dark style is gone, the extension disables its own rules. In addition,
+> while the panel is open, it may download a signed public promo file and image
+> from `goatcam.dagoat.io` at most every 6 hours (in Firefox, only when the
+> optional technical and interaction data permission is enabled).
 
 **"The panel shows a banner for another product."**
 
-> It is the author's own app, GOAT Cam, and nothing else: there is no ad network
-> and no third-party advertising. The only third-party asset is the CC0 photo
-> credited below. The banner's photo is a `data:` image and its QR
-> code is inline SVG, both inside the package, so showing it requests nothing —
-> the extension never contacts goatcam.dagoat.io or the App Store. Clicking the
-> banner opens `https://goatcam.dagoat.io` in a new tab (`rel="noopener
-> noreferrer"`, no query string), exactly like the Ko-fi and GitHub buttons. The
-> QR code is a picture of an App Store link; only a phone camera can follow it.
-> The photo is CC0 ("White cup and MacBook", Alex Knight).
+> It is a first-party promo for the author's own app, GOAT Cam, and nothing
+> else: there is no ad network and no third-party advertising. A fallback photo
+> (`data:` image, CC0 "White cup and MacBook" by Alex Knight) and inline SVG QR
+> code are bundled inside the package, and while the panel is open the extension
+> may download a signed promo update and image from `goatcam.dagoat.io` over
+> HTTPS (cached locally in `chrome.storage.local`). It never contacts the App
+> Store directly. Clicking the banner opens `https://goatcam.dagoat.io` in a new
+> tab (`rel="noopener noreferrer"`, no query string), exactly like the Ko-fi and
+> GitHub buttons. The QR code is a picture of an App Store link; only a phone
+> camera can follow it.
 
 **"Is any of the code minified, bundled or obfuscated?"**
 

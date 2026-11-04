@@ -56,7 +56,7 @@ test('"none" is declared alone, and technicalAndInteraction is never required', 
   const dcp = firefox.browser_specific_settings.gecko.data_collection_permissions;
   if (dcp.required.includes('none')) {
     assert.equal(dcp.required.length, 1, '"none" cannot be combined with other required types');
-    assert.equal(dcp.optional, undefined, '"none" means nothing is collected, so there is nothing optional');
+    assert.deepEqual(dcp.optional, ['technicalAndInteraction']);
   }
   assert.ok(
     !dcp.required.includes('technicalAndInteraction'),
@@ -129,4 +129,49 @@ test('the shipped version is 1.0.3 (GOAT Cam banner on 1.0.2)', () => {
 
 test('the Chrome manifest carries no gecko-only keys', () => {
   assert.equal(chrome.browser_specific_settings, undefined);
+});
+
+test('Chrome uses the classic background worker and preserves its exact host permissions', () => {
+  assert.deepEqual(chrome.background, { service_worker: 'background.js' });
+  assert.deepEqual(chrome.host_permissions, [
+    'https://www.google.com/*',
+    'https://www.google.co.uk/*',
+    'https://www.google.de/*',
+    'https://www.google.fr/*',
+    'https://www.google.it/*',
+    'https://www.google.es/*',
+    'https://www.google.nl/*',
+    'https://www.google.pl/*',
+    'https://www.google.se/*',
+    'https://www.google.com.tr/*',
+    'https://www.google.ca/*',
+    'https://www.google.com.mx/*',
+    'https://www.google.com.br/*',
+    'https://www.google.co.jp/*',
+    'https://www.google.co.in/*',
+    'https://www.google.co.id/*',
+    'https://www.google.co.kr/*',
+    'https://www.google.com.hk/*',
+    'https://www.google.com.tw/*',
+    'https://www.google.com.sg/*',
+    'https://www.google.com.au/*',
+    'https://maps.google.com/*',
+    'https://www.gstatic.com/maps/res/*',
+  ]);
+});
+
+test('Firefox loads the banner libraries before the classic background and declares the collection contract', () => {
+  assert.deepEqual(firefox.background, {
+    scripts: [
+      'lib/banner-core.js',
+      'lib/banner-machine.js',
+      'lib/banner-fetch.js',
+      'lib/banner-key.js',
+      'background.js',
+    ],
+  });
+  assert.deepEqual(
+    firefox.browser_specific_settings.gecko.data_collection_permissions,
+    { required: ['none'], optional: ['technicalAndInteraction'] },
+  );
 });

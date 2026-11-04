@@ -1,8 +1,11 @@
+"use strict";
+if (typeof importScripts === "function") importScripts("lib/banner-core.js", "lib/banner-machine.js", "lib/banner-fetch.js", "lib/banner-key.js");
+
 /**
  * Google Map Dark Mode — settings, background self-check, and remediation.
  *
  * This file is loaded in two different ways and must be valid in both:
- *   - Chrome MV3: an ES module service worker ("type": "module").
+ *   - Chrome MV3: a classic service worker (libraries are loaded with importScripts).
  *   - Firefox MV3: a classic event-page script ("background": { "scripts": [...] }).
  *
  * Therefore: no `import`, no `export`, no top-level `await`. Everything is a
@@ -1472,3 +1475,275 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // every wake. Cheap, idempotent, and does not reset an alarm that already
 // exists. Not a top-level await — the promise is started and left to settle.
 ensureHealthAlarm().catch(() => {});
+
+/* -------------------------------------------------------------------------- */
+/* GOAT Cam online banner — one runner shared by every open Maps panel        */
+/* -------------------------------------------------------------------------- */
+
+const GOAT_BANNER_ORIGIN = "https://goatcam.dagoat.io";
+const GOAT_BANNER_RECORD_KEY = "goatcamBanner.record";
+const GOAT_BANNER_DISPLAY_KEY = "goatcamBanner.display";
+const GOAT_BANNER_SET_PREFIX = "goatcamBanner.set.";
+const GOAT_BANNER_KINDS = ["webp"];
+const GOAT_BANNER_RECORD_CAP = 16_384;
+const GOAT_BANNER_SIGNED_CAP = 16_384;
+const GOAT_BANNER_PHOTO_CAP = 300_000;
+const GOAT_BANNER_SIGNED_ENCODED_CAP = Math.ceil(GOAT_BANNER_SIGNED_CAP / 3) * 4;
+const GOAT_BANNER_PHOTO_ENCODED_CAP = Math.ceil(GOAT_BANNER_PHOTO_CAP / 3) * 4;
+const GOAT_BANNER_SET_VALUE_CAP = GOAT_BANNER_SIGNED_ENCODED_CAP
+  + GOAT_BANNER_PHOTO_ENCODED_CAP + 256;
+
+let goatBannerControls = null;
+const goatBannerPorts = new Set();
+let goatBannerDisplaySeq = 0;
+let goatBannerCurrentSha256 = null;
+
+const goatBannerHexBytes = (hex) => {
+  if (typeof hex !== "string" || hex.length % 2 !== 0) throw new TypeError("invalid banner key");
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    const byte = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (!Number.isInteger(byte)) throw new TypeError("invalid banner key");
+    bytes[i] = byte;
+  }
+  return bytes;
+};
+
+const goatBannerSerializedBytes = (value) => {
+  try {
+    const serialized = JSON.stringify(value);
+    return typeof serialized === "string" ? new TextEncoder().encode(serialized).byteLength : Infinity;
+  } catch {
+    return Infinity;
+  }
+};
+
+const goatBannerBase64 = (bytes) => {
+  let text = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    text += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(text);
+};
+
+const goatBannerDecodeBase64 = (value, cap) => {
+  const encodedCap = Math.ceil(cap / 3) * 4;
+  if (typeof value !== "string" || value.length > encodedCap || value.length % 4 === 1) return null;
+  try {
+    const text = atob(value);
+    const bytes = Uint8Array.from(text, (character) => character.charCodeAt(0));
+    return bytes.byteLength <= cap ? bytes : null;
+  } catch {
+    return null;
+  }
+};
+
+const goatBannerReadRecord = async () => {
+  const local = api?.storage?.local;
+  if (!local || typeof local.get !== "function") return null;
+  if (typeof local.getBytesInUse === "function") {
+    try {
+      const bytes = await local.getBytesInUse(GOAT_BANNER_RECORD_KEY);
+      if (Number.isFinite(bytes) && bytes > GOAT_BANNER_RECORD_CAP) return null;
+    } catch {
+      // A failed size hint falls through to the bounded post-read check.
+    }
+  } else {
+    // ponytail: 16 KiB per record, upgrade path is getBytesInUse before get on browsers that expose it.
+  }
+  try {
+    const result = await local.get(GOAT_BANNER_RECORD_KEY);
+    const record = result?.[GOAT_BANNER_RECORD_KEY];
+    return goatBannerSerializedBytes(record) <= GOAT_BANNER_RECORD_CAP ? record ?? null : null;
+  } catch {
+    return null;
+  }
+};
+
+const goatBannerReadSet = async (sha256) => {
+  const local = api?.storage?.local;
+  if (!local || typeof local.get !== "function") return null;
+  const key = `${GOAT_BANNER_SET_PREFIX}${sha256}`;
+  if (typeof local.getBytesInUse === "function") {
+    try {
+      const bytes = await local.getBytesInUse(key);
+      if (Number.isFinite(bytes) && bytes > GOAT_BANNER_SET_VALUE_CAP) return null;
+    } catch {
+      // The encoded-field checks below remain authoritative.
+    }
+  } else {
+    // ponytail: roughly 422 KiB per cached set, upgrade path is getBytesInUse before get on Firefox versions that add it.
+  }
+  try {
+    const result = await local.get(key);
+    const stored = result?.[key];
+    if (stored === null || typeof stored !== "object" || Array.isArray(stored)) return null;
+    const allowed = new Set(["signed", ...GOAT_BANNER_KINDS]);
+    if (Object.keys(stored).some((field) => !allowed.has(field))) return null;
+    const signed = goatBannerDecodeBase64(stored.signed, GOAT_BANNER_SIGNED_CAP);
+    if (!signed) return null;
+    const photos = {};
+    for (const kind of GOAT_BANNER_KINDS) {
+      if (!Object.hasOwn(stored, kind)) continue;
+      const photo = goatBannerDecodeBase64(stored[kind], GOAT_BANNER_PHOTO_CAP);
+      if (!photo) return null;
+      photos[kind] = photo;
+    }
+    goatBannerCurrentSha256 = sha256;
+    return { signed, photos };
+  } catch {
+    return null;
+  }
+};
+
+const goatBannerWriteRecord = async (record) => {
+  if (goatBannerSerializedBytes(record) > GOAT_BANNER_RECORD_CAP) throw new Error("banner record too large");
+  await api.storage.local.set({ [GOAT_BANNER_RECORD_KEY]: record });
+};
+
+const goatBannerWriteSet = async (sha256, value) => {
+  const stored = { signed: goatBannerBase64(value.signed) };
+  for (const kind of GOAT_BANNER_KINDS) {
+    if (value.photos && value.photos[kind] instanceof Uint8Array) {
+      stored[kind] = goatBannerBase64(value.photos[kind]);
+    }
+  }
+  // One set call is the commit point; storage.local.set either replaces the object or throws.
+  await api.storage.local.set({ [`${GOAT_BANNER_SET_PREFIX}${sha256}`]: stored });
+  goatBannerCurrentSha256 = sha256;
+};
+
+const goatBannerDeleteSetsExcept = async (keepSha256) => {
+  const local = api?.storage?.local;
+  if (!local || typeof local.remove !== "function") return;
+  let keys;
+  if (typeof local.getKeys === "function") {
+    try {
+      keys = await local.getKeys();
+    } catch {
+      keys = null;
+    }
+  }
+  if (!Array.isArray(keys)) {
+    // ponytail: fallback scans all local values, upgrade path is storage.local.getKeys when available.
+    try {
+      const all = await local.get(null);
+      keys = all && typeof all === "object" ? Object.keys(all) : [];
+    } catch {
+      keys = [];
+    }
+  }
+  const remove = keys.filter((key) => (
+    typeof key === "string"
+    && key.startsWith(GOAT_BANNER_SET_PREFIX)
+    && key !== `${GOAT_BANNER_SET_PREFIX}${keepSha256 ?? ""}`
+  ));
+  if (remove.length !== 0) await local.remove(remove);
+};
+
+const goatBannerRender = async (model) => {
+  const local = api?.storage?.local;
+  if (!local || typeof local.set !== "function") return;
+  if (goatBannerDisplaySeq === 0 && typeof local.get === "function") {
+    try {
+      const previous = (await local.get(GOAT_BANNER_DISPLAY_KEY))?.[GOAT_BANNER_DISPLAY_KEY];
+      if (Number.isSafeInteger(previous?.seq) && previous.seq > goatBannerDisplaySeq) {
+        goatBannerDisplaySeq = previous.seq;
+      }
+    } catch {
+      // The next display write still carries a valid sequence for this worker lifetime.
+    }
+  }
+
+  let banner = null;
+  let sha256 = null;
+  let expiresMs = null;
+  if (model?.kind === "online" && model.banner && typeof model.banner === "object") {
+    banner = JSON.parse(JSON.stringify(model.banner));
+    const record = await goatBannerReadRecord();
+    sha256 = goatBannerCurrentSha256
+      ?? (typeof record?.current?.sha256 === "string" ? record.current.sha256 : null);
+    const candidate = Date.parse(model.banner.expires);
+    expiresMs = Number.isFinite(candidate) ? candidate : null;
+  }
+  goatBannerDisplaySeq += 1;
+  await local.set({
+    [GOAT_BANNER_DISPLAY_KEY]: {
+      kind: model?.kind === "online" ? "online" : "dagoat",
+      sha256,
+      immediate: model?.immediate === true,
+      seq: goatBannerDisplaySeq,
+      banner,
+      expiresMs,
+    },
+  });
+};
+
+const goatBannerGate = async () => {
+  if (typeof api?.runtime?.getBrowserInfo !== "function") return true;
+  if (GoatBannerKey.firefoxOnline !== true) return false;
+  try {
+    const permissions = await api.permissions.getAll();
+    return Array.isArray(permissions?.data_collection)
+      && permissions.data_collection.includes("technicalAndInteraction");
+  } catch {
+    return false;
+  }
+};
+
+const ensureGoatBannerRunner = () => {
+  if (goatBannerControls !== null) return goatBannerControls;
+  const publicKeyRaw = goatBannerHexBytes(GoatBannerKey.publicKeyHex);
+  const machine = GoatBannerMachine.create({ floor: GoatBannerKey.floor, kinds: GOAT_BANNER_KINDS });
+  goatBannerControls = GoatBannerFetch.run(machine, {
+    storage: {
+      readRecord: goatBannerReadRecord,
+      readSet: goatBannerReadSet,
+      writeSet: goatBannerWriteSet,
+      writeRecord: goatBannerWriteRecord,
+      deleteSetsExcept: goatBannerDeleteSetsExcept,
+    },
+    setTimer: (atMs) => api.alarms.create("goatcamBanner.timer", { when: atMs }),
+    clearTimer: () => api.alarms.clear("goatcamBanner.timer"),
+    render: goatBannerRender,
+    openLink: (url) => api.tabs.create({ url }),
+    gate: goatBannerGate,
+    origin: GOAT_BANNER_ORIGIN,
+    publicKeyRaw,
+    kinds: GOAT_BANNER_KINDS,
+    onError: (error) => console.warn("[goatcam-banner] runner error:", error),
+  });
+  return goatBannerControls;
+};
+
+if (api?.runtime?.onConnect?.addListener) {
+  api.runtime.onConnect.addListener((port) => {
+    if (!port || port.name !== "goatcamBanner") return;
+    const first = goatBannerPorts.size === 0;
+    goatBannerPorts.add(port);
+    const controls = ensureGoatBannerRunner();
+    if (first) void controls.shown();
+
+    port.onMessage?.addListener((message) => {
+      if (!goatBannerPorts.has(port)) return;
+      switch (message?.type) {
+        case "pointer": void controls.pointer(message.over); break;
+        case "focus": void controls.focus(message.inside); break;
+        case "click": void controls.click(); break;
+        case "resume": void controls.resumed(); break;
+        default: break;
+      }
+    });
+    port.onDisconnect?.addListener(() => {
+      if (!goatBannerPorts.delete(port) || goatBannerPorts.size !== 0) return;
+      void controls.hidden();
+    });
+  });
+}
+
+if (api?.alarms?.onAlarm?.addListener) {
+  api.alarms.onAlarm.addListener((alarm) => {
+    if (alarm?.name !== "goatcamBanner.timer") return;
+    return ensureGoatBannerRunner().timerFired();
+  });
+}

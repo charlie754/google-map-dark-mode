@@ -1,0 +1,4 @@
+# Online banner (GOAT Cam plan 1 copies): keep the bytes exact.
+*.signed binary
+extension/lib/banner-*.js -text
+test/banner/** -text

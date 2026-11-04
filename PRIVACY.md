@@ -1,22 +1,24 @@
 # Privacy policy — Google Map Dark Mode
 
-**Last updated: 2026-10-25. Applies to versions 1.0.0, 1.0.1, 1.0.2 and 1.0.3.**
-The GOAT Cam banner described below is in 1.0.3 only. 1.0.1 and 1.0.2 showed a
+**Last updated: 2026-11-03. Applies to released versions 1.0.0, 1.0.1, 1.0.2 and 1.0.3, and the current source tree.**
+The GOAT Cam banner was introduced in 1.0.3, and the signed promo update from `goatcam.dagoat.io` described below applies to the current source tree. 1.0.1 and 1.0.2 showed a
 Goat Project banner linking to dagoat.io instead, and 1.0.0 showed no banner.
 
 ## The short version
 
-This extension collects nothing, sends nothing, and has no analytics.
+This extension has no account, no analytics, no tracking, and stores its
+settings locally on your device.
 
-There is no server belonging to this extension. There is no account, no sign-in,
-no identifier of any kind assigned to you or your browser, and no crash or usage
-reporting. Nothing you do in Google Maps is recorded, and nothing about you
-leaves your computer because of this extension.
+There is no user account, no sign-in, no user or browser identifier assigned to
+you, and no crash or usage reporting. Nothing you do in Google Maps is recorded
+or transmitted; the only network requests the extension makes are Google's dark
+palette health checks and the promo card download from
+goatcam.dagoat.io described below.
 
 ## What it stores, and where
 
-One thing, in your browser's local extension storage
-(`chrome.storage.local`), which never leaves the device:
+All extension state is kept in your browser's local extension storage
+(`chrome.storage.local`) on your device:
 
 | Key | What it is |
 | --- | --- |
@@ -24,6 +26,9 @@ One thing, in your browser's local extension storage
 | `health` | The result of the extension's own last self-check — which of its four rules matched, and whether Google is still serving the dark palette. |
 | `rulesetState` | Whether the extension switched itself off because it detected a fault, and why. |
 | `legendVersion` | The version hash of Google's palette asset, if one has been observed. Not tied to you; it is the same string for everyone using Maps that day. |
+| `goatcamBanner.record` | Cached signed banner file downloaded from `goatcam.dagoat.io`; local only. |
+| `goatcamBanner.set.<hash>` | Cached banner image data keyed by content hash; local only. |
+| `goatcamBanner.display` | Cached banner display choice and state; local only. |
 
 `storage.sync` is deliberately **not** used. That area syncs through your Google
 account and would put extension data on Google's servers; `storage.local` does
@@ -33,8 +38,8 @@ You can erase all of it by removing the extension.
 
 ## What it sends over the network
 
-Three requests, and only these three. All are made by the extension's own
-background script, all carry `credentials: "omit"` (so no cookies, no session,
+For the map dark-mode self-check, the extension's background script makes three
+requests to Google, all with `credentials: "omit"` (so no cookies, no session,
 nothing that identifies you), and none of them contain anything derived from
 your browsing:
 
@@ -49,6 +54,8 @@ off rather than leave you with a broken Maps. They run when the browser starts
 and then at most once every six hours.
 
 These are the same servers Google Maps is already talking to while you use it.
+
+To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. In Firefox this happens only if you turn on the optional technical and interaction data permission.
 
 ## What it does to Maps' own requests
 
@@ -72,7 +79,9 @@ to.
 A content script runs on Google Maps pages. It reads the colour values Maps has
 already set on the page, darkens them, and writes them back. It does not read
 your searches, your location, your saved places, the page text, or anything you
-type, and it sends nothing anywhere.
+type, and it never transmits your Maps activity or page content; when you open
+the extension's panel, it may request a promo banner update from the extension's
+background script as described above.
 
 ## Links you click
 
@@ -81,10 +90,11 @@ requested from either site until you click one, and clicking one just opens a
 normal browser tab. Those sites then apply their own privacy policies, exactly as
 if you had typed the address yourself.
 
-The panel on the map works the same way. Besides Ko-fi and "Star Project on
-Github", it carries a banner for the author's own app, GOAT Cam. The banner's
-photo and its QR code are part of the extension itself, so showing the banner
-requests nothing from anywhere. Clicking it opens https://goatcam.dagoat.io in a
+The panel on the map works the same way for clicks. Besides Ko-fi and "Star Project on
+Github", it carries a banner for the author's own app, GOAT Cam. A default banner
+photo and QR code are bundled with the extension, and while the panel is open the
+extension may download a signed promo update from `goatcam.dagoat.io` as
+described above. Clicking it opens https://goatcam.dagoat.io in a
 new tab, with nothing about you added to the address. The QR code is only a
 picture of an App Store link: the extension never opens it, and it goes
 somewhere only if you point your phone's camera at it.
@@ -94,7 +104,7 @@ somewhere only if you point your phone's camera at it.
 | Permission | Why |
 | --- | --- |
 | `declarativeNetRequestWithHostAccess` | To perform the palette redirect. The `WithHostAccess` form is the narrower one: rules apply only to the sites listed below. |
-| `storage` | The four local keys above. |
+| `storage` | The local keys listed above. |
 | `alarms` | To re-run the six-hourly self-check. |
 | Host access to `google.*/maps` and `gstatic.com/maps/res/*` | The redirect and the interface script only work on the pages the map is on. Nothing else is accessed. |
 
