@@ -173,6 +173,8 @@ async function measure(page) {
       return { x: +r.x.toFixed(2), y: +r.y.toFixed(2), w: +r.width.toFixed(2), h: +r.height.toFixed(2) };
     };
     const shell = $('.shell');
+    const body = $('.body');
+    const bodyInner = $('.body__inner');
     const goat = $('.goat');
     const plate = $('.goat-lockup');
     const gh = $('.gh');
@@ -180,6 +182,8 @@ async function measure(page) {
     const qr = $('.gc-qr');
     const qrSvg = qr && qr.querySelector('svg');
     const qrBounds = qr && qr.getBoundingClientRect();
+    const qrViewportRoom = qrBounds ? Math.min(qrBounds.left, innerWidth - qrBounds.right,
+      qrBounds.top, innerHeight - qrBounds.bottom) : null;
     const headline = goat && goat.querySelector('.goat__copy .goat__line');
     const wordmark = goat && goat.querySelector('.goat-lockup__name');
     const tagline = goat && goat.querySelector('.goat-lockup__tag');
@@ -233,8 +237,14 @@ async function measure(page) {
     const animations = sh.getAnimations().filter((animation) => animation.effect && animation.effect.target && goat && goat.contains(animation.effect.target));
     return {
       open: shell.classList.contains('is-open'), variant: goat && goat.classList.contains('goat--online') ? 'online' : 'dagoat',
+      viewport: { w: innerWidth, h: innerHeight },
       pillExpanded: pill && pill.getAttribute('aria-expanded'),
-      shell: box(shell), goat: box(goat), plate: box(plate), gh: box(gh),
+      shell: box(shell), body: box(body), bodyInner: box(bodyInner), shellScroll: shell && [shell.scrollHeight, shell.clientHeight],
+      bodyScroll: body && [body.scrollHeight, body.clientHeight, body.scrollTop],
+      bodyInnerScroll: bodyInner && [bodyInner.scrollHeight, bodyInner.clientHeight, bodyInner.scrollTop],
+      shellOverflowY: shell && getComputedStyle(shell).overflowY,
+      bodyOverflowY: bodyInner && getComputedStyle(bodyInner).overflowY,
+      goat: box(goat), plate: box(plate), bannerLink: box(plate), gh: box(gh),
       gap: goat && gh ? +(goat.getBoundingClientRect().top - gh.getBoundingClientRect().bottom).toFixed(2) : null,
       copy: goat ? [...goat.querySelectorAll('.goat__line')].map((el) => el.textContent) : [],
       headline: headline && { box: box(headline), inPlate: Boolean(plate && plate.contains(headline)), hasEm: Boolean(headline.querySelector('em')) },
@@ -253,7 +263,7 @@ async function measure(page) {
       photo: box($('.gc-photo')), image: image && { complete: image.complete, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, scheme: image.src.slice(0, 22) },
       objectPosition: image && getComputedStyle(image).objectPosition,
       qr: box(qr), qrViewBox: qrSvg && qrSvg.getAttribute('viewBox'), qrPathCount: qrSvg ? qrSvg.querySelectorAll(':scope > path').length : 0,
-      qrClips: clips, qrMinRoom: clips.length ? Math.min(...clips.map((item) => item.room)) : null, qrOnTop,
+      qrClips: clips, qrMinRoom: clips.length ? Math.min(...clips.map((item) => item.room)) : null, qrViewportRoom, qrOnTop,
       textsOverQr: textsOverQr.map((item) => item.cls), textsOutside: textOutside.map((item) => item.cls),
       plateBg: plate && getComputedStyle(plate).backgroundColor, plateTransform: plate && getComputedStyle(plate).transform,
       frameTransform: $('.gc-photo__frame') && getComputedStyle($('.gc-photo__frame')).transform,
@@ -305,9 +315,33 @@ function noOverlap(measured) {
   return {
     overlaps,
     textFits: measured.texts.every((item) => item.scrollWidth <= item.clientWidth || item.text.endsWith('\u2026')),
-    headlineAbovePlate: Boolean(measured.headline && measured.headline.box && measured.plate &&
+    headlineAbovePlate: !measured.headline || Boolean(measured.headline.box && measured.plate &&
       measured.headline.box.y + measured.headline.box.h <= measured.plate.y + 0.01),
   };
+}
+
+function zoomTextFits(measured) {
+  return measured.texts.every((item) => item.scrollWidth <= item.clientWidth || item.text.endsWith('\u2026')) &&
+    measured.textsOutside.length === 0;
+}
+
+function zoomPanelInViewport(measured) {
+  const panel = measured.shell;
+  return Boolean(panel && panel.x >= 0 && panel.x + panel.w <= measured.viewport.w &&
+    panel.y >= 0 && panel.y + panel.h <= measured.viewport.h);
+}
+
+function fullyInside(inner, outer) {
+  return Boolean(inner && outer && inner.x >= outer.x - 0.5 && inner.y >= outer.y - 0.5 &&
+    inner.x + inner.w <= outer.x + outer.w + 0.5 && inner.y + inner.h <= outer.y + outer.h + 0.5);
+}
+
+function zoomBannerReachable(measured) {
+  const viewport = { x: 0, y: 0, w: measured.viewport.w, h: measured.viewport.h };
+  const panel = measured.shell;
+  return measured.bodyOverflowY === 'auto' && measured.shellScroll[0] > measured.shellScroll[1] &&
+    [measured.bannerLink, measured.plate, measured.qr].every((box) =>
+      fullyInside(box, viewport) && fullyInside(box, panel));
 }
 
 const browser = await (ENGINE === 'firefox' ? firefox : chromium).launch({ headless: true });
@@ -343,6 +377,8 @@ try {
     await park();
     const rest = await measure(page);
     await shot('online-open');
+    check(tag + ' no-scroll-at-normal-size', rest.shellScroll[0] <= rest.shellScroll[1],
+      JSON.stringify({ shellScroll: rest.shellScroll, shellOverflowY: rest.shellOverflowY, bodyOverflowY: rest.bodyOverflowY }));
     check(tag + ' banner sits under StarGithub with a gap >= 16px', rest.open && rest.gap >= 16,
       JSON.stringify({ open: rest.open, gap: rest.gap }));
     check(tag + ' link is the only link and opens banner.link safely in a new tab',
@@ -545,6 +581,107 @@ try {
     const fetched = requests.filter((url) => !url.startsWith('data:') && url !== 'about:blank');
     check(tag + ' nothing fetched', fetched.length === 0 && errors.length === 0, JSON.stringify({ fetched, errors }));
     log.runs.push({ dpr, screenshots: [PREFIX + 'dagoat-open-dpr' + dpr + '.png', PREFIX + 'dagoat-closed-dpr' + dpr + '.png', PREFIX + 'online-open-dpr' + dpr + '.png', PREFIX + 'online-closed-dpr' + dpr + '.png'], errors, requests });
+    await context.close();
+  }
+
+  for (const zoom of [
+    { name: 'zoom200', viewport: { width: 300, height: 450 } },
+    { name: 'zoom200-narrow', viewport: { width: 400, height: 330 } },
+    { name: 'zoom200-short', viewport: { width: 640, height: 330 } },
+  ]) {
+    const context = await browser.newContext({ viewport: zoom.viewport, deviceScaleFactor: 2 });
+    const page = await context.newPage();
+    const errors = [];
+    const requests = [];
+    page.on('pageerror', (error) => errors.push(String(error)));
+    page.on('console', (message) => { if (message.type() === 'error') errors.push('console: ' + message.text()); });
+    page.on('request', (request) => requests.push(request.url()));
+    await page.setContent(FIXTURE);
+    await page.evaluate('(' + installRuntimeStub.toString() + ')()');
+    await page.addScriptTag({ content: fs.readFileSync(WIDGET, 'utf8') });
+    await page.waitForSelector('#gmdm-widget-host');
+    const tag = '[' + ENGINE + ' ' + zoom.name + ']';
+    const short = zoom.viewport.height < 450;
+    const shot = async (name) => page.locator('.shell').screenshot({ path: path.join(OUT, PREFIX + name + '.png') });
+    const park = async () => page.mouse.move(Math.max(0, zoom.viewport.width - 5), Math.max(0, zoom.viewport.height - 5));
+    const scrollBannerIntoView = async () => {
+      await page.locator('.goat-lockup').evaluate((element) => element.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+      await park();
+      await page.waitForTimeout(80);
+    };
+
+    await page.locator('.pill').click();
+    await park();
+    await page.waitForTimeout(350);
+
+    await publish(page, valid, Date.now() + 3600000, true, 20);
+    await park();
+    const zoomOnline = await measure(page);
+    await shot(zoom.name + '-online-open');
+    check(tag + ' zoom-text-fits valid vector', zoomOnline.variant === 'online' && zoomTextFits(zoomOnline),
+      JSON.stringify({ texts: zoomOnline.texts, outside: zoomOnline.textsOutside, plateScroll: zoomOnline.plateScroll }));
+    const zoomOnlineOverlap = noOverlap(zoomOnline);
+    check(tag + ' zoom-no-overlap valid vector', zoomOnlineOverlap.overlaps.length === 0 && zoomOnlineOverlap.textFits &&
+      zoomOnlineOverlap.headlineAbovePlate, JSON.stringify(zoomOnlineOverlap));
+    check(tag + ' zoom-panel-in-viewport', zoomPanelInViewport(zoomOnline),
+      JSON.stringify({ panel: zoomOnline.shell, viewport: zoomOnline.viewport }));
+
+    if (short) {
+      await scrollBannerIntoView();
+      const zoomQrRestMeasure = await measure(page);
+      await shot(zoom.name + '-banner-scrolled');
+      check(tag + ' zoom-banner-reachable', zoomBannerReachable(zoomQrRestMeasure),
+        JSON.stringify({ link: zoomQrRestMeasure.bannerLink, plate: zoomQrRestMeasure.plate,
+          qr: zoomQrRestMeasure.qr, panel: zoomQrRestMeasure.shell, body: zoomQrRestMeasure.body,
+          bodyInner: zoomQrRestMeasure.bodyInner, shellScroll: zoomQrRestMeasure.shellScroll,
+          bodyScroll: zoomQrRestMeasure.bodyScroll, bodyInnerScroll: zoomQrRestMeasure.bodyInnerScroll,
+          bodyOverflowY: zoomQrRestMeasure.bodyOverflowY, viewport: zoomQrRestMeasure.viewport }));
+    }
+    const zoomQrRest = path.join(OUT, PREFIX + zoom.name + '-qr-rest.png');
+    await page.locator('.gc-qr').screenshot({ path: zoomQrRest });
+    const zoomQr = decodeQr(zoomQrRest, valid.banner.qr.text);
+    if (zoomQr.skipped) skipped(tag + ' zoom-qr-decodes', zoomQr.reason);
+    else check(tag + ' zoom-qr-decodes', zoomQr.pass, zoomQr.detail);
+
+    if (!short && zoomOnline.shellScroll[0] <= zoomOnline.shellScroll[1]) {
+      await page.mouse.move(zoomOnline.qr.x + zoomOnline.qr.w / 2, zoomOnline.qr.y + zoomOnline.qr.h / 2);
+      await page.waitForTimeout(400);
+      const zoomQrHover = await measure(page);
+      await shot(zoom.name + '-qr-hover');
+      check(tag + ' zoom-qr-hover', zoomQrHover.qr.w > zoomOnline.qr.w && zoomQrHover.qr.h > zoomOnline.qr.h &&
+        zoomQrHover.qrMinRoom >= 0 && zoomQrHover.qrViewportRoom >= 0 && zoomQrHover.qrOnTop === 5,
+        JSON.stringify({ resting: zoomOnline.qr, qr: zoomQrHover.qr, clips: zoomQrHover.qrClips,
+          panelRoom: zoomQrHover.qrMinRoom, viewportRoom: zoomQrHover.qrViewportRoom, onTop: zoomQrHover.qrOnTop }));
+      await park();
+      await page.waitForTimeout(250);
+    }
+
+    await publish(page, maxText, Date.now() + 3600000, true, 21);
+    await park();
+    const zoomMax = await measure(page);
+    await shot(zoom.name + '-maxtext-open');
+    check(tag + ' zoom-text-fits max-text vector', zoomMax.variant === 'online' && zoomTextFits(zoomMax),
+      JSON.stringify({ texts: zoomMax.texts, outside: zoomMax.textsOutside, plateScroll: zoomMax.plateScroll }));
+    const zoomMaxOverlap = noOverlap(zoomMax);
+    check(tag + ' zoom-no-overlap max-text vector', zoomMaxOverlap.overlaps.length === 0 && zoomMaxOverlap.textFits &&
+      zoomMaxOverlap.headlineAbovePlate, JSON.stringify(zoomMaxOverlap));
+
+    await publishDagoat(page, true, 22);
+    await park();
+    const zoomDagoat = await measure(page);
+    await shot(zoom.name + '-dagoat-open');
+    check(tag + ' zoom-text-fits dagoat', zoomDagoat.variant === 'dagoat' && zoomTextFits(zoomDagoat),
+      JSON.stringify({ texts: zoomDagoat.texts, outside: zoomDagoat.textsOutside, plateScroll: zoomDagoat.plateScroll }));
+    const zoomDagoatOverlap = noOverlap(zoomDagoat);
+    check(tag + ' zoom-no-overlap dagoat', zoomDagoatOverlap.overlaps.length === 0 && zoomDagoatOverlap.textFits &&
+      zoomDagoatOverlap.headlineAbovePlate, JSON.stringify(zoomDagoatOverlap));
+
+    log.runs.push({ zoom: zoom.name, viewport: zoom.viewport, dpr: 2,
+      screenshots: [PREFIX + zoom.name + '-online-open.png', PREFIX + zoom.name + '-maxtext-open.png',
+        PREFIX + zoom.name + '-dagoat-open.png',
+        ...(short ? [PREFIX + zoom.name + '-banner-scrolled.png'] : []),
+        ...(!short && zoomOnline.shellScroll[0] <= zoomOnline.shellScroll[1] ? [PREFIX + zoom.name + '-qr-hover.png'] : [])],
+      errors, requests });
     await context.close();
   }
 } finally {

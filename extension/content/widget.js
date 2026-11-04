@@ -123,6 +123,9 @@
 
 .shell:hover { transform: scale(1.025); box-shadow: var(--glass-shadow-hover); }
 .shell.is-open { width: 272px; transform: none; box-shadow: var(--glass-shadow-hover); }
+.shell.is-capped { max-height: var(--gmdm-panel-max-height); }
+.shell.is-capped .body { height: max(0px, calc(var(--gmdm-panel-max-height) - 48px)); min-height: 0; overflow: hidden; }
+.shell.is-capped .body__inner { overflow-y: auto; }
 
 /* ---- the always-visible pill ---- */
 
@@ -494,6 +497,9 @@
     ".goat--online .gc-badge { font: 500 6.5px/1.2 var(--gc-mono); padding: 2px 4px; letter-spacing: .05em; font-variant-numeric: tabular-nums; }\n" +
     ".goat--online .gc-badge__text { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
     ".goat--online .gc-badge .gc-osd__dot { flex: none; }\n" +
+    "@media (max-height: 450px) and (min-resolution: 1.5dppx) {\n" +
+      "  .goat--online .gc-qr { bottom: 31px; }\n" +
+    "}\n" +
     "@media (prefers-reduced-motion: reduce) {\n" +
       "  .goat--online .goat-lockup:hover, .goat--online .goat-lockup:active { transform: none; box-shadow: none; }\n" +
       "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo__frame { transform: none; }\n" +
@@ -977,12 +983,18 @@
 
     const top = bottom > 0 ? bottom + STACK_GAP : left === null ? FALLBACK_TOP : MIN_TOP;
     const finalLeft = left === null ? (colLeft < 0 ? FALLBACK_LEFT : colLeft) : left;
+    const panelHeight = shell && shell.classList.contains('is-open') ? shell.scrollHeight : 0;
+    const panelMaxTop = panelHeight ? Math.max(MIN_TOP, vh - panelHeight - 8) : MAX_TOP;
+    const finalTop = Math.max(MIN_TOP, Math.min(MAX_TOP, panelMaxTop, Math.round(top)));
+    const panelMaxHeight = Math.max(0, vh - finalTop - 8);
 
     return {
-      top: Math.max(MIN_TOP, Math.min(MAX_TOP, Math.round(top))),
+      top: finalTop,
       // Never let the panel run off the right edge on a narrow window.
       left: Math.max(8, Math.min(vw - OPEN_WIDTH - 8, Math.round(finalLeft))),
       onMap: panelRight > 0,
+      capped: Boolean(panelHeight && panelHeight > panelMaxHeight),
+      panelMaxHeight,
     };
   }
 
@@ -993,7 +1005,14 @@
     requestAnimationFrame(function () {
       placeQueued = false;
       if (!host) return;
+      if (shell.classList.contains('is-capped')) {
+        shell.classList.remove('is-capped');
+        shell.style.removeProperty('--gmdm-panel-max-height');
+      }
       const p = placement();
+      shell.classList.toggle('is-capped', p.capped);
+      if (p.capped) shell.style.setProperty('--gmdm-panel-max-height', p.panelMaxHeight + 'px');
+      else shell.style.removeProperty('--gmdm-panel-max-height');
       host.style.top = p.top + 'px';
       host.style.left = p.left + 'px';
       // Mirrored onto the DOM so the harness can assert which mode we chose
@@ -1009,9 +1028,11 @@
     const wasOpen = shell.classList.contains('is-open');
     shell.classList.toggle('is-open', open);
     if (pill) pill.setAttribute('aria-expanded', open ? 'true' : 'false');
+    place();
     if (open && !wasOpen) {
       connectBannerPort();
       loadBannerDisplay();
+      setTimeout(place, 360);
     } else if (!open && wasOpen) {
       bannerPendingDisplay = null;
       closeBannerPort();
@@ -1177,6 +1198,7 @@
     bannerModel = model && model.kind === 'online' ? model : { kind: 'dagoat' };
     renderGoatBanner(bannerMount, bannerModel);
     bindBannerEvents();
+    place();
   }
 
   async function drawBannerDisplay(display) {
