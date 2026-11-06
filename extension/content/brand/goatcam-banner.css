@@ -201,7 +201,7 @@
   text-wrap: pretty; overflow-wrap: anywhere;
 }
 .goat--online .goat-lockup__word {
-  position: static; z-index: auto; display: flex; min-width: 0; max-width: 100%;
+  position: static; z-index: auto; isolation: isolate; display: flex; min-width: 0; max-width: 100%;
   flex-direction: column; align-items: flex-start; gap: 4px; pointer-events: none;
 }
 .goat--online .goat-lockup__name,
@@ -231,7 +231,7 @@
 .goat--online .goat-lockup:active { transform: scale(.98); transition-duration: 120ms; }
 
 .goat--online .goat-lockup__word::before {
-  z-index: 0; inset: -12px -16px;
+  z-index: -1; inset: -12px -16px;
   background: linear-gradient(to bottom, rgba(20, 13, 8, .88), rgba(20, 13, 8, .78));
 }
 

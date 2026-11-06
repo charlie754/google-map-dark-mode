@@ -30,6 +30,11 @@ const DAGOAT_LINES = [
   'Contribute your idle compute to Earn GOAT.',
 ];
 const V2_BADGE_FIRST_FAMILY = 'ui-monospace';
+const ONLINE_TEXT_SELECTORS = [
+  ['wordmark', '.goat--online .goat-lockup__name', '.goat--online .goat-lockup__word'],
+  ['tagline', '.goat--online .goat-lockup__tag', '.goat--online .goat-lockup__word'],
+  ['badge text', '.goat--online .gc-badge__text', '.goat--online .gc-badge'],
+];
 
 if (!fs.existsSync(WIDGET)) {
   console.error(WIDGET + ' is missing -- run npm run build first');
@@ -380,6 +385,134 @@ function wcagContrast(text, background) {
     (Math.min(textLuminance, backgroundLuminance) + 0.05);
 }
 
+async function measureRenderedOnlineText(page) {
+  const measured = await page.evaluate((selectors) => {
+    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+    const plate = shadow.querySelector('.goat--online .goat-lockup');
+    const box = (element) => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, w: rect.width, h: rect.height };
+    };
+    return {
+      plate: box(plate),
+      text: selectors.map(([name, selector, blockSelector]) => {
+        const element = shadow.querySelector(selector);
+        const block = shadow.querySelector(blockSelector);
+        return element && block ? {
+          name, selector, blockSelector, box: box(element), color: getComputedStyle(element).color,
+        } : null;
+      }).filter(Boolean),
+    };
+  }, ONLINE_TEXT_SELECTORS);
+  const plateImage = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
+  const scaleX = plateImage.width / measured.plate.w;
+  const scaleY = plateImage.height / measured.plate.h;
+  const hidden = await page.evaluate(() => {
+    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+    const style = shadow.ownerDocument.createElement('style');
+    style.setAttribute('data-rendered-online-text', '');
+    style.textContent = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; transition: none !important; }';
+    shadow.appendChild(style);
+  });
+  let hiddenImage;
+  try {
+    await page.waitForTimeout(20);
+    hiddenImage = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
+  } finally {
+    await page.evaluate(() => document.getElementById('gmdm-widget-host').shadowRoot
+      .querySelector('[data-rendered-online-text]')?.remove());
+  }
+  await page.waitForTimeout(700);
+  if (plateImage.width !== hiddenImage.width || plateImage.height !== hiddenImage.height) {
+    throw new Error('online text screenshots changed size while hiding text');
+  }
+
+  const text = measured.text.map((item) => {
+    const textColor = parseRgbColor(item.color);
+    const declaredLuminance = relativeLuminance(textColor);
+    const left = Math.max(0, Math.floor((item.box.x - measured.plate.x) * scaleX));
+    const top = Math.max(0, Math.floor((item.box.y - measured.plate.y) * scaleY));
+    const right = Math.min(plateImage.width, Math.ceil((item.box.x + item.box.w - measured.plate.x) * scaleX));
+    const bottom = Math.min(plateImage.height, Math.ceil((item.box.y + item.box.h - measured.plate.y) * scaleY));
+    const changed = [];
+    for (let y = top; y < bottom; y++) {
+      for (let x = left; x < right; x++) {
+        const offset = (y * plateImage.width + x) * 4;
+        const visible = { r: plateImage.data[offset], g: plateImage.data[offset + 1], b: plateImage.data[offset + 2] };
+        const background = { r: hiddenImage.data[offset], g: hiddenImage.data[offset + 1], b: hiddenImage.data[offset + 2] };
+        const delta = Math.max(Math.abs(visible.r - background.r), Math.abs(visible.g - background.g),
+          Math.abs(visible.b - background.b));
+        if (delta > 2) {
+          changed.push({ x, y, luminance: relativeLuminance(visible), contrast: wcagContrast(visible, background) });
+        }
+      }
+    }
+    changed.sort((a, b) => b.luminance - a.luminance);
+    const topCount = Math.max(1, Math.ceil(changed.length * 0.1));
+    const brightest = changed[0]?.luminance || 0;
+    const top10 = changed.slice(0, topCount);
+    const minimumTopContrast = top10.length ? Math.min(...top10.map((pixel) => pixel.contrast)) : 0;
+    const brightestRatio = declaredLuminance ? brightest / declaredLuminance : 0;
+    const sampleCount = Math.min(8, changed.length);
+    const glyphPixels = changed.slice(0, Math.max(sampleCount, Math.ceil(changed.length * 0.1)));
+    const points = [];
+    for (let i = 0; i < sampleCount; i++) {
+      const pixel = glyphPixels[Math.min(glyphPixels.length - 1,
+        Math.floor((i + 0.5) * glyphPixels.length / sampleCount))];
+      points.push({ x: measured.plate.x + (pixel.x + 0.5) / scaleX, y: measured.plate.y + (pixel.y + 0.5) / scaleY });
+    }
+    return {
+      ...item, box: item.box, points, changedPixels: changed.length, top10Pixels: topCount,
+      declaredLuminance, brightestLuminance: brightest, brightestRatio,
+      minimumTopContrast, contrastPass: changed.length > 0 && minimumTopContrast >= 4.5 &&
+        Math.abs(brightestRatio - 1) <= 0.15,
+    };
+  });
+
+  const top = await page.evaluate((items) => {
+    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+    const hitStyle = shadow.ownerDocument.createElement('style');
+    hitStyle.setAttribute('data-rendered-online-text-hit-test', '');
+    hitStyle.textContent = '.goat--online .goat-lockup__word, .goat--online .goat-lockup__word *, .goat--online .gc-badge, .goat--online .gc-badge * { pointer-events: auto !important; }';
+    shadow.appendChild(hitStyle);
+    const describe = (element) => element ? {
+      tag: element.tagName, className: typeof element.className === 'string' ? element.className : null,
+    } : null;
+    const result = items.map((item) => {
+      const text = shadow.querySelector(item.selector);
+      const block = shadow.querySelector(item.blockSelector);
+      const samples = item.points.map((point) => {
+        const hit = shadow.elementFromPoint(point.x, point.y);
+        const allowed = Boolean(hit && text && block &&
+          (hit === text || text.contains(hit) || (block.contains(hit) && hit.contains(text))));
+        return { point, hit: describe(hit), allowed };
+      });
+      return { element: item.name, samples, pass: samples.length >= 3 && samples.every((sample) => sample.allowed) };
+    });
+    hitStyle.remove();
+    return result;
+  }, text);
+  return { text, top };
+}
+
+async function checkOnlineTextOnTop(page, tag, vectorName, state) {
+  const measured = await measureRenderedOnlineText(page);
+  const pass = measured.top.every((item) => item.pass);
+  check(tag + ' text-on-top ' + vectorName + ' ' + state, pass, JSON.stringify(measured.top));
+  return measured;
+}
+
+async function checkOnlineTextRenderedContrast(page, tag, vectorName, state, measured = null) {
+  const result = measured || await measureRenderedOnlineText(page);
+  const pass = result.text.every((item) => item.contrastPass);
+  check(tag + ' text-rendered-contrast ' + vectorName + ' ' + state, pass,
+    JSON.stringify(result.text.map((item) => ({
+      element: item.name, color: item.color, changedPixels: item.changedPixels,
+      minimumTopContrast: +item.minimumTopContrast.toFixed(3), brightestRatio: +item.brightestRatio.toFixed(3),
+    }))));
+  return result;
+}
+
 async function measureOnlineTextContrast(page) {
   const measured = await page.evaluate(() => {
     const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
@@ -400,11 +533,12 @@ async function measureOnlineTextContrast(page) {
     }).filter(Boolean);
     const hidden = shadow.ownerDocument.createElement('style');
     hidden.setAttribute('data-online-text-contrast', '');
-    hidden.textContent = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; }';
+    hidden.textContent = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; transition: none !important; }';
     shadow.appendChild(hidden);
     return { plate: box(plate), text, hidden: true };
   });
   try {
+    await page.waitForTimeout(700);
     const image = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
     const scaleX = image.width / measured.plate.w;
     const scaleY = image.height / measured.plate.h;
@@ -565,6 +699,8 @@ try {
     await park();
     await page.waitForTimeout(800);
     const rest = await measure(page);
+    const validRestText = await checkOnlineTextOnTop(page, tag, 'valid', 'rest');
+    await checkOnlineTextRenderedContrast(page, tag, 'valid', 'rest', validRestText);
     await checkOnlineTextContrast(page, tag, 'valid', 'rest');
     const onlineFocusout = await focusoutTrace(page);
     console.log(tag + ' focusout after pinned online redraw: ' + JSON.stringify(onlineFocusout));
@@ -677,6 +813,8 @@ try {
 
     await setActive(true);
     await page.waitForTimeout(1400);
+    const validActiveText = await checkOnlineTextOnTop(page, tag, 'valid', 'active');
+    await checkOnlineTextRenderedContrast(page, tag, 'valid', 'active', validActiveText);
     await checkOnlineTextContrast(page, tag, 'valid', 'active');
     const active = await measure(page);
     await setActive(false);
@@ -749,6 +887,8 @@ try {
 
     await publish(page, maxText, Date.now() + 3600000, false, 2);
     const maxMeasure = await measure(page);
+    const maxRestText = await checkOnlineTextOnTop(page, tag, 'max-text', 'rest');
+    await checkOnlineTextRenderedContrast(page, tag, 'max-text', 'rest', maxRestText);
     await checkOnlineTextContrast(page, tag, 'max-text', 'rest');
     check(tag + ' max-text-fits', maxMeasure.variant === 'online' && maxMeasure.texts.every((x) => x.scrollWidth <= x.clientWidth || x.text.endsWith('\u2026')),
       JSON.stringify(maxMeasure.texts.map((x) => ({ text: x.text, scroll: [x.scrollWidth, x.clientWidth] }))));
@@ -757,6 +897,8 @@ try {
       JSON.stringify(maxOverlap));
     await setActive(true);
     await page.waitForTimeout(1400);
+    const maxActiveText = await checkOnlineTextOnTop(page, tag, 'max-text', 'active');
+    await checkOnlineTextRenderedContrast(page, tag, 'max-text', 'active', maxActiveText);
     await checkOnlineTextContrast(page, tag, 'max-text', 'active');
     await setActive(false);
     await page.waitForTimeout(1000);
