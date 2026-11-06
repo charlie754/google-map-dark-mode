@@ -1,4 +1,4 @@
-# Store listing copy — Google Map Dark Mode 1.0.3
+# Store listing copy — Google Map Dark Mode 1.0.4
 
 Everything a reviewer or a submission form will ask for, written out. Nothing
 here can be submitted by an assistant: both stores need an account holder to sign
@@ -9,11 +9,20 @@ registration fee.
 
 | Store | File |
 | --- | --- |
-| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.3.zip` |
-| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.3.xpi` |
+| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.4.zip` |
+| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.4.xpi` |
 
 The version in both file names comes from the manifests and is checked against
 the archived manifest at package time; it is never typed in twice.
+
+**1.0.4** (2026-11-06) — the GOAT Cam banner can now be updated without a new
+release. While the panel is open, the extension may download a signed promo file
+and photo from goatcam.dagoat.io (at most every 6 hours), checks the signature,
+size and expiry date, and shows it; offline, or if the file is bad or expired, the
+panel shows the original DaGoat.io banner instead. In Firefox the download stays
+off in this version, so Firefox users see the DaGoat.io banner. The panel also
+stays on screen, and scrolls, in short windows at high browser zoom.
+Dark-mode behaviour is unchanged.
 
 **1.0.3** (2026-10-25) — the banner under StarGithub now promotes the author's
 own app, GOAT Cam (it turns an iPhone into a webcam for a Windows 11 PC),
@@ -23,10 +32,9 @@ edge, with the GOAT Cam wordmark on it and an App Store QR code that enlarges
 when hovered or keyboard-focused so a phone can scan it; the goat mark, seal,
 meteors and the second line of copy are gone. Motion plays only on hover or
 focus, and reduced-motion mode keeps nothing that travels. The plate opens
-https://goatcam.dagoat.io in a new tab. A default photo and QR code are bundled
-with the extension, and while the panel is open the extension may download a
-signed promo update from goatcam.dagoat.io (in Firefox, only if the optional
-technical and interaction data permission is enabled). Dark-mode behaviour is unchanged.
+https://goatcam.dagoat.io in a new tab. In 1.0.3 the photo and QR code shipped
+inside the extension and showing the banner made no network request.
+Dark-mode behaviour is unchanged.
 
 **1.0.2** (2026-08-20) — same Goat lockup as 1.0.1, plus panel hover polish:
 toggle pills enlarge on hover (not the whole row); the Dark Mode header lifts

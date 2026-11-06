@@ -1,7 +1,7 @@
 # Privacy policy — Google Map Dark Mode
 
-**Last updated: 2026-11-03. Applies to released versions 1.0.0, 1.0.1, 1.0.2 and 1.0.3, and the current source tree.**
-The GOAT Cam banner was introduced in 1.0.3, and the signed promo update from `goatcam.dagoat.io` described below applies to the current source tree. 1.0.1 and 1.0.2 showed a
+**Last updated: 2026-11-06. Applies to versions 1.0.0 to 1.0.4.**
+The GOAT Cam banner was introduced in 1.0.3, and the signed promo update from `goatcam.dagoat.io` described below arrived in 1.0.4 (Chrome only; it stays off in Firefox). 1.0.1 and 1.0.2 showed a
 Goat Project banner linking to dagoat.io instead, and 1.0.0 showed no banner.
 
 ## The short version

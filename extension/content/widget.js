@@ -1028,7 +1028,6 @@
     const wasOpen = shell.classList.contains('is-open');
     shell.classList.toggle('is-open', open);
     if (pill) pill.setAttribute('aria-expanded', open ? 'true' : 'false');
-    place();
     if (open && !wasOpen) {
       connectBannerPort();
       loadBannerDisplay();

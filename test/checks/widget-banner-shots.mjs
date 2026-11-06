@@ -280,6 +280,31 @@ async function measure(page) {
   });
 }
 
+async function installFocusoutTrace(page) {
+  await page.evaluate(() => {
+    const describe = (node) => {
+      if (!node) return null;
+      return {
+        tag: node.nodeName,
+        id: node.id || null,
+        className: typeof node.className === 'string' ? node.className : null,
+        rootHost: node.getRootNode() && node.getRootNode().host ? node.getRootNode().host.id : null,
+      };
+    };
+    window.__focusoutTrace = [];
+    document.addEventListener('focusout', (event) => {
+      window.__focusoutTrace.push({
+        target: describe(event.target),
+        relatedTarget: describe(event.relatedTarget),
+      });
+    }, true);
+  });
+}
+
+async function focusoutTrace(page) {
+  return page.evaluate(() => window.__focusoutTrace.slice());
+}
+
 function decodeQr(file, expected) {
   const code = 'import sys,cv2; img=cv2.imread(sys.argv[1]); data,_,_=cv2.QRCodeDetector().detectAndDecode(img); print(data)';
   const result = spawnSync('python', ['-I', '-c', code, file], { encoding: 'utf8' });
@@ -359,6 +384,7 @@ try {
     await page.evaluate('(' + installRuntimeStub.toString() + ')()');
     await page.addScriptTag({ content: fs.readFileSync(WIDGET, 'utf8') });
     await page.waitForSelector('#gmdm-widget-host');
+    await installFocusoutTrace(page);
     const tag = '[' + ENGINE + ' dpr ' + dpr + ']';
     const shot = async (name) => page.locator('.shell').screenshot({ path: path.join(OUT, PREFIX + name + '-dpr' + dpr + '.png') });
     const park = async () => page.mouse.move(595, 895);
@@ -366,16 +392,26 @@ try {
 
     await shot('dagoat-closed');
     await page.locator('.pill').click();
+    await publishDagoat(page, true, 0);
     await park();
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(800);
     const dagoat = await measure(page);
+    const dagoatFocusout = await focusoutTrace(page);
+    console.log(tag + ' focusout after pinned dagoat redraw: ' + JSON.stringify(dagoatFocusout));
+    check(tag + ' pinned-stays-open dagoat', dagoat.open,
+      JSON.stringify({ shell: dagoat.open, focusout: dagoatFocusout }));
     await shot('dagoat-open');
     check(tag + ' dagoat-text', dagoat.variant === 'dagoat' && JSON.stringify(dagoat.copy) === JSON.stringify(DAGOAT_LINES) && dagoat.href === DAGOAT_URL,
       JSON.stringify({ copy: dagoat.copy, href: dagoat.href, target: dagoat.target, rel: dagoat.rel }));
 
     await publish(page, valid, Date.now() + 3600000, false, 1);
     await park();
+    await page.waitForTimeout(800);
     const rest = await measure(page);
+    const onlineFocusout = await focusoutTrace(page);
+    console.log(tag + ' focusout after pinned online redraw: ' + JSON.stringify(onlineFocusout));
+    check(tag + ' pinned-stays-open online', rest.open,
+      JSON.stringify({ shell: rest.open, focusout: onlineFocusout }));
     await shot('online-open');
     check(tag + ' no-scroll-at-normal-size', rest.shellScroll[0] <= rest.shellScroll[1],
       JSON.stringify({ shellScroll: rest.shellScroll, shellOverflowY: rest.shellOverflowY, bodyOverflowY: rest.bodyOverflowY }));

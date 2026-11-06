@@ -122,9 +122,9 @@ test('both manifests agree on name and version (the store artifacts are keyed of
   assert.equal(chrome.name, firefox.name);
 });
 
-test('the shipped version is 1.0.3 (GOAT Cam banner on 1.0.2)', () => {
-  assert.equal(chrome.version, '1.0.3');
-  assert.equal(firefox.version, '1.0.3');
+test('the shipped version is 1.0.4 (signed online banner on 1.0.3)', () => {
+  assert.equal(chrome.version, '1.0.4');
+  assert.equal(firefox.version, '1.0.4');
 });
 
 test('the Chrome manifest carries no gecko-only keys', () => {
