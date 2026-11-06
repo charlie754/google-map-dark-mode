@@ -352,6 +352,92 @@ function comparePngFiles(actualFile, originalFile) {
   };
 }
 
+function parseRgbColor(color) {
+  const match = color.match(/^rgba?\(\s*([\d.]+)[, ]+\s*([\d.]+)[, ]+\s*([\d.]+)(?:[, ]+\s*([\d.]+))?\s*\)$/i);
+  if (!match) throw new Error('unparseable computed text colour: ' + color);
+  return { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]), a: match[4] === undefined ? 1 : Number(match[4]) };
+}
+
+function linearChannel(value) {
+  const channel = value / 255;
+  return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+}
+
+function relativeLuminance(rgb) {
+  return 0.2126 * linearChannel(rgb.r) + 0.7152 * linearChannel(rgb.g) + 0.0722 * linearChannel(rgb.b);
+}
+
+function wcagContrast(text, background) {
+  const alpha = text.a === undefined ? 1 : text.a;
+  const composited = alpha === 1 ? text : {
+    r: alpha * text.r + (1 - alpha) * background.r,
+    g: alpha * text.g + (1 - alpha) * background.g,
+    b: alpha * text.b + (1 - alpha) * background.b,
+  };
+  const textLuminance = relativeLuminance(composited);
+  const backgroundLuminance = relativeLuminance(background);
+  return (Math.max(textLuminance, backgroundLuminance) + 0.05) /
+    (Math.min(textLuminance, backgroundLuminance) + 0.05);
+}
+
+async function measureOnlineTextContrast(page) {
+  const measured = await page.evaluate(() => {
+    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+    const plate = shadow.querySelector('.goat--online .goat-lockup');
+    const selectors = [
+      ['goat-lockup__name', '.goat--online .goat-lockup__name'],
+      ['goat-lockup__tag', '.goat--online .goat-lockup__tag'],
+      ['gc-badge__text', '.goat--online .gc-badge__text'],
+    ];
+    const box = (element) => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, w: rect.width, h: rect.height };
+    };
+    const text = selectors.map(([name, selector]) => {
+      const element = shadow.querySelector(selector);
+      if (!element) return null;
+      return { name, box: box(element), color: getComputedStyle(element).color };
+    }).filter(Boolean);
+    const hidden = shadow.ownerDocument.createElement('style');
+    hidden.setAttribute('data-online-text-contrast', '');
+    hidden.textContent = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; }';
+    shadow.appendChild(hidden);
+    return { plate: box(plate), text, hidden: true };
+  });
+  try {
+    const image = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
+    const scaleX = image.width / measured.plate.w;
+    const scaleY = image.height / measured.plate.h;
+    return measured.text.map((item) => {
+      const textColor = parseRgbColor(item.color);
+      const left = Math.max(0, Math.floor((item.box.x - measured.plate.x) * scaleX));
+      const top = Math.max(0, Math.floor((item.box.y - measured.plate.y) * scaleY));
+      const right = Math.min(image.width, Math.ceil((item.box.x + item.box.w - measured.plate.x) * scaleX));
+      const bottom = Math.min(image.height, Math.ceil((item.box.y + item.box.h - measured.plate.y) * scaleY));
+      let minimum = Infinity;
+      for (let y = top; y < bottom; y++) {
+        for (let x = left; x < right; x++) {
+          const offset = (y * image.width + x) * 4;
+          minimum = Math.min(minimum, wcagContrast(textColor, {
+            r: image.data[offset], g: image.data[offset + 1], b: image.data[offset + 2],
+          }));
+        }
+      }
+      return { element: item.name, color: item.color, box: item.box, minimum: +minimum.toFixed(3) };
+    });
+  } finally {
+    await page.evaluate(() => document.getElementById('gmdm-widget-host').shadowRoot
+      .querySelector('[data-online-text-contrast]')?.remove());
+  }
+}
+
+async function checkOnlineTextContrast(page, tag, vectorName, state) {
+  const ratios = await measureOnlineTextContrast(page);
+  const summary = ratios.map((item) => item.element + '=' + item.minimum.toFixed(2)).join(' ');
+  check(tag + ' online-text-contrast ' + vectorName + ' ' + state + ' ' + summary,
+    ratios.every((item) => item.minimum >= 4.5), JSON.stringify(ratios));
+}
+
 function intersects(a, b) {
   return Boolean(a && b && a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y);
 }
@@ -479,6 +565,7 @@ try {
     await park();
     await page.waitForTimeout(800);
     const rest = await measure(page);
+    await checkOnlineTextContrast(page, tag, 'valid', 'rest');
     const onlineFocusout = await focusoutTrace(page);
     console.log(tag + ' focusout after pinned online redraw: ' + JSON.stringify(onlineFocusout));
     check(tag + ' pinned-stays-open online', rest.open,
@@ -589,7 +676,8 @@ try {
       JSON.stringify({ first: firstOpenText, reopened: closedPublished.texts.map((item) => ({ text: item.text, fontSize: item.fontSize })) }));
 
     await setActive(true);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1400);
+    await checkOnlineTextContrast(page, tag, 'valid', 'active');
     const active = await measure(page);
     await setActive(false);
     await page.waitForTimeout(1000);
@@ -661,11 +749,17 @@ try {
 
     await publish(page, maxText, Date.now() + 3600000, false, 2);
     const maxMeasure = await measure(page);
+    await checkOnlineTextContrast(page, tag, 'max-text', 'rest');
     check(tag + ' max-text-fits', maxMeasure.variant === 'online' && maxMeasure.texts.every((x) => x.scrollWidth <= x.clientWidth || x.text.endsWith('\u2026')),
       JSON.stringify(maxMeasure.texts.map((x) => ({ text: x.text, scroll: [x.scrollWidth, x.clientWidth] }))));
     const maxOverlap = noOverlap(maxMeasure);
     check(tag + ' no-overlap max-text vector', maxOverlap.overlaps.length === 0 && maxOverlap.textFits && maxOverlap.headlineAbovePlate,
       JSON.stringify(maxOverlap));
+    await setActive(true);
+    await page.waitForTimeout(1400);
+    await checkOnlineTextContrast(page, tag, 'max-text', 'active');
+    await setActive(false);
+    await page.waitForTimeout(1000);
 
     const unsafe = vectorCopy(valid);
     unsafe.headline = '<b>x';
