@@ -482,8 +482,9 @@
   /* Online campaign layout is runtime-only: keep the published lockup copy
      above byte-identical while giving the signed renderer its own geometry. */
   const GOAT_ONLINE_FIX_CSS =
-    ".goat--online .goat__copy { display: block; margin: 0 0 8px; padding: 2px 0 1px; }\n" +
+    ".goat--online .goat__copy { display: block; height: 48px; margin: 0 0 8px; padding: 0; }\n" +
     ".goat--online .goat__line { display: block; width: 100%; max-width: 100%; margin: 0; overflow: hidden; }\n" +
+    ".goat--online .goat-lockup { height: 74px; }\n" +
     ".goat--online .goat-lockup__word { position: absolute; z-index: 1; left: 22px; top: 14px; " +
       "display: flex; width: calc(50% - 2px); max-width: calc(50% - 2px); min-width: 0; " +
       "flex-direction: column; align-items: flex-start; gap: 4px; overflow: hidden; pointer-events: none; }\n" +
@@ -491,15 +492,20 @@
       "display: block; flex: none; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
     ".goat--online .goat-lockup__name { font-size: 15px; }\n" +
     ".goat--online .goat-lockup__tag { font-size: 6px; }\n" +
-    ".goat--online .gc-badge { position: absolute; z-index: 2; top: 12px; right: 8px; " +
+    ".goat--online .gc-badge { position: absolute; z-index: 2; top: auto; right: auto; left: 22px; bottom: 7px; " +
       "display: flex; align-items: center; gap: 3px; width: calc(50% - 28px); max-width: calc(50% - 28px); " +
       "overflow: hidden; white-space: nowrap; }\n" +
     ".goat--online .gc-badge { font: 500 6.5px/1.2 var(--gc-mono); padding: 2px 4px; letter-spacing: .05em; font-variant-numeric: tabular-nums; }\n" +
     ".goat--online .gc-badge__text { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
     ".goat--online .gc-badge .gc-osd__dot { flex: none; }\n" +
-    "@media (max-height: 450px) and (min-resolution: 1.5dppx) {\n" +
-      "  .goat--online .gc-qr { bottom: 31px; }\n" +
-    "}\n" +
+    ".goat--online .gc-qr { --gc-qr: 60px; --gc-qr-zoom: 2.6667; top: 6px; right: 14px; bottom: auto; }\n" +
+    ".goat--dagoat .goat__copy { padding: 0; }\n" +
+    ".goat--dagoat { font-family: -apple-system, \"Segoe UI\", system-ui, Roboto, sans-serif; }\n" +
+    ".goat--dagoat .goat-lockup { height: 74px; font-size: 10px; font-family: inherit; }\n" +
+    ".goat--dagoat .goat-lockup__word { left: auto; top: auto; font-family: \"Inter\", \"Helvetica Neue\", \"Segoe UI\", Arial, sans-serif; font-weight: 300; }\n" +
+    ".goat--dagoat .goat-lockup__word::before { content: none; }\n" +
+    ".goat--dagoat .goat-lockup__name { font-family: inherit; font-weight: 300; line-height: 1; }\n" +
+    ".goat--dagoat .goat-lockup__tag { font-family: inherit; font-weight: 500; line-height: 1; }\n" +
     "@media (prefers-reduced-motion: reduce) {\n" +
       "  .goat--online .goat-lockup:hover, .goat--online .goat-lockup:active { transform: none; box-shadow: none; }\n" +
       "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo__frame { transform: none; }\n" +
@@ -538,44 +544,71 @@
       const size = Number.parseFloat(d.defaultView.getComputedStyle(el).fontSize);
       el.style.fontSize = (Number.isFinite(size) ? size * 0.85 : 10) + 'px';
     };
-    const fitText = function (el, value) {
+    const layoutReady = function (el) {
+      const shell = mount.closest('.shell');
+      const mountBox = mount.getBoundingClientRect();
+      return Boolean(shell && shell.classList.contains('is-open') && !mount.__gmdmBannerFitBlocked &&
+        mountBox.width > 0 && mountBox.height > 0 && el.clientWidth > 0 && el.clientHeight > 0);
+    };
+    const fitElement = function (el, value, render) {
       const raw = String(value == null ? '' : value);
-      el.textContent = raw;
-      if (!raw || !el.clientWidth || fits(el)) return;
-      shrinkText(el);
-      if (fits(el)) return;
-      let shortened = raw;
-      while (shortened.length > 1 && !fits(el)) {
-        shortened = shortened.slice(0, -1).trimEnd();
-        el.textContent = shortened + '…';
-      }
-      if (!el.textContent.endsWith('…')) el.textContent = shortened + '…';
+      const state = el.__gmdmFitState || { fontSize: null };
+      state.source = raw;
+      el.__gmdmFitState = state;
+      const fit = function () {
+        // Rebuild from the source and restore the original CSS size on every
+        // pass. A previous pass may have run during the panel transition.
+        render(raw);
+        if (!layoutReady(el)) return false;
+        if (!Number.isFinite(state.fontSize)) {
+          const size = Number.parseFloat(d.defaultView.getComputedStyle(el).fontSize);
+          state.fontSize = Number.isFinite(size) ? size : null;
+        }
+        if (Number.isFinite(state.fontSize)) el.style.fontSize = state.fontSize + 'px';
+        else el.style.removeProperty('font-size');
+        render(raw);
+        if (!raw || fits(el)) return true;
+        shrinkText(el);
+        if (fits(el)) return true;
+        let shortened = raw;
+        while (shortened.length > 1 && !fits(el)) {
+          shortened = shortened.slice(0, -1).trimEnd();
+          el.textContent = shortened + '…';
+        }
+        if (!el.textContent.endsWith('…')) el.textContent = shortened + '…';
+        return true;
+      };
+      el.__gmdmFit = fit;
+      fit();
+      return fit;
+    };
+    const fitText = function (el, value) {
+      return fitElement(el, value, function (raw) {
+        el.textContent = raw;
+      });
     };
     const addHeadline = function (parent, banner) {
       const line = make('span', 'goat__line', parent);
       const headline = String(banner.headline == null ? '' : banner.headline);
       const emphasized = typeof banner.headlineEm === 'string' && banner.headlineEm &&
         headline.includes(banner.headlineEm) ? banner.headlineEm : '';
-      if (!emphasized) {
-        fitText(line, headline);
-        return line;
-      }
-      const at = headline.indexOf(emphasized);
-      line.appendChild(d.createTextNode(headline.slice(0, at)));
-      const em = make('em', '', line);
-      em.textContent = emphasized;
-      line.appendChild(d.createTextNode(headline.slice(at + emphasized.length)));
-      if (!fits(line)) {
-        shrinkText(line);
-        if (!fits(line)) {
-          let shortened = headline;
-          while (shortened.length > 1 && !fits(line)) {
-            shortened = shortened.slice(0, -1).trimEnd();
-            line.textContent = shortened + '\u2026';
-          }
-          if (!line.textContent.endsWith('\u2026')) line.textContent = shortened + '\u2026';
+      const render = function (raw) {
+        line.replaceChildren();
+        if (!emphasized) {
+          line.textContent = raw;
+          return;
         }
-      }
+        const at = raw.indexOf(emphasized);
+        if (at < 0) {
+          line.textContent = raw;
+          return;
+        }
+        line.appendChild(d.createTextNode(raw.slice(0, at)));
+        const em = make('em', '', line);
+        em.textContent = emphasized;
+        line.appendChild(d.createTextNode(raw.slice(at + emphasized.length)));
+      };
+      fitElement(line, headline, render);
       return line;
     };
     const addTagline = function (parent, banner) {
@@ -754,6 +787,13 @@
       const badgeText = selected.querySelector('.gc-badge__text');
       if (badgeText) fitText(badgeText, model.banner.badge);
     }
+    selected.__gmdmFitBanner = function () {
+      const fitted = selected.querySelectorAll('.goat__line, .goat-lockup__name, .goat-lockup__tag, .gc-badge__text');
+      for (let i = 0; i < fitted.length; i++) {
+        if (typeof fitted[i].__gmdmFit === 'function') fitted[i].__gmdmFit();
+      }
+    };
+    selected.__gmdmFitBanner();
   }
   // goatcam-banner-render:end
 
@@ -880,6 +920,9 @@
   let bannerHovered = false;
   let bannerFocused = false;
   let bannerVisibilityBound = false;
+  let bannerResizeObserver = null;
+  let bannerFitRaf = 0;
+  let bannerFitBlocked = true;
 
   /* --------------------------------------------------------------- placement
    * Google's top-left overlay stack is the search field plus, conditionally, a
@@ -1021,6 +1064,27 @@
     });
   }
 
+  function setBannerFitBlocked(blocked) {
+    bannerFitBlocked = Boolean(blocked);
+    if (bannerMount) bannerMount.__gmdmBannerFitBlocked = bannerFitBlocked;
+  }
+
+  function fitBannerText() {
+    if (!bannerMount || bannerFitBlocked || !shell || !shell.classList.contains('is-open')) return;
+    const box = bannerMount.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return;
+    const banner = bannerMount.firstElementChild;
+    if (banner && typeof banner.__gmdmFitBanner === 'function') banner.__gmdmFitBanner();
+  }
+
+  function scheduleBannerFit() {
+    if (bannerFitRaf) cancelAnimationFrame(bannerFitRaf);
+    bannerFitRaf = requestAnimationFrame(function () {
+      bannerFitRaf = 0;
+      fitBannerText();
+    });
+  }
+
   /* ------------------------------------------------------------------ open */
 
   function setOpen(open) {
@@ -1029,10 +1093,17 @@
     shell.classList.toggle('is-open', open);
     if (pill) pill.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (open && !wasOpen) {
+      setBannerFitBlocked(true);
       connectBannerPort();
       loadBannerDisplay();
       setTimeout(place, 360);
+      setTimeout(function () {
+        if (!shell || !shell.classList.contains('is-open')) return;
+        setBannerFitBlocked(false);
+        scheduleBannerFit();
+      }, 360);
     } else if (!open && wasOpen) {
+      setBannerFitBlocked(true);
       bannerPendingDisplay = null;
       closeBannerPort();
     }
@@ -1198,6 +1269,7 @@
     renderGoatBanner(bannerMount, bannerModel);
     bindBannerEvents();
     place();
+    scheduleBannerFit();
   }
 
   async function drawBannerDisplay(display) {
@@ -1340,7 +1412,20 @@
     shell = shadow.querySelector('.shell');
     pill = shadow.querySelector('.pill');
     bannerMount = shadow.querySelector('[data-goat-banner]');
+    setBannerFitBlocked(true);
+    if (typeof ResizeObserver === 'function') {
+      bannerResizeObserver = new ResizeObserver(function () { scheduleBannerFit(); });
+      bannerResizeObserver.observe(bannerMount);
+    }
     drawBannerModel({ kind: 'dagoat' });
+
+    shell.addEventListener('transitionend', function (event) {
+      if (!shell.classList.contains('is-open') ||
+          (event.target !== shell && event.target !== shadow.querySelector('.body'))) return;
+      if (event.propertyName !== 'width' && event.propertyName !== 'grid-template-rows') return;
+      setBannerFitBlocked(false);
+      scheduleBannerFit();
+    });
 
     shell.addEventListener('mouseenter', openSoon);
     shell.addEventListener('mouseleave', closeSoon);

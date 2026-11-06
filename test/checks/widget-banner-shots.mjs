@@ -7,8 +7,9 @@ import { chromium, firefox } from '@playwright/test';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { PNG } from 'pngjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ENGINE = process.argv.includes('firefox') ? 'firefox' : 'chromium';
@@ -18,6 +19,7 @@ if (ENGINE !== 'chromium' && ENGINE !== 'firefox') {
 }
 const PREFIX = ENGINE === 'firefox' ? 'firefox-' : '';
 const WIDGET = path.join(ROOT, 'dist', ENGINE === 'firefox' ? 'firefox' : 'chrome', 'content', 'widget.js');
+const ORIGINAL_WIDGET = execFileSync('git', ['show', '2e7d372:extension/content/widget.js'], { cwd: ROOT, encoding: 'utf8' });
 const DEFAULT_OUT = path.join(ROOT, 'test', 'artifacts', 'banner');
 const outputArgument = process.argv[2] && !['chromium', 'firefox'].includes(process.argv[2]) ? process.argv[2] : '';
 const OUT = path.resolve(outputArgument.trim() ? outputArgument : DEFAULT_OUT);
@@ -193,7 +195,7 @@ async function measure(page) {
     const pill = $('.pill');
     const texts = goat ? [...goat.querySelectorAll('.goat__line, .goat-lockup__name, .goat-lockup__tag, .gc-badge')].map((el) => ({
       text: el.textContent, cls: String(el.className), scrollWidth: el.scrollWidth, clientWidth: el.clientWidth,
-      scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, box: box(el),
+      scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, fontSize: Number.parseFloat(getComputedStyle(el).fontSize), box: box(el),
     })) : [];
     const textOutside = texts.filter((item) => {
       const inBox = item.cls.startsWith('goat__line') ? goat : plate;
@@ -244,7 +246,7 @@ async function measure(page) {
       bodyInnerScroll: bodyInner && [bodyInner.scrollHeight, bodyInner.clientHeight, bodyInner.scrollTop],
       shellOverflowY: shell && getComputedStyle(shell).overflowY,
       bodyOverflowY: bodyInner && getComputedStyle(bodyInner).overflowY,
-      goat: box(goat), plate: box(plate), bannerLink: box(plate), gh: box(gh),
+      goat: box(goat), copyBox: box(goat && goat.querySelector('.goat__copy')), plate: box(plate), bannerLink: box(plate), gh: box(gh),
       gap: goat && gh ? +(goat.getBoundingClientRect().top - gh.getBoundingClientRect().bottom).toFixed(2) : null,
       copy: goat ? [...goat.querySelectorAll('.goat__line')].map((el) => el.textContent) : [],
       headline: headline && { box: box(headline), inPlate: Boolean(plate && plate.contains(headline)), hasEm: Boolean(headline.querySelector('em')) },
@@ -315,6 +317,39 @@ function decodeQr(file, expected) {
   if (result.status !== 0) return { pass: false, detail: (result.stderr || result.stdout || ('python exit ' + result.status)).trim() };
   const decoded = (result.stdout || '').trim();
   return { pass: decoded === expected, detail: 'decoded=' + JSON.stringify(decoded) };
+}
+
+function comparePngFiles(actualFile, originalFile) {
+  const actual = PNG.sync.read(fs.readFileSync(actualFile));
+  const original = PNG.sync.read(fs.readFileSync(originalFile));
+  const sameSize = actual.width === original.width && actual.height === original.height;
+  if (!sameSize) return { pass: false, sameSize, actual: [actual.width, actual.height], original: [original.width, original.height] };
+  const tolerance = 8;
+  let differingPixels = 0;
+  let maxChannelDelta = 0;
+  let minX = actual.width;
+  let minY = actual.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let i = 0; i < actual.data.length; i += 4) {
+    const delta = Math.max(Math.abs(actual.data[i] - original.data[i]), Math.abs(actual.data[i + 1] - original.data[i + 1]),
+      Math.abs(actual.data[i + 2] - original.data[i + 2]), Math.abs(actual.data[i + 3] - original.data[i + 3]));
+    if (delta > maxChannelDelta) maxChannelDelta = delta;
+    if (delta > tolerance) {
+      differingPixels += 1;
+      const pixel = i / 4;
+      const x = pixel % actual.width;
+      const y = Math.floor(pixel / actual.width);
+      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+  }
+  const totalPixels = actual.width * actual.height;
+  const differingFraction = differingPixels / totalPixels;
+  return {
+    pass: maxChannelDelta <= 8 && differingFraction <= 0.005,
+    sameSize, width: actual.width, height: actual.height, tolerance: 'per-channel <= 8 for anti-aliasing; differing pixels <= 0.5%',
+    differingPixels, differingFraction, maxChannelDelta, diffBounds: differingPixels ? [minX, minY, maxX, maxY] : null,
+  };
 }
 
 function intersects(a, b) {
@@ -401,8 +436,44 @@ try {
     check(tag + ' pinned-stays-open dagoat', dagoat.open,
       JSON.stringify({ shell: dagoat.open, focusout: dagoatFocusout }));
     await shot('dagoat-open');
+    const currentDagoatFile = path.join(OUT, PREFIX + 'dagoat-model-dpr' + dpr + '.png');
+    await page.locator('.goat').screenshot({ path: currentDagoatFile });
+    const currentDagoatBoxes = await page.locator('.goat').evaluate((element) => {
+      const box = (selector) => { const node = element.querySelector(selector); const rect = node && node.getBoundingClientRect(); return rect &&
+        { x: +rect.x.toFixed(2), y: +rect.y.toFixed(2), w: +rect.width.toFixed(2), h: +rect.height.toFixed(2),
+          font: getComputedStyle(node).font, letter: getComputedStyle(node).letterSpacing }; };
+      return { plate: box('.goat-lockup'), mark: box('.goat-lockup__mark'), word: box('.goat-lockup__word'),
+        name: box('.goat-lockup__name'), tag: box('.goat-lockup__tag') };
+    });
+    const originalContext = await browser.newContext({ viewport: { width: 600, height: 900 }, deviceScaleFactor: dpr });
+    const originalPage = await originalContext.newPage();
+    await originalPage.setContent(FIXTURE);
+    await originalPage.evaluate('(' + installRuntimeStub.toString() + ')()');
+    await originalPage.addScriptTag({ content: ORIGINAL_WIDGET });
+    await originalPage.waitForSelector('#gmdm-widget-host');
+    await originalPage.locator('.pill').click();
+    await originalPage.mouse.move(595, 895);
+    await originalPage.waitForTimeout(800);
+    const originalDagoatFile = path.join(OUT, PREFIX + 'dagoat-model-1.0.2-dpr' + dpr + '.png');
+    await originalPage.locator('.goat').screenshot({ path: originalDagoatFile });
+    const dagoatImage = comparePngFiles(currentDagoatFile, originalDagoatFile);
+    dagoatImage.currentBoxes = currentDagoatBoxes;
+    dagoatImage.originalBoxes = await originalPage.locator('.goat').evaluate((element) => {
+      const box = (selector) => { const node = element.querySelector(selector); const rect = node && node.getBoundingClientRect(); return rect &&
+        { x: +rect.x.toFixed(2), y: +rect.y.toFixed(2), w: +rect.width.toFixed(2), h: +rect.height.toFixed(2),
+          font: getComputedStyle(node).font, letter: getComputedStyle(node).letterSpacing }; };
+      return { plate: box('.goat-lockup'), mark: box('.goat-lockup__mark'), word: box('.goat-lockup__word'),
+        name: box('.goat-lockup__name'), tag: box('.goat-lockup__tag') };
+    });
+    check(tag + ' dagoat-matches-1.0.2 image', dagoatImage.pass, JSON.stringify(dagoatImage));
+    await originalContext.close();
     check(tag + ' dagoat-text', dagoat.variant === 'dagoat' && JSON.stringify(dagoat.copy) === JSON.stringify(DAGOAT_LINES) && dagoat.href === DAGOAT_URL,
       JSON.stringify({ copy: dagoat.copy, href: dagoat.href, target: dagoat.target, rel: dagoat.rel }));
+    check(tag + ' dagoat-matches-1.0.2', dagoat.goat && dagoat.copyBox && dagoat.plate &&
+      Math.abs(dagoat.goat.w - 244) <= 1 && Math.abs(dagoat.goat.h - 130.1) <= 1 &&
+      Math.abs(dagoat.copyBox.w - 244) <= 1 && Math.abs(dagoat.copyBox.h - 48.1) <= 1 &&
+      Math.abs(dagoat.plate.w - 244) <= 1 && Math.abs(dagoat.plate.h - 74) <= 1,
+      JSON.stringify({ goat: dagoat.goat, copy: dagoat.copyBox, plate: dagoat.plate }));
 
     await publish(page, valid, Date.now() + 3600000, false, 1);
     await park();
@@ -421,8 +492,8 @@ try {
       rest.links === 1 && rest.href === valid.banner.link && rest.target === '_blank' &&
       /(^| )noopener( |$)/.test(rest.rel) && /(^| )noreferrer( |$)/.test(rest.rel),
       JSON.stringify({ links: rest.links, href: rest.href, target: rest.target, rel: rest.rel }));
-    check(tag + ' plate size and photo cover the plate inside its border',
-      Math.abs(rest.plate.w - 244) < 0.01 && Math.abs(rest.plate.h - 136) < 0.01 &&
+     check(tag + ' plate size and photo cover the plate inside its border',
+       Math.abs(rest.plate.w - 244) < 0.01 && Math.abs(rest.plate.h - 74) < 0.01 &&
       Math.abs(rest.photo.w - (rest.plate.w - 2)) < 0.01 && Math.abs(rest.photo.h - (rest.plate.h - 2)) < 0.01 &&
       rest.image.complete && rest.image.naturalWidth === 800 && rest.image.naturalHeight === 498,
       JSON.stringify({ plate: rest.plate, photo: rest.photo, image: rest.image }));
@@ -430,8 +501,8 @@ try {
       rest.plateScroll[0] === rest.plateScroll[1] && rest.plateScroll[2] === rest.plateScroll[3] &&
       rest.textsOutside.length === 0 && rest.plateOverflow === 'visible',
       JSON.stringify({ scroll: rest.plateScroll, textsOutside: rest.textsOutside, overflow: rest.plateOverflow }));
-    check(tag + ' QR rests at 72x72 css px with the 37-module matrix, clear of the wordmark',
-      rest.qrViewBox === '0 0 37 37' && Math.abs(rest.qr.w - 72) < 0.01 && Math.abs(rest.qr.h - 72) < 0.01 &&
+    check(tag + ' QR rests at 60x60 css px with the 37-module matrix, clear of the wordmark',
+      rest.qrViewBox === '0 0 37 37' && Math.abs(rest.qr.w - 60) < 0.01 && Math.abs(rest.qr.h - 60) < 0.01 &&
       rest.textsOverQr.length === 0,
       JSON.stringify({ qr: rest.qr, viewBox: rest.qrViewBox, textsOverQr: rest.textsOverQr }));
     const restOverlap = noOverlap(rest);
@@ -468,7 +539,14 @@ try {
       onlineText.badgeText.fontFamily.trim().toLowerCase().startsWith(V2_BADGE_FIRST_FAMILY) &&
       onlineText.badgeText.lineBoxHeight >= 1.2 * onlineText.badgeText.fontSize,
       JSON.stringify(onlineText.badgeText));
-    check(tag + ' online geometry', onlineText.open && onlineText.plate && Math.abs(onlineText.plate.w - 244) < 0.01 && Math.abs(onlineText.plate.h - 136) < 0.01 &&
+    check(tag + ' online-geometry-matches-dagoat', onlineText.goat && onlineText.copyBox && onlineText.plate &&
+      dagoat.goat && dagoat.copyBox && dagoat.plate &&
+      Math.abs(onlineText.goat.w - dagoat.goat.w) <= 1 && Math.abs(onlineText.goat.h - dagoat.goat.h) <= 1 &&
+      Math.abs(onlineText.copyBox.w - dagoat.copyBox.w) <= 1 && Math.abs(onlineText.copyBox.h - dagoat.copyBox.h) <= 1 &&
+      Math.abs(onlineText.plate.w - dagoat.plate.w) <= 1 && Math.abs(onlineText.plate.h - dagoat.plate.h) <= 1,
+      JSON.stringify({ online: { goat: onlineText.goat, copy: onlineText.copyBox, plate: onlineText.plate },
+        dagoat: { goat: dagoat.goat, copy: dagoat.copyBox, plate: dagoat.plate } }));
+    check(tag + ' online geometry', onlineText.open && onlineText.plate && Math.abs(onlineText.plate.w - 244) < 0.01 && Math.abs(onlineText.plate.h - 74) < 0.01 &&
       onlineText.image.complete && onlineText.image.naturalWidth === 800 && onlineText.image.naturalHeight === 498 && onlineText.qrViewBox === '0 0 37 37' && onlineText.qrPathCount === 1,
       JSON.stringify({ plate: onlineText.plate, image: onlineText.image, qr: onlineText.qr, viewBox: onlineText.qrViewBox, paths: onlineText.qrPathCount }));
     check(tag + ' online text fits', onlineText.texts.every((x) => x.scrollWidth <= x.clientWidth || x.text.endsWith('\u2026')),
@@ -481,6 +559,34 @@ try {
     const qr = decodeQr(qrFile, valid.banner.qr.text);
     if (qr.skipped) skipped(tag + ' online-qr-decodes', qr.reason);
     else check(tag + ' online-qr-decodes', qr.pass, qr.detail);
+
+    const expectedBannerTexts = [valid.banner.headline, valid.banner.wordmark, valid.banner.tagline.join(' \u00b7 '), valid.banner.badge];
+    const firstOpenText = onlineText.texts.map((item) => ({ text: item.text, fontSize: item.fontSize }));
+    const intactAfterReopen = (measured) => {
+      const snapshot = measured.texts.map((item) => ({ text: item.text, fontSize: item.fontSize }));
+      return measured.variant === 'online' && JSON.stringify(snapshot.map((item) => item.text)) === JSON.stringify(expectedBannerTexts) &&
+        snapshot.length === firstOpenText.length && snapshot.every((item, index) => Math.abs(item.fontSize - firstOpenText[index].fontSize) < 0.01);
+    };
+    await page.locator('.pill').click();
+    await park();
+    await page.waitForTimeout(350);
+    await page.locator('.pill').click();
+    await park();
+    await page.waitForTimeout(500);
+    const reopened = await measure(page);
+    check(tag + ' reopen-text-intact', intactAfterReopen(reopened),
+      JSON.stringify({ first: firstOpenText, reopened: reopened.texts.map((item) => ({ text: item.text, fontSize: item.fontSize })) }));
+
+    await page.locator('.pill').click();
+    await park();
+    await page.waitForTimeout(350);
+    await publish(page, valid, Date.now() + 3600000, true, 9);
+    await page.locator('.pill').click();
+    await park();
+    await page.waitForTimeout(500);
+    const closedPublished = await measure(page);
+    check(tag + ' reopen-text-intact closed-display', intactAfterReopen(closedPublished),
+      JSON.stringify({ first: firstOpenText, reopened: closedPublished.texts.map((item) => ({ text: item.text, fontSize: item.fontSize })) }));
 
     await setActive(true);
     await page.waitForTimeout(1000);
@@ -511,8 +617,8 @@ try {
       qrHover.qr.w >= 150 && qrHover.qr.h >= 150 && qrHover.qrMinRoom >= 0 &&
       qrHover.qrClips.length >= 1 && qrHover.qrOnTop === 5,
       JSON.stringify({ qr: qrHover.qr, clips: qrHover.qrClips, room: qrHover.qrMinRoom, onTop: qrHover.qrOnTop }));
-    check(tag + ' QR returns to 72px after the pointer leaves',
-      Math.abs(afterQr.qr.w - 72) < 0.01 && Math.abs(afterQr.qr.h - 72) < 0.01,
+    check(tag + ' QR returns to 60px after the pointer leaves',
+      Math.abs(afterQr.qr.w - 60) < 0.01 && Math.abs(afterQr.qr.h - 60) < 0.01,
       JSON.stringify(afterQr.qr));
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
