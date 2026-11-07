@@ -33,6 +33,7 @@ const V2_BADGE_FIRST_FAMILY = 'ui-monospace';
 const ONLINE_TEXT_SELECTORS = [
   ['wordmark', '.goat--online .goat-lockup__name', '.goat--online .goat-lockup__word'],
   ['tagline', '.goat--online .goat-lockup__tag', '.goat--online .goat-lockup__word'],
+  ['tagline em', '.goat--online .goat-lockup__tag em', '.goat--online .goat-lockup__tag'],
   ['badge text', '.goat--online .gc-badge__text', '.goat--online .gc-badge'],
 ];
 // Whole photo inset of the 16ef14e DPR-2 rest render; this fixed reference is
@@ -46,7 +47,7 @@ const PHOTO_TEXT_GLOW_PADDING = 12;
 const NO_HARD_EDGE_CONTROL_THRESHOLD_FRACTION = 0.35;
 const NO_HARD_EDGE_EPSILON = 0.001;
 const NO_HARD_EDGE_MIN_ROWS_FRACTION = 0.5;
-const ONLINE_TEXT_HIDE_CSS = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; -webkit-text-fill-color: transparent !important; -webkit-text-stroke: 0 !important; transition: none !important; }';
+const ONLINE_TEXT_HIDE_CSS = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .goat-lockup__tag em, .goat--online .gc-badge__text { color: transparent !important; -webkit-text-fill-color: transparent !important; -webkit-text-stroke: 0 !important; transition: none !important; }';
 const ONLINE_BARE_PHOTO_CSS = ONLINE_TEXT_HIDE_CSS +
   ' .goat--online .gc-photo::after { background: none !important; }' +
   ' .goat--online .gc-photo { filter: none !important; }' +
@@ -74,6 +75,13 @@ function readVector(name) {
 }
 
 const valid = readVector('valid');
+const online = valid;
+Object.assign(valid.banner, {
+  headline: 'GOAT Cam \u2014 your iPhone, NOW your PC\u2019s webcam.',
+  headlineEm: 'NOW',
+  tagline: ['Your iPhone, NOW', 'your PC\u2019s webcam.'],
+  badge: '1440p \u00b7 60 fps',
+});
 const maxText = readVector('max-text');
 const webp = fs.readFileSync(path.join(ROOT, 'test', 'banner', 'vectors', 'photos', 'hero-coffee-800.webp')).toString('base64');
 
@@ -214,6 +222,8 @@ async function measure(page) {
     const iphoneImage = iphone && iphone.querySelector('.gc-iphone__screen');
     const qr = $('.gc-qr');
     const qrSvg = qr && qr.querySelector('svg');
+    const stage = $('.gc-stage');
+    const vf = $('.gc-vf');
     const qrBounds = qr && qr.getBoundingClientRect();
     const qrViewportRoom = qrBounds ? Math.min(qrBounds.left, innerWidth - qrBounds.right,
       qrBounds.top, innerHeight - qrBounds.bottom) : null;
@@ -223,6 +233,20 @@ async function measure(page) {
     const badge = goat && goat.querySelector('.gc-badge');
     const badgeText = badge && badge.querySelector('.gc-badge__text');
     const badgeTextStyle = badgeText && getComputedStyle(badgeText);
+    const taglineLines = tagline ? [...tagline.children] : [];
+    const stageStyle = stage && getComputedStyle(stage);
+    const stageTransform = stageStyle && stageStyle.transform;
+    const stageScale = stageTransform && stageTransform !== 'none' ? Number.parseFloat(stageTransform.slice(7)) : 1;
+    const vfBounds = vf && vf.getBoundingClientRect();
+    const vfInner = vfBounds ? box(vf) && {
+      x: +(vfBounds.x + 2).toFixed(2), y: +(vfBounds.y + 2).toFixed(2),
+      w: +(Math.max(0, vfBounds.width - 4)).toFixed(2), h: +(Math.max(0, vfBounds.height - 4)).toFixed(2),
+    } : null;
+    const stageItems = [
+      ['.gc-badge', badge], ['.goat-lockup__name', wordmark],
+      ...taglineLines.map((line) => ['.' + String(line.className), line]),
+      ['.gc-iphone', iphone], ['.gc-qr', qr],
+    ].filter(([, element]) => element).map(([selector, element]) => ({ selector, rect: box(element) }));
     const pill = $('.pill');
     const texts = goat ? [...goat.querySelectorAll('.goat__line, .goat-lockup__name, .goat-lockup__tag, .gc-badge')].map((el) => ({
       text: el.textContent, cls: String(el.className), scrollWidth: el.scrollWidth, clientWidth: el.clientWidth,
@@ -282,6 +306,13 @@ async function measure(page) {
       copy: goat ? [...goat.querySelectorAll('.goat__line')].map((el) => el.textContent) : [],
       headline: headline && { box: box(headline), inPlate: Boolean(plate && plate.contains(headline)), hasEm: Boolean(headline.querySelector('em')) },
       wordmarkBox: box(wordmark), taglineBox: box(tagline), badgeBox: box(badge),
+      taglineLines: taglineLines.map((line) => ({ text: line.textContent, box: box(line) })),
+      taglineFontFamily: tagline && getComputedStyle(tagline).fontFamily,
+      taglineEm: tagline && [...tagline.querySelectorAll('em')].map((em) => ({
+        text: em.textContent, fontStyle: getComputedStyle(em).fontStyle, color: getComputedStyle(em).color,
+      })),
+      wordmarkFontSize: wordmark && Number.parseFloat(getComputedStyle(wordmark).fontSize),
+      stage: box(stage), stageTransform, stageScale, content: stageItems, vfInner,
       badgeText: badgeText && {
         scrollHeight: badgeText.scrollHeight,
         clientHeight: badgeText.clientHeight,
@@ -713,6 +744,7 @@ async function measureOnlineTextContrast(page) {
     const selectors = [
       ['goat-lockup__name', '.goat--online .goat-lockup__name'],
       ['goat-lockup__tag', '.goat--online .goat-lockup__tag'],
+      ['goat-lockup__tag em', '.goat--online .goat-lockup__tag em'],
       ['gc-badge__text', '.goat--online .gc-badge__text'],
     ];
     const box = (element) => {
@@ -764,6 +796,7 @@ async function checkOnlineNoColourHacks(page, tag, vectorName, state) {
     const selectors = [
       ['wordmark', '.goat--online .goat-lockup__name'],
       ['tagline', '.goat--online .goat-lockup__tag'],
+      ['tagline em', '.goat--online .goat-lockup__tag em'],
       ['badge', '.goat--online .gc-badge'],
       ['badge text', '.goat--online .gc-badge__text'],
     ];
@@ -779,7 +812,8 @@ async function checkOnlineNoColourHacks(page, tag, vectorName, state) {
   });
   const expected = {
     wordmark: { r: 248, g: 238, b: 223 },
-    tagline: { r: 216, g: 194, b: 165 },
+    tagline: { r: 248, g: 238, b: 223 },
+    'tagline em': { r: 240, g: 192, b: 122 },
     badge: { r: 240, g: 192, b: 122 },
     'badge text': { r: 240, g: 192, b: 122 },
   };
@@ -791,7 +825,8 @@ async function checkOnlineNoColourHacks(page, tag, vectorName, state) {
       return false;
     }
   };
-  const pass = styles.photo.filter === 'none' && styles.text.every((item) => !item.missing && item.filter === 'none' && colorMatches(item.color, expected[item.name]));
+  const pass = styles.photo.filter === 'none' && styles.text.every((item) => item.name === 'tagline em' && item.missing ||
+    (!item.missing && item.filter === 'none' && colorMatches(item.color, expected[item.name])));
   check(tag + ' no-colour-hacks ' + vectorName + ' ' + state, pass, JSON.stringify({ expected, ...styles }));
 }
 
@@ -821,6 +856,33 @@ function noOverlap(measured) {
     textFits: measured.texts.every((item) => item.scrollWidth <= item.clientWidth || item.text.endsWith('\u2026')),
     headlineAbovePlate: !measured.headline || Boolean(measured.headline.box && measured.plate &&
       measured.headline.box.y + measured.headline.box.h <= measured.plate.y + 0.01),
+  };
+}
+
+function stageClearances(measured) {
+  const vf = measured.vfInner;
+  return (measured.content || []).map((item) => ({
+    selector: item.selector,
+    clear: vf && item.rect ? Math.min(
+      item.rect.x - vf.x, item.rect.y - vf.y,
+      vf.x + vf.w - item.rect.x - item.rect.w,
+      vf.y + vf.h - item.rect.y - item.rect.h,
+    ) : -Infinity,
+  }));
+}
+
+function stageInside(measured, margin = 4) {
+  return measured.variant === 'online' && measured.vfInner && measured.content &&
+    measured.content.length === 6 && stageClearances(measured).every((item) => item.clear >= margin);
+}
+
+function stageGeometrySummary(measured) {
+  return {
+    stageScale: measured.stageScale,
+    plate: measured.plate,
+    plateTransform: measured.plateTransform,
+    vfInner: measured.vfInner,
+    clearances: stageClearances(measured),
   };
 }
 
@@ -923,6 +985,17 @@ try {
     await park();
     await page.waitForTimeout(800);
     const rest = await measure(page);
+    check(tag + ' stage clearance at rest >= 4px', stageInside(rest), JSON.stringify(stageGeometrySummary(rest)));
+    await page.locator('.goat--online .goat-lockup').screenshot({ path: path.join(OUT, PREFIX + 'online-plate-rest-dpr' + dpr + '.png') });
+    check(tag + ' slogan is two serif lines with gold NOW emphasis',
+      rest.taglineLines && rest.taglineLines.length === 2 &&
+      JSON.stringify(rest.taglineLines.map((line) => line.text)) === JSON.stringify(online.banner.tagline) &&
+      rest.taglineEm && rest.taglineEm.length === 1 && rest.taglineEm[0].text === 'NOW' &&
+      rest.taglineEm[0].fontStyle === 'italic' && rest.taglineEm[0].color === 'rgb(240, 192, 122)' &&
+      /serif/i.test(rest.taglineFontFamily || ''),
+      JSON.stringify({ lines: rest.taglineLines, em: rest.taglineEm, fontFamily: rest.taglineFontFamily }));
+    check(tag + ' wordmark is larger than be8ee2a', rest.wordmarkFontSize > 15,
+      JSON.stringify({ wordmarkFontSize: rest.wordmarkFontSize, baseline: 15 }));
     const validRestText = await checkOnlineTextOnTop(page, tag, 'valid', 'rest');
     await checkOnlineTextRenderedContrast(page, tag, 'valid', 'rest', validRestText);
     await checkOnlineNoColourHacks(page, tag, 'valid', 'rest');
@@ -950,7 +1023,7 @@ try {
       Number.parseFloat(rest.iphoneImage.borderRadius) >= 5 && iphoneCorners && iphoneCorners.pass,
       JSON.stringify({ iphone: rest.iphone, qr: rest.qr, image: rest.iphoneImage, corners: iphoneCorners }));
     check(tag + ' plate size and photo cover the plate inside its border',
-       Math.abs(rest.plate.w - 244) < 0.01 && Math.abs(rest.plate.h - 74) < 0.01 &&
+       Math.abs(rest.plate.w - 244) < 0.01 && Math.abs(rest.plate.h - 96) < 0.01 &&
       Math.abs(rest.photo.w - (rest.plate.w - 2)) < 0.01 && Math.abs(rest.photo.h - (rest.plate.h - 2)) < 0.01 &&
       rest.image.complete && rest.image.naturalWidth === 800 && rest.image.naturalHeight === 498,
       JSON.stringify({ plate: rest.plate, photo: rest.photo, image: rest.image }));
@@ -958,8 +1031,8 @@ try {
       rest.plateScroll[0] === rest.plateScroll[1] && rest.plateScroll[2] === rest.plateScroll[3] &&
       rest.textsOutside.length === 0 && rest.plateOverflow === 'visible',
       JSON.stringify({ scroll: rest.plateScroll, textsOutside: rest.textsOutside, overflow: rest.plateOverflow }));
-    check(tag + ' QR rests at 60x60 css px with the 37-module matrix, clear of the wordmark',
-      rest.qrViewBox === '0 0 37 37' && Math.abs(rest.qr.w - 60) < 0.01 && Math.abs(rest.qr.h - 60) < 0.01 &&
+    check(tag + ' QR rests at 72x72 css px with the 37-module matrix, clear of the wordmark',
+      rest.qrViewBox === '0 0 37 37' && Math.abs(rest.qr.w - 72) < 0.01 && Math.abs(rest.qr.h - 72) < 0.01 &&
       rest.textsOverQr.length === 0,
       JSON.stringify({ qr: rest.qr, viewBox: rest.qrViewBox, textsOverQr: rest.textsOverQr }));
     const restOverlap = noOverlap(rest);
@@ -1010,7 +1083,7 @@ try {
     await park();
     const onlineText = await measure(page);
     check(tag + ' online-text', onlineText.variant === 'online' && onlineText.texts.some((x) => x.text === valid.banner.headline) &&
-      onlineText.name === valid.banner.wordmark && onlineText.tag === valid.banner.tagline.join(' \u00b7 ') && onlineText.href === valid.banner.link &&
+      onlineText.name === valid.banner.wordmark && onlineText.tag === valid.banner.tagline.join('') && onlineText.href === valid.banner.link &&
       onlineText.target === '_blank' && /(^| )noopener( |$)/.test(onlineText.rel),
       JSON.stringify({ texts: onlineText.texts.map((x) => x.text), name: onlineText.name, tag: onlineText.tag, href: onlineText.href, rel: onlineText.rel }));
     check(tag + ' online layout keeps headline above the photo and restores the plate copy',
@@ -1027,16 +1100,16 @@ try {
     check(tag + ' online-geometry-matches-dagoat', onlineText.goat && onlineText.copyBox && onlineText.plate &&
       dagoat.goat && dagoat.copyBox && dagoat.plate &&
       Math.abs(onlineText.goat.w - dagoat.goat.w) <= 1 && Math.abs(onlineText.goat.h - dagoat.goat.h) <= 1 &&
-      Math.abs(onlineText.copyBox.w - dagoat.copyBox.w) <= 1 && Math.abs(onlineText.copyBox.h - dagoat.copyBox.h) <= 1 &&
-      Math.abs(onlineText.plate.w - dagoat.plate.w) <= 1 && Math.abs(onlineText.plate.h - dagoat.plate.h) <= 1,
+      Math.abs(onlineText.goat.w - 244) <= 1 && Math.abs(onlineText.goat.h - 130) <= 1,
       JSON.stringify({ online: { goat: onlineText.goat, copy: onlineText.copyBox, plate: onlineText.plate },
         dagoat: { goat: dagoat.goat, copy: dagoat.copyBox, plate: dagoat.plate } }));
-    check(tag + ' online geometry', onlineText.open && onlineText.plate && Math.abs(onlineText.plate.w - 244) < 0.01 && Math.abs(onlineText.plate.h - 74) < 0.01 &&
+    check(tag + ' online geometry', onlineText.open && onlineText.goat && Math.abs(onlineText.goat.w - 244) < 0.01 && Math.abs(onlineText.goat.h - 130) < 0.01 &&
+      onlineText.plate && Math.abs(onlineText.plate.w - 244) < 0.01 && Math.abs(onlineText.plate.h - 96) < 0.01 &&
       onlineText.image.complete && onlineText.image.naturalWidth === 800 && onlineText.image.naturalHeight === 498 && onlineText.qrViewBox === '0 0 37 37' && onlineText.qrPathCount === 1,
       JSON.stringify({ plate: onlineText.plate, image: onlineText.image, qr: onlineText.qr, viewBox: onlineText.qrViewBox, paths: onlineText.qrPathCount }));
     check(tag + ' online text fits', onlineText.texts.every((x) => x.scrollWidth <= x.clientWidth || x.text.endsWith('\u2026')),
       JSON.stringify(onlineText.texts.map((x) => ({ text: x.text, scroll: [x.scrollWidth, x.clientWidth] }))));
-    const liveTextExpected = [valid.banner.headline, valid.banner.wordmark, valid.banner.tagline.join(' \u00b7 '), valid.banner.badge];
+    const liveTextExpected = [valid.banner.headline, valid.banner.wordmark, valid.banner.tagline.join(''), valid.banner.badge];
     const liveTextWhole = onlineText.texts.length === liveTextExpected.length &&
       onlineText.texts.every((item, index) => item.text === liveTextExpected[index] && !item.text.includes('\u2026') &&
         item.scrollWidth <= item.clientWidth && item.fontSize >= LIVE_TEXT_MIN_FONT_SIZES[index] - 0.01);
@@ -1051,7 +1124,7 @@ try {
     if (qr.skipped) skipped(tag + ' online-qr-decodes', qr.reason);
     else check(tag + ' online-qr-decodes', qr.pass, qr.detail);
 
-    const expectedBannerTexts = [valid.banner.headline, valid.banner.wordmark, valid.banner.tagline.join(' \u00b7 '), valid.banner.badge];
+    const expectedBannerTexts = [valid.banner.headline, valid.banner.wordmark, valid.banner.tagline.join(''), valid.banner.badge];
     const firstOpenText = onlineText.texts.map((item) => ({ text: item.text, fontSize: item.fontSize }));
     const intactAfterReopen = (measured) => {
       const snapshot = measured.texts.map((item) => ({ text: item.text, fontSize: item.fontSize }));
@@ -1086,49 +1159,65 @@ try {
     await checkOnlineNoColourHacks(page, tag, 'valid', 'active');
     await checkOnlineTextContrast(page, tag, 'valid', 'active');
     const active = await measure(page);
+    const restQrItem = rest.content && rest.content.find((item) => item.selector === '.gc-qr');
+    const activeQrItem = active.content && active.content.find((item) => item.selector === '.gc-qr');
+    const restNameItem = rest.content && rest.content.find((item) => item.selector === '.goat-lockup__name');
+    const activeNameItem = active.content && active.content.find((item) => item.selector === '.goat-lockup__name');
+    check(tag + ' stage clearance at active >= 4px', stageInside(active), JSON.stringify(stageGeometrySummary(active)));
+    check(tag + ' active stage grows, brackets tighten, plate stays fixed',
+      active.stageScale > rest.stageScale + 0.01 && activeQrItem.rect.w > restQrItem.rect.w * 1.01 &&
+      activeNameItem.rect.w > restNameItem.rect.w * 1.01 && active.vfInner.w < rest.vfInner.w - 1 &&
+      active.vfInner.h < rest.vfInner.h - 1 && active.plateTransform === 'none' &&
+      Math.abs(active.plate.w - rest.plate.w) < 0.5 && Math.abs(active.plate.h - rest.plate.h) < 0.5,
+      JSON.stringify({ rest: stageGeometrySummary(rest), active: stageGeometrySummary(active) }));
     await setActive(false);
     await page.waitForTimeout(1000);
     const afterActive = await measure(page);
     check(tag + ' motion active state', +active.steamOpacity === 1 && active.animations.running >= 3 && afterActive.animations.running === 0,
       JSON.stringify({ active: active.animations, after: afterActive.animations, steam: [active.steamOpacity, afterActive.steamOpacity] }));
+    await page.evaluate(() => {
+      const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+      const wordmark = shadow.querySelector('.goat--online .goat-lockup__name');
+      wordmark.style.setProperty('position', 'relative');
+      wordmark.style.setProperty('left', '-100px', 'important');
+    });
+    const shifted = await measure(page);
+    check(tag + ' negative control: wordmark pushed left fails 4px clearance', !stageInside(shifted),
+      JSON.stringify(stageGeometrySummary(shifted)));
+    await page.evaluate(() => {
+      const wordmark = document.getElementById('gmdm-widget-host').shadowRoot.querySelector('.goat--online .goat-lockup__name');
+      wordmark.style.removeProperty('position');
+      wordmark.style.removeProperty('left');
+    });
     await page.locator('.goat-lockup').hover({ position: { x: 20, y: 20 } });
     await page.waitForTimeout(700);
     const hover = await measure(page);
-    check(tag + ' hover motion', /^matrix\(1, 0, 0, 1, 0, -2\)$/.test(hover.plateTransform) && /^matrix\(1\.0[5-6]/.test(hover.frameTransform),
-      JSON.stringify({ plate: hover.plateTransform, frame: hover.frameTransform }));
-    check(tag + ' photo hover lifts the plate 2px', hover.plateTransform === 'matrix(1, 0, 0, 1, 0, -2)',
-      JSON.stringify({ plate: hover.plateTransform }));
+    await page.locator('.goat--online .goat-lockup').screenshot({ path: path.join(OUT, PREFIX + 'online-plate-hover-dpr' + dpr + '.png') });
+    check(tag + ' hover motion', hover.stageScale > 1.04 && /^matrix\(1\.0[5-6]/.test(hover.frameTransform) && hover.plateTransform === 'none',
+      JSON.stringify({ stage: hover.stageTransform, plate: hover.plateTransform, frame: hover.frameTransform }));
     await park();
     await page.waitForTimeout(250);
 
     await page.locator('.gc-qr').hover();
     await page.waitForTimeout(400);
     const qrHover = await measure(page);
-    await shot('online-qr-hover');
     await park();
     await page.waitForTimeout(800);
     const afterQr = await measure(page);
-    check(tag + ' QR hover: tile >= 150px, not clipped by the panel, on top',
-      qrHover.qr.w >= 150 && qrHover.qr.h >= 150 && qrHover.qrMinRoom >= 0 &&
-      qrHover.qrClips.length >= 1 && qrHover.qrOnTop === 5,
-      JSON.stringify({ qr: qrHover.qr, clips: qrHover.qrClips, room: qrHover.qrMinRoom, onTop: qrHover.qrOnTop }));
-    check(tag + ' QR returns to 60px after the pointer leaves',
-      Math.abs(afterQr.qr.w - 60) < 0.01 && Math.abs(afterQr.qr.h - 60) < 0.01,
-      JSON.stringify(afterQr.qr));
+    check(tag + ' QR hover uses stage scale only', qrHover.stageScale > 1.04 && qrHover.qr.w > afterQr.qr.w * 1.01 &&
+      qrHover.qr.w < afterQr.qr.w * 1.1 && qrHover.qrOnTop === 5,
+      JSON.stringify({ hover: { qr: qrHover.qr, stage: qrHover.stageTransform }, rest: { qr: afterQr.qr, stage: afterQr.stageTransform } }));
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.locator('.goat-lockup').hover({ position: { x: 20, y: 20 } });
     await page.waitForTimeout(900);
     const reducedHover = await measure(page);
-    await page.locator('.gc-qr').hover();
-    await page.waitForTimeout(40);
-    const reducedQr = await measure(page);
-    check(tag + ' reduced motion: no lift, no steam, nothing running; QR zoom stays and is instant',
+    check(tag + ' reduced motion: no stage scale, no bracket travel, no lift or steam',
       reducedHover.reduced && reducedHover.plateTransform === 'none' && reducedHover.frameTransform === 'none' &&
-      reducedHover.steamDisplay === 'none' && reducedHover.animations.running === 0 &&
-      reducedQr.qr.w >= 150 && reducedQr.qr.h >= 150 && reducedQr.qrMinRoom >= 0 && reducedQr.qrOnTop === 5,
+      reducedHover.stageTransform === 'none' && reducedHover.steamDisplay === 'none' && reducedHover.animations.running === 0 &&
+      Math.abs(reducedHover.vfInner.w - rest.vfInner.w) < 0.01 && Math.abs(reducedHover.vfInner.h - rest.vfInner.h) < 0.01,
       JSON.stringify({ plate: reducedHover.plateTransform, frame: reducedHover.frameTransform, steam: reducedHover.steamDisplay,
-        animations: reducedHover.animations, qr: reducedQr.qr, room: reducedQr.qrMinRoom, onTop: reducedQr.qrOnTop }));
+        stage: reducedHover.stageTransform, animations: reducedHover.animations, vf: reducedHover.vfInner, restVf: rest.vfInner }));
     await park();
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.waitForTimeout(600);
@@ -1145,11 +1234,11 @@ try {
     await page.waitForTimeout(400);
     const keyboard = await measure(page);
     await shot('online-keyboard-focus');
-    check(tag + ' keyboard: Tab reaches the link, focus-visible zooms the QR, unclipped and on top',
-      keyboard.focused && keyboard.focusVisible && keyboard.isActive && keyboard.qr.w >= 150 &&
-      keyboard.qr.h >= 150 && keyboard.qrMinRoom >= 0 && keyboard.qrOnTop === 5,
+    check(tag + ' keyboard: Tab reaches the link and focus-visible scales the stage',
+      keyboard.focused && keyboard.focusVisible && keyboard.isActive && keyboard.stageScale > 1.04 &&
+      keyboard.qr.w > rest.qr.w * 1.01 && keyboard.qrOnTop === 5,
       JSON.stringify({ focused: keyboard.focused, focusVisible: keyboard.focusVisible, active: keyboard.isActive,
-        qr: keyboard.qr, room: keyboard.qrMinRoom, onTop: keyboard.qrOnTop }));
+        stage: keyboard.stageTransform, qr: keyboard.qr, room: keyboard.qrMinRoom, onTop: keyboard.qrOnTop }));
     await page.locator('.pill').focus();
     await park();
     await page.waitForTimeout(250);

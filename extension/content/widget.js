@@ -482,34 +482,39 @@
   /* Online campaign layout is runtime-only: keep the published lockup copy
      above byte-identical while giving the signed renderer its own geometry. */
   const GOAT_ONLINE_FIX_CSS =
-    ".goat--online .goat__copy { display: block; height: 48px; margin: 0 0 8px; padding: 0; }\n" +
+    ".goat--online .goat__copy { display: block; height: 30px; margin: 0 0 4px; padding: 0; }\n" +
     ".goat--online .goat__line { display: block; width: 100%; max-width: 100%; margin: 0; overflow: hidden; }\n" +
-    ".goat--online .goat-lockup { height: 74px; }\n" +
-    ".goat--online .goat-lockup__word { position: absolute; z-index: 1; left: 22px; top: 14px; " +
-      "display: flex; width: 112px; max-width: 112px; min-width: 0; " +
-      "flex-direction: column; align-items: flex-start; gap: 4px; overflow: visible; pointer-events: none; }\n" +
-      ".goat--online .goat-lockup__name, .goat--online .goat-lockup__tag { " +
-        "display: block; flex: none; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
-      ".goat--online .goat-lockup__name { font-size: 15px; }\n" +
-      ".goat--online .goat-lockup__tag { font-size: 6px; }\n" +
-      ".goat--online .goat-lockup__name { color: var(--gc-cream); text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 6px rgba(20, 13, 8, .78), 0 0 10px rgba(20, 13, 8, .42); }\n" +
-      ".goat--online .goat-lockup__tag { color: var(--gc-cream-soft); text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 5px rgba(20, 13, 8, .8), 0 0 10px rgba(20, 13, 8, .44); }\n" +
-      ".goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .goat-lockup__tag { color: var(--gc-cream-soft); }\n" +
-    ".goat--online .gc-badge { position: absolute; z-index: 2; top: auto; right: auto; left: 22px; bottom: 7px; " +
-      "display: flex; align-items: center; gap: 3px; width: calc(50% - 28px); max-width: calc(50% - 28px); " +
-      "overflow: hidden; white-space: nowrap; }\n" +
-    ".goat--online .gc-badge { font: 700 6.5px/1.2 var(--gc-mono); padding: 2px 4px; letter-spacing: .05em; font-variant-numeric: tabular-nums; background: rgba(20, 13, 8, .82); box-shadow: none; }\n" +
+    ".goat--online .goat-lockup { --gc-h: 96px; height: 96px; }\n" +
+    ".goat--online .gc-stage { position: absolute; inset: 0; z-index: 2; display: block; transform-origin: 50% 50%; transition: transform 360ms var(--gc-out); }\n" +
+    ".goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-stage { transform: scale(1.05); transition: transform 420ms var(--gc-in); }\n" +
+    /* Feathered glow: four soft radial blobs under the wordmark and slogan rows, tails inside 12px of the text;
+       the ::after scales with the stage so the glow stays under the text on hover. */
+    ".goat--online .gc-photo, .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo { --gc-scrim: radial-gradient(ellipse 36px 20px at 42px 40px, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .88) 72%, rgba(0, 0, 0, .72) 86%, rgba(0, 0, 0, .3) 93%, rgba(0, 0, 0, 0) 98%), " +
+      "radial-gradient(ellipse 36px 20px at 91px 40px, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .88) 72%, rgba(0, 0, 0, .72) 86%, rgba(0, 0, 0, .3) 93%, rgba(0, 0, 0, 0) 98%), " +
+      "radial-gradient(ellipse 36px 20px at 42px 62px, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .88) 72%, rgba(0, 0, 0, .72) 86%, rgba(0, 0, 0, .3) 93%, rgba(0, 0, 0, 0) 98%), " +
+      "radial-gradient(ellipse 36px 20px at 91px 62px, rgba(0, 0, 0, .9) 0%, rgba(0, 0, 0, .88) 72%, rgba(0, 0, 0, .72) 86%, rgba(0, 0, 0, .3) 93%, rgba(0, 0, 0, 0) 98%); " +
+      "}\n" +
+    ".goat--online .gc-photo::after { background: var(--gc-scrim); }\n" +
+    ".goat--online .gc-photo::after { transform-origin: 50% 50%; transition: transform 360ms var(--gc-out); }\n" +
+    ".goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo::after { transform: scale(1.05); transition: transform 420ms var(--gc-in); }\n" +
+    ".goat--online .gc-steam { z-index: 0; }\n" +
+    ".goat--online .gc-photo__img { filter: none; }\n" +
+    ".goat--online .goat-lockup__word::before { content: none; }\n" +
+    ".goat--online .goat-lockup__word { position: absolute; z-index: 1; left: 18px; top: calc(50% + 4px); display: flex; width: 98px; max-width: 98px; min-width: 0; transform: translateY(-50%); flex-direction: column; align-items: flex-start; gap: 3px; pointer-events: none; }\n" +
+    ".goat--online .goat-lockup__name { display: block; flex: none; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; color: var(--gc-cream); font: 400 23px/.96 var(--gc-serif); letter-spacing: -.03em; white-space: nowrap; text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 6px rgba(20, 13, 8, .78), 0 0 10px rgba(20, 13, 8, .42); }\n" +
+    ".goat--online .goat-lockup__tag { display: flex; flex: none; width: 100%; min-width: 0; max-width: 100%; flex-direction: column; align-items: flex-start; gap: 0; overflow: visible; color: var(--gc-cream); font: 400 9px/1.08 var(--gc-serif); letter-spacing: normal; text-transform: none; white-space: nowrap; }\n" +
+    ".goat--online .goat-lockup__tag > span { display: block; width: 100%; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
+    ".goat--online .goat-lockup__tag em { font-style: italic; color: var(--gc-gold); }\n" +
+    ".goat--online .gc-badge { position: absolute; z-index: 2; top: 15px; right: auto; left: 18px; display: flex; align-items: center; gap: 3px; width: max-content; max-width: 98px; overflow: hidden; white-space: nowrap; font: 700 6.5px/1.2 var(--gc-mono); padding: 2px 4px; letter-spacing: .05em; font-variant-numeric: tabular-nums; background: rgba(20, 13, 8, .82); box-shadow: none; }\n" +
     ".goat--online .gc-badge__text { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; color: var(--gc-gold); text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 5px rgba(20, 13, 8, .8), 0 0 10px rgba(20, 13, 8, .44); }\n" +
     ".goat--online .gc-badge .gc-osd__dot { flex: none; }\n" +
-    ".goat--online .gc-qr { --gc-qr: 60px; --gc-qr-zoom: 2.6667; top: 6px; right: 14px; bottom: auto; }\n" +
-    ".goat--online .gc-photo, .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo { --gc-scrim: none; }\n" +
-    ".goat--online .gc-photo::after { background: none; }\n" +
-    ".goat--online .gc-photo__img { filter: none; }\n" +
-    ".goat--online .goat-lockup__word::before { content: \"\"; z-index: -1; inset: -6px 0 -6px -6px; border-radius: 50%; " +
-      "background: radial-gradient(ellipse 72px 30px at 48% 50%, rgba(20, 13, 8, .86), rgba(20, 13, 8, .56) 68%, rgba(20, 13, 8, 0) 100%); filter: blur(5px); opacity: 1; }\n" +
-    ".goat--online .gc-iphone { position: absolute; z-index: 2; top: 6px; right: 76px; display: block; width: 30px; height: 62px; overflow: hidden; border: 0; border-radius: 6.5px; background: transparent; box-shadow: 0 2px 5px rgba(0, 0, 0, .55); pointer-events: none; }\n" +
+    ".goat--online .gc-vf { --gc-vf-t: 0px; --gc-vf-r: 0px; --gc-vf-b: 0px; --gc-vf-l: 0px; z-index: 1; }\n" +
+    ".goat--online .gc-qr { --gc-qr: 72px; top: calc((var(--gc-h) - 2px - var(--gc-qr)) / 2); right: 18px; bottom: auto; }\n" +
+    ".goat--online .gc-qr:hover, .goat--online .goat-lockup:focus-visible .gc-qr { scale: 1; transition: none; }\n" +
+    ".goat--online .gc-iphone { position: absolute; z-index: 2; top: calc((var(--gc-h) - 2px - var(--gc-qr)) / 2 + 6px); right: calc(18px + var(--gc-qr) + 4px); display: block; width: 28px; height: 60px; overflow: hidden; border: 0; border-radius: 6.5px; background: transparent; box-shadow: 0 2px 5px rgba(0, 0, 0, .55); pointer-events: none; }\n" +
     ".goat--online .gc-iphone::after { content: \"\"; position: absolute; z-index: 2; inset: 0; border: 1px solid rgba(10, 8, 7, .92); border-radius: inherit; box-shadow: inset 0 0 0 .5px rgba(255, 239, 214, .4); pointer-events: none; }\n" +
     ".goat--online .gc-iphone__screen { display: block; width: 100%; height: 100%; border: 0; border-radius: 4.6px; object-fit: fill; }\n" +
+    ".goat--online .goat-lockup:hover, .goat--online .goat-lockup:active { transform: none !important; box-shadow: none !important; }\n" +
     ".goat--dagoat .goat__copy { padding: 0; }\n" +
     ".goat--dagoat { font-family: -apple-system, \"Segoe UI\", system-ui, Roboto, sans-serif; }\n" +
     ".goat--dagoat .goat-lockup { height: 74px; font-size: 10px; font-family: inherit; }\n" +
@@ -518,7 +523,9 @@
     ".goat--dagoat .goat-lockup__name { font-family: inherit; font-weight: 300; line-height: 1; }\n" +
     ".goat--dagoat .goat-lockup__tag { font-family: inherit; font-weight: 500; line-height: 1; }\n" +
     "@media (prefers-reduced-motion: reduce) {\n" +
-      "  .goat--online .goat-lockup:hover, .goat--online .goat-lockup:active { transform: none; box-shadow: none; }\n" +
+      "  .goat--online .goat-lockup:hover, .goat--online .goat-lockup:active { transform: none !important; box-shadow: none !important; }\n" +
+      "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-stage { transform: none; transition: none; }\n" +
+      "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo::after { transform: none; transition: none; }\n" +
       "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo__frame { transform: none; }\n" +
       "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-vf { inset: var(--gc-vf-t, 6px) var(--gc-vf-r, 6px) var(--gc-vf-b, 6px) var(--gc-vf-l, 6px); }\n" +
     "}\n";
@@ -624,9 +631,39 @@
       fitElement(line, headline, render);
       return line;
     };
+    const renderEmphasized = function (line, raw, emphasized) {
+      line.replaceChildren();
+      if (!emphasized) {
+        line.appendChild(d.createTextNode(raw));
+        return;
+      }
+      let cursor = 0;
+      let at = raw.indexOf(emphasized, cursor);
+      while (at >= 0) {
+        if (at > cursor) line.appendChild(d.createTextNode(raw.slice(cursor, at)));
+        const em = make('em', '', line);
+        em.appendChild(d.createTextNode(emphasized));
+        cursor = at + emphasized.length;
+        at = raw.indexOf(emphasized, cursor);
+      }
+      if (cursor < raw.length) line.appendChild(d.createTextNode(raw.slice(cursor)));
+    };
     const addTagline = function (parent, banner) {
       const tag = make('span', 'goat-lockup__tag', parent);
-      fitText(tag, Array.isArray(banner.tagline) ? banner.tagline.join(' · ') : '');
+      const lines = Array.isArray(banner.tagline) ? banner.tagline : [];
+      const emphasized = typeof banner.headlineEm === 'string' ? banner.headlineEm : '';
+      for (let i = 0; i < lines.length; i++) {
+        const line = make('span', 'gc-tag__' + (i === 0 ? 'a' : i === 1 ? 'b' : String(i + 1)), tag);
+        fitElement(line, lines[i], function (raw) {
+          renderEmphasized(line, raw, emphasized && raw.includes(emphasized) ? emphasized : '');
+        });
+      }
+      tag.__gmdmFitTagline = function () {
+        const children = tag.querySelectorAll(':scope > span');
+        for (let i = 0; i < children.length; i++) {
+          if (typeof children[i].__gmdmFit === 'function') children[i].__gmdmFit();
+        }
+      };
       return tag;
     };
     const addBadge = function (parent, banner) {
@@ -778,7 +815,8 @@
       }
       if (banner.effects && banner.effects.viewfinder) make('span', 'gc-vf', image);
       // photo.textBox is intentionally ignored; the publisher preview does not use it.
-      const iphone = make('span', 'gc-iphone', link);
+      const stage = make('span', 'gc-stage', link);
+      const iphone = make('span', 'gc-iphone', stage);
       attr(iphone, 'aria-hidden', 'true');
       const iphoneImage = make('img', 'gc-iphone__screen', iphone);
       attr(iphoneImage, 'src', IPHONE_PREVIEW_DATA_URL);
@@ -786,11 +824,11 @@
       attr(iphoneImage, 'width', '60');
       attr(iphoneImage, 'height', '128');
       attr(iphoneImage, 'draggable', 'false');
-      const word = make('span', 'goat-lockup__word', link);
+      const word = make('span', 'goat-lockup__word', stage);
       const name = make('span', 'goat-lockup__name', word); fitText(name, banner.wordmark);
       addTagline(word, banner);
-      addBadge(link, banner);
-      addQr(link, banner);
+      addBadge(stage, banner);
+      addQr(stage, banner);
       return root;
     };
     const selected = model && model.kind === 'online' && model.banner && model.photo &&
@@ -804,12 +842,12 @@
       const name = selected.querySelector('.goat-lockup__name');
       const tag = selected.querySelector('.goat-lockup__tag');
       if (name) fitText(name, model.banner.wordmark);
-      if (tag) fitText(tag, Array.isArray(model.banner.tagline) ? model.banner.tagline.join(' · ') : '');
+      if (tag && typeof tag.__gmdmFitTagline === 'function') tag.__gmdmFitTagline();
       const badgeText = selected.querySelector('.gc-badge__text');
       if (badgeText) fitText(badgeText, model.banner.badge);
     }
     selected.__gmdmFitBanner = function () {
-      const fitted = selected.querySelectorAll('.goat__line, .goat-lockup__name, .goat-lockup__tag, .gc-badge__text');
+      const fitted = selected.querySelectorAll('.goat__line, .goat-lockup__name, .goat-lockup__tag > span, .gc-badge__text');
       for (let i = 0; i < fitted.length; i++) {
         if (typeof fitted[i].__gmdmFit === 'function') fitted[i].__gmdmFit();
       }
