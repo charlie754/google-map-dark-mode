@@ -994,6 +994,25 @@ try {
       rest.taglineEm[0].fontStyle === 'italic' && rest.taglineEm[0].color === 'rgb(240, 192, 122)' &&
       /serif/i.test(rest.taglineFontFamily || ''),
       JSON.stringify({ lines: rest.taglineLines, em: rest.taglineEm, fontFamily: rest.taglineFontFamily }));
+    const caption = await page.evaluate(() => {
+      const root = document.getElementById('gmdm-widget-host').shadowRoot;
+      const line = root.querySelector('.goat--online .goat__line');
+      const range = document.createRange();
+      range.selectNodeContents(line);
+      // Rows by vertical centre: the italic NOW's taller box sits on the same row as its text.
+      const tops = [];
+      for (const mid of Array.from(range.getClientRects()).filter((r) => r.width > 1).map((r) => (r.top + r.bottom) / 2).sort((a, b) => a - b)) {
+        if (!tops.length || mid - tops[tops.length - 1] > 6) tops.push(mid);
+      }
+      const parts = []; let cur = '';
+      for (const node of line.childNodes) { if (node.nodeName === 'BR') { parts.push(cur); cur = ''; } else cur += node.textContent; }
+      parts.push(cur);
+      return { parts, rows: tops.length };
+    });
+    check(tag + ' caption breaks into two rows at the em dash (founder 2026-11-07)',
+      caption.parts.length === 2 && caption.parts[0] === 'GOAT Cam — ' &&
+      caption.parts[1] === online.banner.headline.split(' — ')[1] && caption.rows === 2,
+      JSON.stringify(caption));
     check(tag + ' wordmark is larger than be8ee2a', rest.wordmarkFontSize > 15,
       JSON.stringify({ wordmarkFontSize: rest.wordmarkFontSize, baseline: 15 }));
     const validRestText = await checkOnlineTextOnTop(page, tag, 'valid', 'rest');

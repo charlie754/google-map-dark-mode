@@ -483,7 +483,7 @@
      above byte-identical while giving the signed renderer its own geometry. */
   const GOAT_ONLINE_FIX_CSS =
     ".goat--online .goat__copy { display: block; height: 30px; margin: 0 0 4px; padding: 0; }\n" +
-    ".goat--online .goat__line { display: block; width: 100%; max-width: 100%; margin: 0; overflow: hidden; }\n" +
+    ".goat--online .goat__line { display: block; width: 100%; max-width: 100%; margin: 0; overflow: hidden; white-space: nowrap; }\n" +
     ".goat--online .goat-lockup { --gc-h: 96px; height: 96px; }\n" +
     ".goat--online .gc-stage { position: absolute; inset: 0; z-index: 2; display: block; transform-origin: 50% 50%; transition: transform 360ms var(--gc-out); }\n" +
     ".goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-stage { transform: scale(1.05); transition: transform 420ms var(--gc-in); }\n" +
@@ -612,21 +612,30 @@
       const headline = String(banner.headline == null ? '' : banner.headline);
       const emphasized = typeof banner.headlineEm === 'string' && banner.headlineEm &&
         headline.includes(banner.headlineEm) ? banner.headlineEm : '';
-      const render = function (raw) {
-        line.replaceChildren();
-        if (!emphasized) {
-          line.textContent = raw;
-          return;
-        }
-        const at = raw.indexOf(emphasized);
+      const appendPart = function (text) {
+        const at = emphasized ? text.indexOf(emphasized) : -1;
         if (at < 0) {
-          line.textContent = raw;
+          line.appendChild(d.createTextNode(text));
           return;
         }
-        line.appendChild(d.createTextNode(raw.slice(0, at)));
+        line.appendChild(d.createTextNode(text.slice(0, at)));
         const em = make('em', '', line);
         em.textContent = emphasized;
-        line.appendChild(d.createTextNode(raw.slice(at + emphasized.length)));
+        line.appendChild(d.createTextNode(text.slice(at + emphasized.length)));
+      };
+      const render = function (raw) {
+        line.replaceChildren();
+        // Founder 2026-11-07, as on Discord: the caption breaks into two rows at the em dash
+        // ("GOAT Cam —" / "your iPhone, NOW your PC's webcam.").
+        // ponytail: one break at the first " — "; a much longer second row still wraps to a third.
+        const dash = raw.indexOf(' — ');
+        if (dash < 0) {
+          appendPart(raw);
+          return;
+        }
+        appendPart(raw.slice(0, dash + 3));
+        make('br', '', line);
+        appendPart(raw.slice(dash + 3));
       };
       fitElement(line, headline, render);
       return line;
