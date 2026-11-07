@@ -486,19 +486,30 @@
     ".goat--online .goat__line { display: block; width: 100%; max-width: 100%; margin: 0; overflow: hidden; }\n" +
     ".goat--online .goat-lockup { height: 74px; }\n" +
     ".goat--online .goat-lockup__word { position: absolute; z-index: 1; left: 22px; top: 14px; " +
-      "display: flex; width: calc(50% - 2px); max-width: calc(50% - 2px); min-width: 0; " +
-      "flex-direction: column; align-items: flex-start; gap: 4px; overflow: hidden; pointer-events: none; }\n" +
-    ".goat--online .goat-lockup__name, .goat--online .goat-lockup__tag { " +
-      "display: block; flex: none; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
-    ".goat--online .goat-lockup__name { font-size: 15px; }\n" +
-    ".goat--online .goat-lockup__tag { font-size: 6px; -webkit-text-stroke: .2px currentColor; }\n" +
+      "display: flex; width: 112px; max-width: 112px; min-width: 0; " +
+      "flex-direction: column; align-items: flex-start; gap: 4px; overflow: visible; pointer-events: none; }\n" +
+      ".goat--online .goat-lockup__name, .goat--online .goat-lockup__tag { " +
+        "display: block; flex: none; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }\n" +
+      ".goat--online .goat-lockup__name { font-size: 15px; }\n" +
+      ".goat--online .goat-lockup__tag { font-size: 6px; }\n" +
+      ".goat--online .goat-lockup__name { color: var(--gc-cream); text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 6px rgba(20, 13, 8, .78), 0 0 10px rgba(20, 13, 8, .42); }\n" +
+      ".goat--online .goat-lockup__tag { color: var(--gc-cream-soft); text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 5px rgba(20, 13, 8, .8), 0 0 10px rgba(20, 13, 8, .44); }\n" +
+      ".goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .goat-lockup__tag { color: var(--gc-cream-soft); }\n" +
     ".goat--online .gc-badge { position: absolute; z-index: 2; top: auto; right: auto; left: 22px; bottom: 7px; " +
       "display: flex; align-items: center; gap: 3px; width: calc(50% - 28px); max-width: calc(50% - 28px); " +
       "overflow: hidden; white-space: nowrap; }\n" +
-    ".goat--online .gc-badge { font: 500 6.5px/1.2 var(--gc-mono); padding: 2px 4px; letter-spacing: .05em; font-variant-numeric: tabular-nums; }\n" +
-    ".goat--online .gc-badge__text { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; -webkit-text-stroke: .2px currentColor; }\n" +
+    ".goat--online .gc-badge { font: 700 6.5px/1.2 var(--gc-mono); padding: 2px 4px; letter-spacing: .05em; font-variant-numeric: tabular-nums; background: rgba(20, 13, 8, .82); box-shadow: none; }\n" +
+    ".goat--online .gc-badge__text { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; color: var(--gc-gold); text-shadow: 0 0 2px rgba(20, 13, 8, .96), 0 0 5px rgba(20, 13, 8, .8), 0 0 10px rgba(20, 13, 8, .44); }\n" +
     ".goat--online .gc-badge .gc-osd__dot { flex: none; }\n" +
     ".goat--online .gc-qr { --gc-qr: 60px; --gc-qr-zoom: 2.6667; top: 6px; right: 14px; bottom: auto; }\n" +
+    ".goat--online .gc-photo, .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo { --gc-scrim: none; }\n" +
+    ".goat--online .gc-photo::after { background: none; }\n" +
+    ".goat--online .gc-photo__img { filter: none; }\n" +
+    ".goat--online .goat-lockup__word::before { content: \"\"; z-index: -1; inset: -6px 0 -6px -6px; border-radius: 50%; " +
+      "background: radial-gradient(ellipse 72px 30px at 48% 50%, rgba(20, 13, 8, .86), rgba(20, 13, 8, .56) 68%, rgba(20, 13, 8, 0) 100%); filter: blur(5px); opacity: 1; }\n" +
+    ".goat--online .gc-iphone { position: absolute; z-index: 2; top: 6px; right: 76px; display: block; width: 30px; height: 62px; overflow: hidden; border: 0; border-radius: 6.5px; background: transparent; box-shadow: 0 2px 5px rgba(0, 0, 0, .55); pointer-events: none; }\n" +
+    ".goat--online .gc-iphone::after { content: \"\"; position: absolute; z-index: 2; inset: 0; border: 1px solid rgba(10, 8, 7, .92); border-radius: inherit; box-shadow: inset 0 0 0 .5px rgba(255, 239, 214, .4); pointer-events: none; }\n" +
+    ".goat--online .gc-iphone__screen { display: block; width: 100%; height: 100%; border: 0; border-radius: 4.6px; object-fit: fill; }\n" +
     ".goat--dagoat .goat__copy { padding: 0; }\n" +
     ".goat--dagoat { font-family: -apple-system, \"Segoe UI\", system-ui, Roboto, sans-serif; }\n" +
     ".goat--dagoat .goat-lockup { height: 74px; font-size: 10px; font-family: inherit; }\n" +
@@ -514,6 +525,8 @@
   const CSS_ALL = CSS + "\n" + GOAT_LOCKUP_CSS + "\n" + GOAT_ONLINE_FIX_CSS;
 
   // goatcam-banner-render:begin
+  // Static extension preview only; this image is not part of the signed banner.
+  const IPHONE_PREVIEW_DATA_URL = 'data:image/webp;base64,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';
   function renderGoatBanner(mount, model) {
     const d = mount.ownerDocument || document;
     const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -765,6 +778,14 @@
       }
       if (banner.effects && banner.effects.viewfinder) make('span', 'gc-vf', image);
       // photo.textBox is intentionally ignored; the publisher preview does not use it.
+      const iphone = make('span', 'gc-iphone', link);
+      attr(iphone, 'aria-hidden', 'true');
+      const iphoneImage = make('img', 'gc-iphone__screen', iphone);
+      attr(iphoneImage, 'src', IPHONE_PREVIEW_DATA_URL);
+      attr(iphoneImage, 'alt', '');
+      attr(iphoneImage, 'width', '60');
+      attr(iphoneImage, 'height', '128');
+      attr(iphoneImage, 'draggable', 'false');
       const word = make('span', 'goat-lockup__word', link);
       const name = make('span', 'goat-lockup__name', word); fitText(name, banner.wordmark);
       addTagline(word, banner);

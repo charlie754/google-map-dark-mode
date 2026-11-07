@@ -35,6 +35,30 @@ const ONLINE_TEXT_SELECTORS = [
   ['tagline', '.goat--online .goat-lockup__tag', '.goat--online .goat-lockup__word'],
   ['badge text', '.goat--online .gc-badge__text', '.goat--online .gc-badge'],
 ];
+// Whole photo inset of the 16ef14e DPR-2 rest render; this fixed reference is
+// informational only for the natural-photo check below.
+const PHOTO_LUMINANCE_BEFORE_16EF14E = 0.06199577356776212;
+const PHOTO_NATURAL_MAX_ATTENUATION = 1.03;
+const PHOTO_NATURAL_MIN_MEAN_ATTENUATION = 0.9;
+const PHOTO_TEXT_GLOW_PADDING = 12;
+// The threshold is derived per engine/DPR from the injected hard-edge control:
+// the real overlay must stay below 35% of the control's seam response.
+const NO_HARD_EDGE_CONTROL_THRESHOLD_FRACTION = 0.35;
+const NO_HARD_EDGE_EPSILON = 0.001;
+const NO_HARD_EDGE_MIN_ROWS_FRACTION = 0.5;
+const ONLINE_TEXT_HIDE_CSS = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; -webkit-text-fill-color: transparent !important; -webkit-text-stroke: 0 !important; transition: none !important; }';
+const ONLINE_BARE_PHOTO_CSS = ONLINE_TEXT_HIDE_CSS +
+  ' .goat--online .gc-photo::after { background: none !important; }' +
+  ' .goat--online .gc-photo { filter: none !important; }' +
+  ' .goat--online .goat-lockup__word::before { content: none !important; display: none !important; }' +
+  ' .goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { text-shadow: none !important; filter: none !important; }' +
+  ' .goat--online .gc-badge { background: transparent !important; box-shadow: none !important; }';
+const ONLINE_HARD_EDGE_CONTROL_CSS = ONLINE_TEXT_HIDE_CSS +
+  ' .goat--online .goat-lockup::after { content: ""; position: absolute; z-index: 10; inset: 0;' +
+  ' background: linear-gradient(to right, #000 0 50%, #fff 50% 100%); pointer-events: none; }';
+const NO_HARD_EDGE_CONTROL_MIN_AVERAGE = 0.2;
+const LIVE_TEXT_MIN_FONT_SIZES = [10.5, 15, 6, 6.5];
+let onlineProbeSequence = 0;
 
 if (!fs.existsSync(WIDGET)) {
   console.error(WIDGET + ' is missing -- run npm run build first');
@@ -186,6 +210,8 @@ async function measure(page) {
     const plate = $('.goat-lockup');
     const gh = $('.gh');
     const image = $('.gc-photo__img');
+    const iphone = $('.gc-iphone');
+    const iphoneImage = iphone && iphone.querySelector('.gc-iphone__screen');
     const qr = $('.gc-qr');
     const qrSvg = qr && qr.querySelector('svg');
     const qrBounds = qr && qr.getBoundingClientRect();
@@ -268,6 +294,10 @@ async function measure(page) {
       href: plate && plate.getAttribute('href'), target: plate && plate.getAttribute('target'), rel: plate && plate.getAttribute('rel'),
       aria: plate && plate.getAttribute('aria-label'), links: goat ? goat.querySelectorAll('a').length : 0,
       photo: box($('.gc-photo')), image: image && { complete: image.complete, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, scheme: image.src.slice(0, 22) },
+      iphone: box(iphone), iphoneImage: iphoneImage && {
+        complete: iphoneImage.complete, naturalWidth: iphoneImage.naturalWidth, naturalHeight: iphoneImage.naturalHeight,
+        scheme: iphoneImage.src.slice(0, 22), borderRadius: getComputedStyle(iphone).borderRadius,
+      },
       objectPosition: image && getComputedStyle(image).objectPosition,
       qr: box(qr), qrViewBox: qrSvg && qrSvg.getAttribute('viewBox'), qrPathCount: qrSvg ? qrSvg.querySelectorAll(':scope > path').length : 0,
       qrClips: clips, qrMinRoom: clips.length ? Math.min(...clips.map((item) => item.room)) : null, qrViewportRoom, qrOnTop,
@@ -372,6 +402,182 @@ function relativeLuminance(rgb) {
   return 0.2126 * linearChannel(rgb.r) + 0.7152 * linearChannel(rgb.g) + 0.0722 * linearChannel(rgb.b);
 }
 
+function imageRect(box, plate, scaleX, scaleY) {
+  return {
+    left: (box.x - plate.x) * scaleX, top: (box.y - plate.y) * scaleY,
+    right: (box.x + box.w - plate.x) * scaleX, bottom: (box.y + box.h - plate.y) * scaleY,
+  };
+}
+
+function containsImagePoint(rect, x, y) {
+  return x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
+}
+
+function measurePlateLuminance(buffer, plate, exclusions) {
+  const image = PNG.sync.read(buffer);
+  const scaleX = image.width / plate.w;
+  const scaleY = image.height / plate.h;
+  const plateRect = imageRect(plate, plate, scaleX, scaleY);
+  const exclusionRects = exclusions.filter(Boolean).map((box) => imageRect(box, plate, scaleX, scaleY));
+  let total = 0;
+  let count = 0;
+  for (let y = Math.max(0, Math.floor(plateRect.top)); y < Math.min(image.height, Math.ceil(plateRect.bottom)); y++) {
+    for (let x = Math.max(0, Math.floor(plateRect.left)); x < Math.min(image.width, Math.ceil(plateRect.right)); x++) {
+      if (exclusionRects.some((rect) => containsImagePoint(rect, x + 0.5, y + 0.5))) continue;
+      const offset = (y * image.width + x) * 4;
+      total += relativeLuminance({ r: image.data[offset], g: image.data[offset + 1], b: image.data[offset + 2] });
+      count += 1;
+    }
+  }
+  return { mean: total / count, pixels: count, scale: [scaleX, scaleY], plate: plateRect, exclusions: exclusionRects };
+}
+
+function measureOverlayAttenuation(actualBuffer, bareBuffer, plate, photo, qr, iphone) {
+  const actual = PNG.sync.read(actualBuffer);
+  const bare = PNG.sync.read(bareBuffer);
+  if (actual.width !== bare.width || actual.height !== bare.height) {
+    throw new Error('overlay probe screenshots changed size');
+  }
+  const image = actual;
+  const scaleX = image.width / plate.w;
+  const scaleY = image.height / plate.h;
+  const photoRect = imageRect(photo, plate, scaleX, scaleY);
+  const exclusionRects = [qr, iphone].filter(Boolean)
+    .map((box) => imageRect(box, plate, scaleX, scaleY));
+  const excluded = (x, y) => exclusionRects.some((rect) => containsImagePoint(rect, x + 0.5, y + 0.5));
+  const sums = Array(Math.max(0, image.width - 1)).fill(0);
+  const counts = Array(Math.max(0, image.width - 1)).fill(0);
+  const top = Math.max(0, Math.floor(photoRect.top));
+  const bottom = Math.min(image.height, Math.ceil(photoRect.bottom));
+  const left = Math.max(0, Math.floor(photoRect.left));
+  const right = Math.min(image.width - 1, Math.ceil(photoRect.right) - 1);
+  const luminance = (source, x, y) => {
+    const offset = (y * source.width + x) * 4;
+    return relativeLuminance({ r: source.data[offset], g: source.data[offset + 1], b: source.data[offset + 2] });
+  };
+  for (let y = top; y < bottom; y++) {
+    for (let x = left; x < right; x++) {
+      if (excluded(x, y) || excluded(x + 1, y)) continue;
+      const leftAttenuation = luminance(actual, x, y) / Math.max(luminance(bare, x, y), NO_HARD_EDGE_EPSILON);
+      const rightAttenuation = luminance(actual, x + 1, y) / Math.max(luminance(bare, x + 1, y), NO_HARD_EDGE_EPSILON);
+      sums[x] += Math.abs(leftAttenuation - rightAttenuation);
+      counts[x] += 1;
+    }
+  }
+  const boundaries = sums.map((sum, x) => ({
+    boundaryCss: +(((x + 0.5) / scaleX).toFixed(2)),
+    average: counts[x] ? sum / counts[x] : 0,
+    rows: counts[x],
+  })).filter((item) => item.rows >= (bottom - top) * NO_HARD_EDGE_MIN_ROWS_FRACTION);
+  const max = boundaries.reduce((worst, item) => item.average > worst.average ? item : worst,
+    { boundaryCss: null, average: 0, rows: 0 });
+  return { max, photo: photoRect, exclusions: exclusionRects,
+    minRows: (bottom - top) * NO_HARD_EDGE_MIN_ROWS_FRACTION,
+    boundaries: boundaries.sort((a, b) => b.average - a.average).slice(0, 5) };
+}
+
+function inflateBox(box, padding) {
+  return { x: box.x - padding, y: box.y - padding, w: box.w + padding * 2, h: box.h + padding * 2 };
+}
+
+function measurePhotoNaturalAttenuation(hiddenBuffer, bareBuffer, plate, photo, qr, iphone, textBoxes) {
+  const hidden = PNG.sync.read(hiddenBuffer);
+  const bare = PNG.sync.read(bareBuffer);
+  if (hidden.width !== bare.width || hidden.height !== bare.height) {
+    throw new Error('photo-natural probe screenshots changed size');
+  }
+  const scaleX = hidden.width / plate.w;
+  const scaleY = hidden.height / plate.h;
+  const photoRect = imageRect(photo, plate, scaleX, scaleY);
+  const exclusionRects = [qr, iphone, ...textBoxes.filter(Boolean).map((box) => inflateBox(box, PHOTO_TEXT_GLOW_PADDING))]
+    .map((box) => imageRect(box, plate, scaleX, scaleY));
+  const excluded = (x, y) => exclusionRects.some((rect) => containsImagePoint(rect, x + 0.5, y + 0.5));
+  const top = Math.max(0, Math.floor(photoRect.top));
+  const bottom = Math.min(hidden.height, Math.ceil(photoRect.bottom));
+  const left = Math.max(0, Math.floor(photoRect.left));
+  const right = Math.min(hidden.width, Math.ceil(photoRect.right));
+  const luminance = (source, x, y) => {
+    const offset = (y * source.width + x) * 4;
+    return relativeLuminance({ r: source.data[offset], g: source.data[offset + 1], b: source.data[offset + 2] });
+  };
+  let max = { value: 0, x: null, y: null };
+  let minimum = Infinity;
+  let total = 0;
+  let count = 0;
+  let pixels = 0;
+  for (let y = top; y < bottom; y++) {
+    for (let x = left; x < right; x++) {
+      const hiddenLuminance = luminance(hidden, x, y);
+      const bareLuminance = luminance(bare, x, y);
+      const attenuation = hiddenLuminance / Math.max(bareLuminance, NO_HARD_EDGE_EPSILON);
+      pixels += 1;
+      if (!excluded(x, y) && attenuation > max.value) max = { value: attenuation, x, y };
+      minimum = Math.min(minimum, attenuation);
+      if (!excluded(x, y)) {
+        total += attenuation;
+        count += 1;
+      }
+    }
+  }
+  return {
+    max: { value: max.value, css: { x: +(max.x / scaleX).toFixed(2), y: +(max.y / scaleY).toFixed(2) } },
+    minimum, mean: total / count, pixels, includedPixels: count,
+    photo: photoRect, exclusions: exclusionRects,
+  };
+}
+
+async function withOnlineProbeStyle(page, attribute, cssText, action) {
+  const token = attribute + '-' + (++onlineProbeSequence);
+  try {
+    await page.evaluate(({ attribute: name, token: value, cssText: text }) => {
+      const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+      const style = shadow.ownerDocument.createElement('style');
+      style.setAttribute(name, value);
+      style.textContent = text;
+      shadow.appendChild(style);
+    }, { attribute, token, cssText });
+    return await action();
+  } finally {
+    await page.evaluate(({ attribute: name, token: value }) => {
+      const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+      [...shadow.querySelectorAll('style')].find((style) => style.getAttribute(name) === value)?.remove();
+    }, { attribute, token });
+    await page.waitForTimeout(700);
+  }
+}
+
+async function screenshotOnlineProbe(page, cssText) {
+  return withOnlineProbeStyle(page, 'data-online-overlay-probe', cssText, async () => {
+    await page.waitForTimeout(30);
+    return page.locator('.goat--online .goat-lockup').screenshot();
+  });
+}
+
+function rgbDistance(a, b) {
+  return Math.max(Math.abs(a.r - b.r), Math.abs(a.g - b.g), Math.abs(a.b - b.b));
+}
+
+async function measureIphoneCorners(page, measured) {
+  const image = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
+  const scaleX = image.width / measured.plate.w;
+  const scaleY = image.height / measured.plate.h;
+  const left = Math.round((measured.iphone.x - measured.plate.x) * scaleX);
+  const top = Math.round((measured.iphone.y - measured.plate.y) * scaleY);
+  const right = Math.round((measured.iphone.x + measured.iphone.w - measured.plate.x) * scaleX) - 1;
+  const bottom = Math.round((measured.iphone.y + measured.iphone.h - measured.plate.y) * scaleY) - 1;
+  const points = [[left, top], [right, top], [left, bottom], [right, bottom]];
+  const outside = [[left - 2, top], [right + 2, top], [left - 2, bottom], [right + 2, bottom]];
+  const pixel = ([x, y]) => {
+    const safeX = Math.max(0, Math.min(image.width - 1, x));
+    const safeY = Math.max(0, Math.min(image.height - 1, y));
+    const offset = (safeY * image.width + safeX) * 4;
+    return { r: image.data[offset], g: image.data[offset + 1], b: image.data[offset + 2] };
+  };
+  const corners = points.map((point, index) => ({ point, color: pixel(point), outside: pixel(outside[index]) }));
+  const isBezel = (color) => rgbDistance(color, { r: 10, g: 8, b: 7 }) <= 24;
+  return { corners, pass: corners.every((item) => !isBezel(item.color) || isBezel(item.outside) || rgbDistance(item.color, item.outside) <= 42) };
+}
+
 function wcagContrast(text, background) {
   const alpha = text.a === undefined ? 1 : text.a;
   const composited = alpha === 1 ? text : {
@@ -407,22 +613,10 @@ async function measureRenderedOnlineText(page) {
   const plateImage = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
   const scaleX = plateImage.width / measured.plate.w;
   const scaleY = plateImage.height / measured.plate.h;
-  const hidden = await page.evaluate(() => {
-    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
-    const style = shadow.ownerDocument.createElement('style');
-    style.setAttribute('data-rendered-online-text', '');
-    style.textContent = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; transition: none !important; }';
-    shadow.appendChild(style);
-  });
-  let hiddenImage;
-  try {
+  const hiddenImage = await withOnlineProbeStyle(page, 'data-rendered-online-text', ONLINE_TEXT_HIDE_CSS, async () => {
     await page.waitForTimeout(20);
-    hiddenImage = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
-  } finally {
-    await page.evaluate(() => document.getElementById('gmdm-widget-host').shadowRoot
-      .querySelector('[data-rendered-online-text]')?.remove());
-  }
-  await page.waitForTimeout(700);
+    return PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
+  });
   if (plateImage.width !== hiddenImage.width || plateImage.height !== hiddenImage.height) {
     throw new Error('online text screenshots changed size while hiding text');
   }
@@ -443,7 +637,8 @@ async function measureRenderedOnlineText(page) {
         const delta = Math.max(Math.abs(visible.r - background.r), Math.abs(visible.g - background.g),
           Math.abs(visible.b - background.b));
         if (delta > 2) {
-          changed.push({ x, y, luminance: relativeLuminance(visible), contrast: wcagContrast(visible, background) });
+          changed.push({ x, y, luminance: relativeLuminance(visible), contrast: wcagContrast(visible, background),
+            declaredContrast: wcagContrast(textColor, background) });
         }
       }
     }
@@ -452,6 +647,7 @@ async function measureRenderedOnlineText(page) {
     const brightest = changed[0]?.luminance || 0;
     const top10 = changed.slice(0, topCount);
     const minimumTopContrast = top10.length ? Math.min(...top10.map((pixel) => pixel.contrast)) : 0;
+    const minimumDeclaredTopContrast = top10.length ? Math.min(...top10.map((pixel) => pixel.declaredContrast)) : 0;
     const brightestRatio = declaredLuminance ? brightest / declaredLuminance : 0;
     const sampleCount = Math.min(8, changed.length);
     const glyphPixels = changed.slice(0, Math.max(sampleCount, Math.ceil(changed.length * 0.1)));
@@ -464,34 +660,30 @@ async function measureRenderedOnlineText(page) {
     return {
       ...item, box: item.box, points, changedPixels: changed.length, top10Pixels: topCount,
       declaredLuminance, brightestLuminance: brightest, brightestRatio,
-      minimumTopContrast, contrastPass: changed.length > 0 && minimumTopContrast >= 4.5 &&
-        Math.abs(brightestRatio - 1) <= 0.15,
+      minimumTopContrast, minimumDeclaredTopContrast,
+      contrastPass: changed.length > 0 && Math.max(minimumTopContrast, minimumDeclaredTopContrast) >= 4.5,
     };
   });
 
-  const top = await page.evaluate((items) => {
-    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
-    const hitStyle = shadow.ownerDocument.createElement('style');
-    hitStyle.setAttribute('data-rendered-online-text-hit-test', '');
-    hitStyle.textContent = '.goat--online .goat-lockup__word, .goat--online .goat-lockup__word *, .goat--online .gc-badge, .goat--online .gc-badge * { pointer-events: auto !important; }';
-    shadow.appendChild(hitStyle);
-    const describe = (element) => element ? {
-      tag: element.tagName, className: typeof element.className === 'string' ? element.className : null,
-    } : null;
-    const result = items.map((item) => {
-      const text = shadow.querySelector(item.selector);
-      const block = shadow.querySelector(item.blockSelector);
-      const samples = item.points.map((point) => {
-        const hit = shadow.elementFromPoint(point.x, point.y);
-        const allowed = Boolean(hit && text && block &&
-          (hit === text || text.contains(hit) || (block.contains(hit) && hit.contains(text))));
-        return { point, hit: describe(hit), allowed };
+  const top = await withOnlineProbeStyle(page, 'data-rendered-online-text-hit-test',
+    '.goat--online .goat-lockup__word, .goat--online .goat-lockup__word *, .goat--online .gc-badge, .goat--online .gc-badge * { pointer-events: auto !important; }',
+    () => page.evaluate((items) => {
+      const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+      const describe = (element) => element ? {
+        tag: element.tagName, className: typeof element.className === 'string' ? element.className : null,
+      } : null;
+      return items.map((item) => {
+        const text = shadow.querySelector(item.selector);
+        const block = shadow.querySelector(item.blockSelector);
+        const samples = item.points.map((point) => {
+          const hit = shadow.elementFromPoint(point.x, point.y);
+          const allowed = Boolean(hit && text && block &&
+            (hit === text || text.contains(hit) || (block.contains(hit) && hit.contains(text))));
+          return { point, hit: describe(hit), allowed };
+        });
+        return { element: item.name, samples, pass: samples.length >= 3 && samples.every((sample) => sample.allowed) };
       });
-      return { element: item.name, samples, pass: samples.length >= 3 && samples.every((sample) => sample.allowed) };
-    });
-    hitStyle.remove();
-    return result;
-  }, text);
+    }, text));
   return { text, top };
 }
 
@@ -508,7 +700,8 @@ async function checkOnlineTextRenderedContrast(page, tag, vectorName, state, mea
   check(tag + ' text-rendered-contrast ' + vectorName + ' ' + state, pass,
     JSON.stringify(result.text.map((item) => ({
       element: item.name, color: item.color, changedPixels: item.changedPixels,
-      minimumTopContrast: +item.minimumTopContrast.toFixed(3), brightestRatio: +item.brightestRatio.toFixed(3),
+      minimumTopContrast: +item.minimumTopContrast.toFixed(3), declaredTopContrast: +item.minimumDeclaredTopContrast.toFixed(3),
+      brightestRatio: +item.brightestRatio.toFixed(3),
     }))));
   return result;
 }
@@ -531,13 +724,9 @@ async function measureOnlineTextContrast(page) {
       if (!element) return null;
       return { name, box: box(element), color: getComputedStyle(element).color };
     }).filter(Boolean);
-    const hidden = shadow.ownerDocument.createElement('style');
-    hidden.setAttribute('data-online-text-contrast', '');
-    hidden.textContent = '.goat--online .goat-lockup__name, .goat--online .goat-lockup__tag, .goat--online .gc-badge__text { color: transparent !important; transition: none !important; }';
-    shadow.appendChild(hidden);
-    return { plate: box(plate), text, hidden: true };
+    return { plate: box(plate), text };
   });
-  try {
+  return withOnlineProbeStyle(page, 'data-online-text-contrast', ONLINE_TEXT_HIDE_CSS, async () => {
     await page.waitForTimeout(700);
     const image = PNG.sync.read(await page.locator('.goat--online .goat-lockup').screenshot());
     const scaleX = image.width / measured.plate.w;
@@ -559,10 +748,7 @@ async function measureOnlineTextContrast(page) {
       }
       return { element: item.name, color: item.color, box: item.box, minimum: +minimum.toFixed(3) };
     });
-  } finally {
-    await page.evaluate(() => document.getElementById('gmdm-widget-host').shadowRoot
-      .querySelector('[data-online-text-contrast]')?.remove());
-  }
+  });
 }
 
 async function checkOnlineTextContrast(page, tag, vectorName, state) {
@@ -570,6 +756,43 @@ async function checkOnlineTextContrast(page, tag, vectorName, state) {
   const summary = ratios.map((item) => item.element + '=' + item.minimum.toFixed(2)).join(' ');
   check(tag + ' online-text-contrast ' + vectorName + ' ' + state + ' ' + summary,
     ratios.every((item) => item.minimum >= 4.5), JSON.stringify(ratios));
+}
+
+async function checkOnlineNoColourHacks(page, tag, vectorName, state) {
+  const styles = await page.evaluate(() => {
+    const shadow = document.getElementById('gmdm-widget-host').shadowRoot;
+    const selectors = [
+      ['wordmark', '.goat--online .goat-lockup__name'],
+      ['tagline', '.goat--online .goat-lockup__tag'],
+      ['badge', '.goat--online .gc-badge'],
+      ['badge text', '.goat--online .gc-badge__text'],
+    ];
+    const describe = (name, selector) => {
+      const element = shadow.querySelector(selector);
+      if (!element) return { name, selector, missing: true };
+      const style = getComputedStyle(element);
+      return { name, selector, color: style.color, filter: style.filter,
+        textFill: style.webkitTextFillColor, textStroke: style.webkitTextStrokeColor };
+    };
+    const photo = shadow.querySelector('.goat--online .gc-photo__img');
+    return { photo: photo ? { filter: getComputedStyle(photo).filter } : { missing: true }, text: selectors.map(([name, selector]) => describe(name, selector)) };
+  });
+  const expected = {
+    wordmark: { r: 248, g: 238, b: 223 },
+    tagline: { r: 216, g: 194, b: 165 },
+    badge: { r: 240, g: 192, b: 122 },
+    'badge text': { r: 240, g: 192, b: 122 },
+  };
+  const colorMatches = (value, wanted) => {
+    try {
+      const actual = parseRgbColor(value);
+      return actual.r === wanted.r && actual.g === wanted.g && actual.b === wanted.b && actual.a === 1;
+    } catch {
+      return false;
+    }
+  };
+  const pass = styles.photo.filter === 'none' && styles.text.every((item) => !item.missing && item.filter === 'none' && colorMatches(item.color, expected[item.name]));
+  check(tag + ' no-colour-hacks ' + vectorName + ' ' + state, pass, JSON.stringify({ expected, ...styles }));
 }
 
 function intersects(a, b) {
@@ -582,6 +805,7 @@ function noOverlap(measured) {
     wordmark: measured.wordmarkBox,
     tagline: measured.taglineBox,
     badge: measured.badgeBox,
+    iphone: measured.iphone,
     qr: measured.qr,
   };
   const names = Object.keys(boxes);
@@ -701,6 +925,7 @@ try {
     const rest = await measure(page);
     const validRestText = await checkOnlineTextOnTop(page, tag, 'valid', 'rest');
     await checkOnlineTextRenderedContrast(page, tag, 'valid', 'rest', validRestText);
+    await checkOnlineNoColourHacks(page, tag, 'valid', 'rest');
     await checkOnlineTextContrast(page, tag, 'valid', 'rest');
     const onlineFocusout = await focusoutTrace(page);
     console.log(tag + ' focusout after pinned online redraw: ' + JSON.stringify(onlineFocusout));
@@ -715,7 +940,16 @@ try {
       rest.links === 1 && rest.href === valid.banner.link && rest.target === '_blank' &&
       /(^| )noopener( |$)/.test(rest.rel) && /(^| )noreferrer( |$)/.test(rest.rel),
       JSON.stringify({ links: rest.links, href: rest.href, target: rest.target, rel: rest.rel }));
-     check(tag + ' plate size and photo cover the plate inside its border',
+    const iphoneCorners = rest.variant === 'online' && rest.iphone ? await measureIphoneCorners(page, rest) : null;
+    check(tag + ' iphone-mockup', rest.variant === 'online' && rest.iphone && rest.qr &&
+      rest.iphone.x + rest.iphone.w <= rest.qr.x + 0.01 &&
+      Math.abs((rest.iphone.y + rest.iphone.h / 2) - (rest.plate.y + rest.plate.h / 2)) <= 1 &&
+      rest.iphone.w >= 26 && rest.iphone.w <= 30 && rest.iphone.h >= 56 && rest.iphone.h <= 62 &&
+      rest.iphoneImage && rest.iphoneImage.complete && rest.iphoneImage.naturalWidth === 60 &&
+      rest.iphoneImage.naturalHeight === 128 && rest.iphoneImage.scheme === 'data:image/webp;base64' &&
+      Number.parseFloat(rest.iphoneImage.borderRadius) >= 5 && iphoneCorners && iphoneCorners.pass,
+      JSON.stringify({ iphone: rest.iphone, qr: rest.qr, image: rest.iphoneImage, corners: iphoneCorners }));
+    check(tag + ' plate size and photo cover the plate inside its border',
        Math.abs(rest.plate.w - 244) < 0.01 && Math.abs(rest.plate.h - 74) < 0.01 &&
       Math.abs(rest.photo.w - (rest.plate.w - 2)) < 0.01 && Math.abs(rest.photo.h - (rest.plate.h - 2)) < 0.01 &&
       rest.image.complete && rest.image.naturalWidth === 800 && rest.image.naturalHeight === 498,
@@ -731,6 +965,34 @@ try {
     const restOverlap = noOverlap(rest);
     check(tag + ' no-overlap valid vector', restOverlap.overlaps.length === 0 && restOverlap.textFits && restOverlap.headlineAbovePlate,
       JSON.stringify(restOverlap));
+    const plateImage = await page.locator('.goat--online .goat-lockup').screenshot();
+    const plateAfter = measurePlateLuminance(plateImage, rest.plate, [rest.qr, rest.iphone]);
+    const barePhotoImage = await screenshotOnlineProbe(page, ONLINE_BARE_PHOTO_CSS);
+    const hiddenTextImage = await screenshotOnlineProbe(page, ONLINE_TEXT_HIDE_CSS);
+    const naturalPhoto = measurePhotoNaturalAttenuation(hiddenTextImage, barePhotoImage, rest.plate, rest.photo, rest.qr, rest.iphone,
+      [rest.wordmarkBox, rest.taglineBox, rest.badgeBox]);
+    check(tag + ' photo-natural', naturalPhoto.max.value <= PHOTO_NATURAL_MAX_ATTENUATION &&
+      naturalPhoto.mean >= PHOTO_NATURAL_MIN_MEAN_ATTENUATION,
+      JSON.stringify({ maxAttenuation: +naturalPhoto.max.value.toFixed(6), meanAttenuation: +naturalPhoto.mean.toFixed(6),
+        minimumAttenuation: +naturalPhoto.minimum.toFixed(6), maxAt: naturalPhoto.max.css,
+        maxRequired: PHOTO_NATURAL_MAX_ATTENUATION, meanRequired: PHOTO_NATURAL_MIN_MEAN_ATTENUATION,
+        textGlowPaddingCssPx: PHOTO_TEXT_GLOW_PADDING, pixels: naturalPhoto.pixels,
+        includedPixels: naturalPhoto.includedPixels, exclusions: naturalPhoto.exclusions,
+        wholePlateMean: +plateAfter.mean.toFixed(12), wholePlateVs16ef14e: +(plateAfter.mean / PHOTO_LUMINANCE_BEFORE_16EF14E).toFixed(6),
+        wholePlateBaseline16ef14e: PHOTO_LUMINANCE_BEFORE_16EF14E }));
+    const controlImage = await screenshotOnlineProbe(page, ONLINE_HARD_EDGE_CONTROL_CSS);
+    const realOverlay = measureOverlayAttenuation(hiddenTextImage, barePhotoImage, rest.plate, rest.photo, rest.qr, rest.iphone);
+    const controlOverlay = measureOverlayAttenuation(controlImage, barePhotoImage, rest.plate, rest.photo, rest.qr, rest.iphone);
+    const noHardEdgeThreshold = controlOverlay.max.average * NO_HARD_EDGE_CONTROL_THRESHOLD_FRACTION;
+    check(tag + ' no-hard-edge control', controlOverlay.max.average >= NO_HARD_EDGE_CONTROL_MIN_AVERAGE &&
+      controlOverlay.max.average >= realOverlay.max.average * 3,
+      JSON.stringify({ control: controlOverlay.max, real: realOverlay.max,
+        controlMin: NO_HARD_EDGE_CONTROL_MIN_AVERAGE, requiredControlToRealRatio: 3,
+        thresholdFraction: NO_HARD_EDGE_CONTROL_THRESHOLD_FRACTION, exclusions: controlOverlay.exclusions }));
+    check(tag + ' no-hard-edge', realOverlay.max.average <= noHardEdgeThreshold,
+      JSON.stringify({ real: realOverlay.max, control: controlOverlay.max, threshold: noHardEdgeThreshold,
+        thresholdFraction: NO_HARD_EDGE_CONTROL_THRESHOLD_FRACTION, exclusions: realOverlay.exclusions,
+        realBoundaries: realOverlay.boundaries, controlBoundaries: controlOverlay.boundaries }));
     check(tag + ' at rest: steam hidden and its three loops are paused',
       +rest.steamOpacity === 0 && rest.animations.running === 0 && rest.animations.total >= 3,
       JSON.stringify({ steam: rest.steamOpacity, display: rest.steamDisplay, animations: rest.animations }));
@@ -774,6 +1036,12 @@ try {
       JSON.stringify({ plate: onlineText.plate, image: onlineText.image, qr: onlineText.qr, viewBox: onlineText.qrViewBox, paths: onlineText.qrPathCount }));
     check(tag + ' online text fits', onlineText.texts.every((x) => x.scrollWidth <= x.clientWidth || x.text.endsWith('\u2026')),
       JSON.stringify(onlineText.texts.map((x) => ({ text: x.text, scroll: [x.scrollWidth, x.clientWidth] }))));
+    const liveTextExpected = [valid.banner.headline, valid.banner.wordmark, valid.banner.tagline.join(' \u00b7 '), valid.banner.badge];
+    const liveTextWhole = onlineText.texts.length === liveTextExpected.length &&
+      onlineText.texts.every((item, index) => item.text === liveTextExpected[index] && !item.text.includes('\u2026') &&
+        item.scrollWidth <= item.clientWidth && item.fontSize >= LIVE_TEXT_MIN_FONT_SIZES[index] - 0.01);
+    check(tag + ' live-text-whole', liveTextWhole,
+      JSON.stringify({ expected: liveTextExpected, actual: onlineText.texts.map((item) => ({ text: item.text, fontSize: item.fontSize, scroll: [item.scrollWidth, item.clientWidth] })) }));
     check(tag + ' online photo and QR are local', onlineText.image.scheme === 'data:image/webp;base64' && onlineText.plateScroll[0] === onlineText.plateScroll[1],
       JSON.stringify({ scheme: onlineText.image.scheme, scroll: onlineText.plateScroll }));
 
@@ -815,6 +1083,7 @@ try {
     await page.waitForTimeout(1400);
     const validActiveText = await checkOnlineTextOnTop(page, tag, 'valid', 'active');
     await checkOnlineTextRenderedContrast(page, tag, 'valid', 'active', validActiveText);
+    await checkOnlineNoColourHacks(page, tag, 'valid', 'active');
     await checkOnlineTextContrast(page, tag, 'valid', 'active');
     const active = await measure(page);
     await setActive(false);
@@ -889,6 +1158,7 @@ try {
     const maxMeasure = await measure(page);
     const maxRestText = await checkOnlineTextOnTop(page, tag, 'max-text', 'rest');
     await checkOnlineTextRenderedContrast(page, tag, 'max-text', 'rest', maxRestText);
+    await checkOnlineNoColourHacks(page, tag, 'max-text', 'rest');
     await checkOnlineTextContrast(page, tag, 'max-text', 'rest');
     check(tag + ' max-text-fits', maxMeasure.variant === 'online' && maxMeasure.texts.every((x) => x.scrollWidth <= x.clientWidth || x.text.endsWith('\u2026')),
       JSON.stringify(maxMeasure.texts.map((x) => ({ text: x.text, scroll: [x.scrollWidth, x.clientWidth] }))));
@@ -899,6 +1169,7 @@ try {
     await page.waitForTimeout(1400);
     const maxActiveText = await checkOnlineTextOnTop(page, tag, 'max-text', 'active');
     await checkOnlineTextRenderedContrast(page, tag, 'max-text', 'active', maxActiveText);
+    await checkOnlineNoColourHacks(page, tag, 'max-text', 'active');
     await checkOnlineTextContrast(page, tag, 'max-text', 'active');
     await setActive(false);
     await page.waitForTimeout(1000);

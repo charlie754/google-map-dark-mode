@@ -36,6 +36,37 @@ test('the renderer is marked and builds DOM without an innerHTML data sink', () 
   assert.match(source, /<path|createElementNS/);
 });
 
+test('the online renderer embeds the decoded static iPhone preview', () => {
+  const source = rendererSource(widget);
+  const match = /const IPHONE_PREVIEW_DATA_URL = 'data:image\/webp;base64,([^']+)'/.exec(source);
+  assert.ok(match, 'the static iPhone WebP data URL is missing');
+  const bytes = Buffer.from(match[1], 'base64');
+  assert.equal(bytes.subarray(0, 4).toString('ascii'), 'RIFF');
+  assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP');
+  assert.ok(bytes.length < 20 * 1024, 'the embedded iPhone preview exceeds 20 KB');
+  assert.match(source, /make\('span', 'gc-iphone', link\)/);
+  assert.match(source, /attr\(iphone, 'aria-hidden', 'true'\)/);
+  assert.match(source, /attr\(iphoneImage, 'width', '60'\)/);
+  assert.match(source, /attr\(iphoneImage, 'height', '128'\)/);
+  assert.match(source, /Static extension preview only; this image is not part of the signed banner/);
+});
+
+test('the online photo stays natural and text uses only soft treatment', () => {
+  const source = widget.slice(widget.indexOf('const GOAT_ONLINE_FIX_CSS'), widget.indexOf('// goatcam-banner-render:begin'));
+  assert.match(source, /\.goat--online \.gc-photo, \.goat--online \.goat-lockup:is\(:hover, :focus-visible, \.is-active\) \.gc-photo \{ --gc-scrim: none; \}/);
+  assert.match(source, /\.goat--online \.gc-photo::after \{ background: none; \}/);
+  assert.match(source, /\.goat--online \.gc-photo__img \{ filter: none; \}/);
+  assert.match(source, /\.goat--online \.goat-lockup__name \{ color: var\(--gc-cream\); text-shadow:/);
+  assert.match(source, /\.goat--online \.goat-lockup__tag \{ color: var\(--gc-cream-soft\); text-shadow:/);
+  assert.match(source, /\.goat--online \.gc-badge__text \{[^}]*color: var\(--gc-gold\); text-shadow:/);
+  assert.match(source, /radial-gradient\(ellipse 72px 30px at 48% 50%/);
+  assert.match(source, /filter: blur\(5px\); opacity: 1/);
+  assert.doesNotMatch(source, /\.goat--online \.goat-lockup__word \{[^}]*background:/s);
+  assert.doesNotMatch(source, /\.goat--online \.goat-lockup__name, \.goat--online \.goat-lockup__tag \{[^}]*background:/s);
+  assert.match(source, /\.goat--online \.gc-badge \{[^}]*background: rgba\(20, 13, 8, \.82\); box-shadow: none;/);
+  assert.doesNotMatch(source, /brightness\(|contrast\(|saturate\(|-webkit-text-fill-color|-webkit-text-stroke|background-blend-mode/);
+});
+
 test('the online and DaGoat links carry their required navigation policy', () => {
   const source = rendererSource(widget);
   assert.match(source, /https:\/\/dagoat\.io/);
