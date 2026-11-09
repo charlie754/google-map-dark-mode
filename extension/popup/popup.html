@@ -49,6 +49,18 @@
     </div>
   </div>
 
+  <!-- Firefox only (lib/data-consent.js unhides it). Chrome downloads the panel's GOAT Cam
+       banner without asking; Firefox waits for the optional data-collection consent. -->
+  <div class="panel" id="bannerConsent" hidden>
+    <div class="row">
+      <span class="row__text">
+        <label class="row__label" for="onlineBanner">GOAT Cam banner updates</label>
+        <span class="row__hint" id="onlineBannerHint">Download the latest promo from goatcam.dagoat.io</span>
+      </span>
+      <input type="checkbox" role="switch" class="switch" id="onlineBanner" aria-describedby="onlineBannerHint">
+    </div>
+  </div>
+
   <p class="error" id="error" role="alert" hidden></p>
 
   <button type="button" id="kofi" class="kofi" data-url="https://ko-fi.com/irp_hongkong">
@@ -76,6 +88,7 @@
   </div>
 
   <script src="../lib/polyfill.js"></script>
+  <script src="../lib/data-consent.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

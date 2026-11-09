@@ -6,7 +6,7 @@
     publicKeyHex: "048bab7ec0b7ce36bcbeecee3450d5156213b664c6dbd0287f7c0350e4ead0c1f26d4b61525d52d11d2cee038b91f5ca14773e4db21b0d3fa21f8e2cfdf0593389",
     keyId: "220c87522a4b7cbf",
     floor: 0,
-    firefoxOnline: false,
+    firefoxOnline: true,
   });
   globalThis.GoatBannerKey = value;
   if (typeof module !== "undefined" && module && module.exports) module.exports = value;

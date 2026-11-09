@@ -63,6 +63,25 @@
       <p class="error" id="error" role="alert" hidden></p>
     </section>
 
+    <!-- Firefox only (lib/data-consent.js unhides it). -->
+    <section class="card" id="bannerConsent" hidden>
+      <h2 class="card__title">GOAT Cam banner</h2>
+      <div class="panel">
+        <div class="row">
+          <span class="row__text">
+            <label class="row__label" for="onlineBanner">Download banner updates</label>
+            <span class="row__hint" id="onlineBannerHint">
+              Lets the panel on the map fetch the current GOAT Cam promo — a signed file and one
+              photo — from goatcam.dagoat.io, at most every six hours and only while the panel is
+              open. Off, the panel shows the banner bundled with the extension and makes no request.
+              Firefox asks for this as optional technical and interaction data; you can also change
+              it in about:addons under Permissions and data.
+            </span>
+          </span>
+          <input type="checkbox" role="switch" class="switch" id="onlineBanner" aria-describedby="onlineBannerHint">
+        </div>
+      </div>
+    </section>
     <section class="card">
       <h2 class="card__title">Status</h2>
 
@@ -102,7 +121,7 @@
       <p class="card__foot">
         This is here because a broken extension and a working one look identical from the map:
         both give you the map Google would have given you anyway. The check runs against Google’s
-        own servers, and it is the only network request this extension makes on its own account.
+        own servers, and it is the only network request this extension makes for the map itself.
       </p>
     </section>
 
@@ -129,9 +148,11 @@
       </p>
 
       <p class="prose">
-        There is no account, no server of the extension’s own, and no analytics. The only requests
-        it makes are to google.com and gstatic.com, the same servers Maps is already talking to,
-        and only to check that the dark palette is still being served.
+        There is no account, no server of the extension’s own, and no analytics. For the map it
+        only talks to google.com and gstatic.com, the same servers Maps is already talking to, and
+        only to check that the dark palette is still being served. The panel on the map may also
+        download a signed GOAT Cam promo from goatcam.dagoat.io; in Firefox only after you turn on
+        the switch above.
       </p>
 
       <p class="prose" id="sourceLine" hidden>
@@ -156,10 +177,10 @@
           stays bright against the dark interface.
         </li>
         <li>
-          <strong>Terrain is untested.</strong> There are rules covering the terrain base map as
-          well as the ordinary road one, but the terrain view has never been driven through a
-          real session on either browser. Treat it as unverified rather than supported: it may
-          look right, it may not, and it may behave differently in Chrome and Firefox.
+          <strong>Terrain and Transit are spot-checked, not continuously tested.</strong> Both
+          have their own rules and were switched on in real Maps sessions in Chrome and Firefox
+          for version 1.0.5, where the map stayed dark. Other layers and future Google changes
+          may still come up light.
         </li>
         <li>
           <strong>Not every Google address is covered.</strong> Maps is served from dozens of
@@ -208,6 +229,7 @@
   <!-- polyfill.js first, so the page establishes the `browser` namespace itself rather than
        relying on the host providing one. A no-op where it already exists. -->
   <script src="../lib/polyfill.js"></script>
+  <script src="../lib/data-consent.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

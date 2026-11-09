@@ -139,7 +139,7 @@ function makeFakeBrowser({ flavor = 'chrome', data = {}, fetchImpl, permissions 
     runtime,
     storage: { local: storageLocal },
     alarms: alarmsApi,
-    permissions: { async getAll() { return { data_collection: permissions }; } },
+    permissions: { onAdded: eventSource(), async getAll() { return { data_collection: [...permissions] }; } },
     tabs: { async create(info) { return info; } },
   };
   const context = {
@@ -312,6 +312,33 @@ test('firefox-gate-on-when-allowed', async () => {
   assert.equal(fake.fetchCalls.filter(({ url }) => url.endsWith('/banner/v1.signed')).length, 1);
   assert.equal(fake.state.get(DISPLAY_KEY).kind, 'online');
   await port.disconnect();
+});
+
+test('firefox-consent-granted-while-panel-open-fetches-now', async () => {
+  // 1.0.5: the popup/options switch requests technicalAndInteraction from a click. A grant
+  // made while a Maps panel is already open must start the download there and then.
+  const permissions = [];
+  const fake = await loadBackground({
+    flavor: 'firefox',
+    firefoxOnline: true,
+    permissions,
+    fetchImpl: validFetch,
+  });
+  const port = await connect(fake);
+  await waitFor(() => fake.state.get(DISPLAY_KEY)?.kind === 'dagoat', 'Firefox fallback before consent');
+  assert.equal(fake.fetchCalls.length, 0);
+  permissions.push('technicalAndInteraction');
+  await fake.api.permissions.onAdded.emit({ permissions: [], origins: [], data_collection: ['technicalAndInteraction'] });
+  await waitFor(() => fake.state.get(DISPLAY_KEY)?.kind === 'online', 'Firefox online display after consent');
+  assert.equal(fake.fetchCalls.filter(({ url }) => url.endsWith('/banner/v1.signed')).length, 1);
+  await port.disconnect();
+});
+
+test('shipped key enables the Firefox banner behind the consent gate', () => {
+  // 1.0.4 shipped firefoxOnline:false, so Firefox never fetched even with consent -- the
+  // "ads section does not work on Firefox" report. The consent gate itself is unchanged.
+  const key = fs.readFileSync(path.join(LIB_DIR, 'banner-key.js'), 'utf8');
+  assert.match(key, /firefoxOnline: true,/);
 });
 
 test('display-written', async () => {

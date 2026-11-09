@@ -18,7 +18,7 @@ if (typeof importScripts === "function") importScripts("lib/banner-core.js", "li
  * All the colour work lives in the declarativeNetRequest static ruleset
  * (rules/dark-map.json). Google Maps picks one of three renderers client-side
  * and each takes its palette from a different place, so it takes four rules to
- * cover them:
+ * cover them, plus a fifth for the Transit layer's own palette:
  *
  *   mode            base-map transport                    palette source
  *   --------------  -----------------------------------   --------------------
@@ -32,9 +32,13 @@ if (typeof importScripts === "function") importScripts("lib/banner-core.js", "li
  *           stock desktop Chrome and every Firefox.
  *   rule 2  CompactLegend-Terrain-<v>  -> CompactLegend-TerrainDark-<v>
  *           Same, for the terrain base map.
- *   rule 3  /maps/vt/stream/pb=…!2s(Roadmap|Terrain)! -> …Dark!
+ *   rule 5  CompactLegend-TransitFocused-<v> -> CompactLegend-TransitFocusedDark-<v>
+ *           Layers > Transit swaps the whole base-map palette to its own
+ *           "TransitFocused" style (both engines, measured 2026-11-09). Without
+ *           this rule the Transit map is Google's light one.
+ *   rule 3  /maps/vt/stream/pb=…!2s(Roadmap|Terrain|TransitFocused)! -> …Dark!
  *           Covers plain `canvas` mode, which colours from the server stream.
- *   rule 4  /maps/vt/pb=…!2s(Roadmap|Terrain)!        -> …Dark!
+ *   rule 4  /maps/vt/pb=…!2s(Roadmap|Terrain|TransitFocused)! -> …Dark!
  *           The server-HTML first-paint raster grid, present in ALL modes. Its
  *           only job is to remove the ~1 s light flash before the vector layer
  *           arrives; it cannot darken the map on its own (the vector renderer
@@ -157,7 +161,7 @@ const PINNED_LEGEND_VERSIONS = [
 
 /**
  * Version-liveness canary. `RoadmapSatellite` is served (HTTP 200) alongside
- * Roadmap/RoadmapDark/Terrain/TerrainDark, and — critically — none of our four
+ * Roadmap/RoadmapDark/Terrain/TerrainDark, and — critically — none of our five
  * rules can match it: rule 1 requires `Roadmap` followed immediately by `-`,
  * and here it is followed by `S`. So the canary measures whether the *version*
  * is still on the CDN without being perturbed by our own redirects.
@@ -184,9 +188,9 @@ const RASTER_DEAD_MAX_BYTES = 500;
  * and not the other are reported as a failure by runRuleSelfCheck().
  *
  * The value is a LIST because a rule's regex can carry alternatives that the
- * self-check must not be narrower than: rules 3 and 4 match `(Roadmap|Terrain)`,
- * and a table with only the Roadmap arm would report "ok" for a ruleset whose
- * Terrain arm had been broken.
+ * self-check must not be narrower than: rules 3 and 4 match
+ * `(Roadmap|Terrain|TransitFocused)`, and a table with only the Roadmap arm
+ * would report "ok" for a ruleset whose Terrain or Transit arm had been broken.
  *
  * `type` is the DNR resource type to test under. The CompactLegend asset is
  * fetched by Maps as fetch/xhr (both are `xmlhttprequest` to DNR); the raster
@@ -211,6 +215,15 @@ const RULE_SAMPLES = {
         "https://www.gstatic.com/maps/res/CompactLegend-TerrainDark-4311471e3660cd049e8ede59d279b3ba",
     },
   ],
+  5: [
+    {
+      name: "legend-transit",
+      type: "xmlhttprequest",
+      url: "https://www.gstatic.com/maps/res/CompactLegend-TransitFocused-5e6bae4931cec7c0849f0477025453b8",
+      expect:
+        "https://www.gstatic.com/maps/res/CompactLegend-TransitFocusedDark-5e6bae4931cec7c0849f0477025453b8",
+    },
+  ],
   3: [
     {
       name: "vector-stream",
@@ -225,6 +238,13 @@ const RULE_SAMPLES = {
       url: "https://www.google.com/maps/vt/stream/pb=!1m7!8m6!1m3!1i12!2i960!3i1691!2i6!3x16777215!2m3!1e0!2sm!3i790555512!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrain!4e1!5m1!1e0",
       expect:
         "https://www.google.com/maps/vt/stream/pb=!1m7!8m6!1m3!1i12!2i960!3i1691!2i6!3x16777215!2m3!1e0!2sm!3i790555512!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrainDark!4e1!5m1!1e0",
+    },
+    {
+      name: "vector-stream-transit",
+      type: "xmlhttprequest",
+      url: "https://www.google.com/maps/vt/stream/pb=!1m7!8m6!1m3!1i14!2i4822!3i6156!2i6!3x16777215!2m3!1e0!2sm!3i803569006!2m6!1e2!2stransit!3i999999!4m2!1ssp!2s2!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTransitFocused!4e1!6m9!1e12!2i2!26m1!1b1!28e3!39b1!44e2!50e0!71b1",
+      expect:
+        "https://www.google.com/maps/vt/stream/pb=!1m7!8m6!1m3!1i14!2i4822!3i6156!2i6!3x16777215!2m3!1e0!2sm!3i803569006!2m6!1e2!2stransit!3i999999!4m2!1ssp!2s2!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTransitFocusedDark!4e1!6m9!1e12!2i2!26m1!1b1!28e3!39b1!44e2!50e0!71b1",
     },
   ],
   4: [
@@ -241,6 +261,13 @@ const RULE_SAMPLES = {
       url: "https://www.google.com/maps/vt/pb=!1m4!1m3!1i17!2i30812!3i54180!2m3!1e0!2sm!3i789555512!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrain!4e0!5m1!1e0!23i100818990",
       expect:
         "https://www.google.com/maps/vt/pb=!1m4!1m3!1i17!2i30812!3i54180!2m3!1e0!2sm!3i789555512!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrainDark!4e0!5m1!1e0!23i100818990",
+    },
+    {
+      name: "raster-firstpaint-transit",
+      type: "image",
+      url: "https://www.google.com/maps/vt/pb=!1m4!1m3!1i14!2i4824!3i6157!2m3!1e0!2sm!3i803568952!2m6!1e2!2stransit!3i999999!4m2!1ssp!2s2!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTransitFocused!4e0!5m1!1e0!23i1368782",
+      expect:
+        "https://www.google.com/maps/vt/pb=!1m4!1m3!1i14!2i4824!3i6157!2m3!1e0!2sm!3i803568952!2m6!1e2!2stransit!3i999999!4m2!1ssp!2s2!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTransitFocusedDark!4e0!5m1!1e0!23i1368782",
     },
   ],
 };
@@ -1738,6 +1765,21 @@ if (api?.runtime?.onConnect?.addListener) {
       if (!goatBannerPorts.delete(port) || goatBannerPorts.size !== 0) return;
       void controls.hidden();
     });
+  });
+}
+
+// Firefox: the banner download is gated on the optional `technicalAndInteraction`
+// data-collection consent (goatBannerGate). Firefox offers it as a checkbox in the
+// AMO install prompt; the popup and options page carry a switch that requests it
+// from a click. A grant made while a Maps panel is already open must take effect
+// there and then, not at the next 6-hour timer or the next time a panel opens.
+// Chrome has no data_collection key, so this listener never fires for it.
+if (api?.permissions?.onAdded?.addListener) {
+  api.permissions.onAdded.addListener((permissions) => {
+    const granted = Array.isArray(permissions?.data_collection)
+      && permissions.data_collection.includes("technicalAndInteraction");
+    if (!granted || goatBannerPorts.size === 0) return;
+    void ensureGoatBannerRunner().resumed();
   });
 }
 
