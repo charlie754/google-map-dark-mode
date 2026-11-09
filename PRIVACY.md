@@ -57,7 +57,7 @@ These are the same servers Google Maps is already talking to while you use it.
 
 To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. In Firefox this happens only if you turn on the optional technical and interaction data permission.
 
-In Firefox that permission is off unless you choose it: in the add-on's install prompt, with the **GOAT Cam banner updates** switch in the toolbar popup or on the settings page (from 1.0.5), or under about:addons → Permissions and data. Turning it off again stops the download; the panel then shows the banner bundled with the extension.
+In Firefox that permission is off unless you choose it: in the add-on's install prompt, with the **Show the latest GOAT Cam banner** button under the banner in the Maps panel (it opens a one-page explanation with an Allow button), with the **GOAT Cam banner updates** switch in the toolbar popup or on the settings page (from 1.0.5), or under about:addons → Permissions and data. Turning it off again stops the download; the panel then shows the banner bundled with the extension.
 
 ## What it does to Maps' own requests
 

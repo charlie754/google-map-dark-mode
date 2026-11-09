@@ -1776,10 +1776,53 @@ if (api?.runtime?.onConnect?.addListener) {
 // Chrome has no data_collection key, so this listener never fires for it.
 if (api?.permissions?.onAdded?.addListener) {
   api.permissions.onAdded.addListener((permissions) => {
+    void goatBannerPublishConsent();
     const granted = Array.isArray(permissions?.data_collection)
       && permissions.data_collection.includes("technicalAndInteraction");
     if (!granted || goatBannerPorts.size === 0) return;
     void ensureGoatBannerRunner().resumed();
+  });
+}
+if (api?.permissions?.onRemoved?.addListener) {
+  api.permissions.onRemoved.addListener(() => { void goatBannerPublishConsent(); });
+}
+
+// Firefox: tell the Maps panel whether to offer the "show the latest banner" button.
+// A signed install from AMO has the consent ticked by default in Firefox's install
+// prompt, but a temporary add-on (about:debugging), a self-installed build, or a user
+// who unticked it never sees that checkbox again, and the toolbar popup's switch sits
+// behind the puzzle-piece menu. So the ads section itself carries the opt-in: the
+// content script cannot call permissions.request(), so its button asks us to open
+// consent/consent.html, a one-click page that requests the permission from a click.
+const GOAT_BANNER_CONSENT_KEY = "goatcamBanner.consent";
+const goatBannerConsentNeeded = async () => {
+  if (typeof api?.runtime?.getBrowserInfo !== "function") return false;
+  if (GoatBannerKey.firefoxOnline !== true) return false;
+  try {
+    const permissions = await api.permissions.getAll();
+    if (!Array.isArray(permissions?.data_collection)) return false;
+    return !permissions.data_collection.includes("technicalAndInteraction");
+  } catch {
+    return false;
+  }
+};
+const goatBannerPublishConsent = async () => {
+  try {
+    const needed = await goatBannerConsentNeeded();
+    await api.storage.local.set({ [GOAT_BANNER_CONSENT_KEY]: { needed } });
+  } catch (error) {
+    console.warn("[goatcam-banner] consent state:", error);
+  }
+};
+void goatBannerPublishConsent();
+
+if (api?.runtime?.onMessage?.addListener) {
+  api.runtime.onMessage.addListener((message) => {
+    if (message?.type !== "goatcamBanner.openConsent") return;
+    void goatBannerConsentNeeded().then((needed) => {
+      if (!needed) return;
+      return api.tabs.create({ url: api.runtime.getURL("consent/consent.html") });
+    });
   });
 }
 

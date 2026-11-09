@@ -21,7 +21,8 @@ for Google's dark version of it (Chrome and Firefox). Terrain was re-checked on
 live Maps in both browsers. In Firefox, the GOAT Cam banner update from
 goatcam.dagoat.io now works: it is still off until you allow the optional
 "technical and interaction data" permission, which can now be turned on from a
-**GOAT Cam banner updates** switch in the popup and on the settings page (as well
+**Show the latest GOAT Cam banner** button under the banner in the Maps panel, or
+the **GOAT Cam banner updates** switch in the popup and on the settings page (as well
 as in the install prompt and about:addons). Chrome behaviour is unchanged.
 
 **1.0.4** (2026-11-06) — the GOAT Cam banner can now be updated without a new

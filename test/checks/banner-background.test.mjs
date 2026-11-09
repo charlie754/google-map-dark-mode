@@ -139,8 +139,8 @@ function makeFakeBrowser({ flavor = 'chrome', data = {}, fetchImpl, permissions 
     runtime,
     storage: { local: storageLocal },
     alarms: alarmsApi,
-    permissions: { onAdded: eventSource(), async getAll() { return { data_collection: [...permissions] }; } },
-    tabs: { async create(info) { return info; } },
+    permissions: { onAdded: eventSource(), onRemoved: eventSource(), async getAll() { return { data_collection: [...permissions] }; } },
+    tabs: { created: [], async create(info) { this.created.push(info); return info; } },
   };
   const context = {
     console,
@@ -339,6 +339,33 @@ test('shipped key enables the Firefox banner behind the consent gate', () => {
   // "ads section does not work on Firefox" report. The consent gate itself is unchanged.
   const key = fs.readFileSync(path.join(LIB_DIR, 'banner-key.js'), 'utf8');
   assert.match(key, /firefoxOnline: true,/);
+});
+
+test('firefox-panel-consent-button-state-and-page', async () => {
+  // 1.0.5 follow-up: a temporary/self-installed Firefox add-on never shows the install-prompt
+  // checkbox, so the Maps panel itself offers the opt-in. The background publishes whether
+  // it is needed and opens consent/consent.html on request; a grant clears the flag.
+  const permissions = [];
+  const fake = await loadBackground({ flavor: 'firefox', firefoxOnline: true, permissions, fetchImpl: validFetch });
+  await waitFor(() => fake.state.get('goatcamBanner.consent')?.needed === true, 'consent needed published');
+  await fake.api.runtime.onMessage.emit({ type: 'goatcamBanner.openConsent' }, {}, () => {});
+  await waitFor(() => fake.api.tabs.created.length === 1, 'consent page opened');
+  assert.match(fake.api.tabs.created[0].url, /consent\/consent\.html$/);
+  permissions.push('technicalAndInteraction');
+  await fake.api.permissions.onAdded.emit({ permissions: [], origins: [], data_collection: ['technicalAndInteraction'] });
+  await waitFor(() => fake.state.get('goatcamBanner.consent')?.needed === false, 'consent flag cleared');
+  await fake.api.runtime.onMessage.emit({ type: 'goatcamBanner.openConsent' }, {}, () => {});
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(fake.api.tabs.created.length, 1, 'no page once granted');
+});
+
+test('chrome-never-offers-the-consent-button', async () => {
+  const fake = await loadBackground({ fetchImpl: validFetch });
+  await waitFor(() => fake.state.has('goatcamBanner.consent'), 'consent state published');
+  assert.equal(fake.state.get('goatcamBanner.consent').needed, false);
+  await fake.api.runtime.onMessage.emit({ type: 'goatcamBanner.openConsent' }, {}, () => {});
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(fake.api.tabs.created.length, 0);
 });
 
 test('display-written', async () => {

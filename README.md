@@ -153,9 +153,11 @@ extension may download a signed promo update from goatcam.dagoat.io (at most eve
 six hours; see [PRIVACY.md](PRIVACY.md)) and falls back to the bundled banner if it
 is offline, bad or expired. In Firefox that download waits for the optional
 *technical and interaction data* consent — offered in the install prompt, and from
-1.0.5 also as the **GOAT Cam banner updates** switch in the popup and settings page
-(a temporary add-on loaded from about:debugging gets no install prompt, so use the
-switch). Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
+1.0.5 also as a **Show the latest GOAT Cam banner** button right under the banner
+in the Maps panel (it opens a one-page explanation with an Allow button) and as the
+**GOAT Cam banner updates** switch in the popup and settings page. A temporary add-on
+loaded from about:debugging gets no install prompt, so it starts with the bundled
+banner and that button until you allow it. Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
 keyboard-focusing the QR code enlarges it so a phone can scan it. The banner
 animates only while the pointer or keyboard focus is on it; in reduced-motion
 mode nothing travels and the QR code enlarges instantly.
