@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Google Map Dark Mode** — a Chrome + Firefox MV3 extension that gives `google.com/maps` a real
-dark mode. v1.0.2, packaged for both stores: dark map surface *and* dark app chrome, on by
+dark mode. v1.0.5, packaged for both stores: dark map surface *and* dark app chrome, on by
 default, verified under sustained interaction on both browsers.
 
 Internals still carry the old code name `maps-noir` in one place on purpose — the
@@ -72,8 +72,11 @@ Google's genuine dark cartography. `Terrain` / `TerrainDark` likewise. Invalid s
 cleanly, which is the health canary. Version hashes rotate; two were observed in one day, so never
 pin one.
 
-Four DNR rules in `extension/rules/dark-map.json` cover all three modes. Rule 1 (the legend) is the
-one that matters; rule 4 (first-paint raster tiles) exists only to kill a ~1 s light flash.
+Five DNR rules in `extension/rules/dark-map.json` cover all three modes. Rule 1 (the legend) is the
+one that matters; rule 4 (first-paint raster tiles) exists only to kill a ~1 s light flash; rule 5
+is the Transit layer, which swaps the WHOLE palette to `CompactLegend-TransitFocused-<v>` (and the
+tile token to `!2sTransitFocused!`, covered by rules 3/4) rather than drawing over Roadmap. Any new
+Layers mode that stays light: capture its CompactLegend style name first — that is the lever.
 
 ### Dead ends — proven, do not retry
 

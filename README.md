@@ -34,24 +34,26 @@ https://www.gstatic.com/maps/res/CompactLegend-Roadmap-<32-hex-version>
 `CompactLegend-RoadmapDark-<the same version>` also exists, is served with
 HTTP 200, and is about 1.9 MB of Google's own night cartography — the palette
 behind the dark map you have seen in the Maps mobile app. `Terrain` and
-`TerrainDark` likewise.
+`TerrainDark` likewise, and so do `TransitFocused` / `TransitFocusedDark`, the
+palette Maps switches to when the Transit layer is on.
 
 So darkening the map is a **pure string substitution on a URL**. No protobuf
-surgery, no length arithmetic, no re-encoding: four
+surgery, no length arithmetic, no re-encoding: five
 `declarativeNetRequest` rules rewrite `Roadmap` to `RoadmapDark` in Google's own
 request, and the WebGL renderer draws Google's real dark map. The colours you get
 are the ones Google's cartographers chose, at every zoom level, with the label
 haloes and road casings they designed for a dark background.
 
 Four rules, because three renderer modes take their palette from two different
-places:
+places, and a fifth for the Transit layer's own palette:
 
 | Rule | Rewrites | Covers |
 | --- | --- | --- |
 | 1 | `CompactLegend-Roadmap-<v>` → `-RoadmapDark-` | the vector renderer (stock desktop Chrome) and Firefox's canvas+labeler renderer — **the one that matters** |
 | 2 | `CompactLegend-Terrain-<v>` → `-TerrainDark-` | the same, for the Terrain base map |
-| 3 | `/maps/vt/stream/pb=…!2s(Roadmap\|Terrain)!` → `…Dark!` | the plain-canvas fallback, which colours server-side |
-| 4 | `/maps/vt/pb=…!2s(Roadmap\|Terrain)!` → `…Dark!` | the first-paint raster grid, present in every mode — its only job is to remove a ~1 second light flash |
+| 3 | `/maps/vt/stream/pb=…!2s(Roadmap\|Terrain\|TransitFocused)!` → `…Dark!` | the plain-canvas fallback, which colours server-side |
+| 4 | `/maps/vt/pb=…!2s(Roadmap\|Terrain\|TransitFocused)!` → `…Dark!` | the first-paint raster grid, present in every mode — its only job is to remove a ~1 second light flash |
+| 5 | `CompactLegend-TransitFocused-<v>` → `-TransitFocusedDark-` | **Layers → Transit**, which swaps the whole base map to its own `TransitFocused` palette (added in 1.0.5; before it the Transit map stayed light in both browsers) |
 
 An invalid style name 404s cleanly, which is how the extension can tell whether
 this still works (see *Self-check*, below).
@@ -114,7 +116,7 @@ node tools/package.mjs
 ```
 
 then open `about:debugging#/runtime/this-firefox`, click **Load Temporary
-Add-on…**, and choose `dist/google-map-dark-mode-firefox-1.0.3.xpi`. A temporary
+Add-on…**, and choose `dist/google-map-dark-mode-firefox-1.0.5.xpi`. A temporary
 add-on is removed when Firefox closes.
 
 Dark mode is **on by default**. The toolbar button has three switches: a master
@@ -145,9 +147,15 @@ boundary this panel's own palette would be transformed along with Maps'.
 
 At the bottom of the panel is a banner for the author's own iPhone app,
 [GOAT Cam](https://goatcam.dagoat.io), which turns the phone into a webcam for a
-Windows 11 PC. It is self-promotion, not an ad network. Its coffee photo and its
-App Store QR code are embedded in the extension, so showing the banner makes no
-network request. Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
+Windows 11 PC. It is self-promotion, not an ad network. A default coffee photo
+and App Store QR code are embedded in the extension. While the panel is open the
+extension may download a signed promo update from goatcam.dagoat.io (at most every
+six hours; see [PRIVACY.md](PRIVACY.md)) and falls back to the bundled banner if it
+is offline, bad or expired. In Firefox that download waits for the optional
+*technical and interaction data* consent — offered in the install prompt, and from
+1.0.5 also as the **GOAT Cam banner updates** switch in the popup and settings page
+(a temporary add-on loaded from about:debugging gets no install prompt, so use the
+switch). Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
 keyboard-focusing the QR code enlarges it so a phone can scan it. The banner
 animates only while the pointer or keyboard focus is on it; in reduced-motion
 mode nothing travels and the QR code enlarges instantly.
@@ -187,9 +195,11 @@ the GOAT desktop app.
   `google.co.uk`, `google.de`, `google.co.jp` and so on — and not one of them has
   ever been driven by the gate. Everything proven live was proven on
   `google.com`.
-- **Terrain is proven offline, not live.** The rules cover the Terrain base map
-  and Chrome's own engine confirms they match, but no gate has driven live Maps
-  with Terrain selected.
+- **Terrain and Transit are spot-checked live, not gated.** In 1.0.5 both were
+  switched on from the Layers control on live Maps in Chromium, Playwright's
+  Firefox 153 and stock Firefox 159, and the map stayed dark (screenshots, not the
+  live gate's time series). The live gate itself still only drives the default
+  map.
 - **Firefox rule health degrades to "unknown".** `testMatchOutcome` does not
   exist there, so the self-check falls back to a weaker oracle that proves the
   engine compiled each rule but not that it matched.

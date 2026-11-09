@@ -1,4 +1,4 @@
-# Store listing copy — Google Map Dark Mode 1.0.4
+# Store listing copy — Google Map Dark Mode 1.0.5
 
 Everything a reviewer or a submission form will ask for, written out. Nothing
 here can be submitted by an assistant: both stores need an account holder to sign
@@ -9,11 +9,20 @@ registration fee.
 
 | Store | File |
 | --- | --- |
-| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.4.zip` |
-| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.4.xpi` |
+| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.5.zip` |
+| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.5.xpi` |
 
 The version in both file names comes from the manifests and is checked against
 the archived manifest at package time; it is never typed in twice.
+
+**1.0.5** (2026-11-09) — the Transit layer is now dark too: Maps switches to a
+separate Transit palette when Layers → Transit is on, and the extension now asks
+for Google's dark version of it (Chrome and Firefox). Terrain was re-checked on
+live Maps in both browsers. In Firefox, the GOAT Cam banner update from
+goatcam.dagoat.io now works: it is still off until you allow the optional
+"technical and interaction data" permission, which can now be turned on from a
+**GOAT Cam banner updates** switch in the popup and on the settings page (as well
+as in the install prompt and about:addons). Chrome behaviour is unchanged.
 
 **1.0.4** (2026-11-06) — the GOAT Cam banner can now be updated without a new
 release. While the panel is open, the extension may download a signed promo file
