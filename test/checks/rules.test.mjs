@@ -140,6 +140,9 @@ test('the transport classifier agrees with the corpus about what each URL is', (
     'vector-stream': ['stream', 'Roadmap', false],
     'terrain-stream': ['stream', 'Terrain', false],
     'terrain-raster': ['raster', 'Terrain', false],
+    'legend-transit': ['legend', 'TransitFocused', false],
+    'transit-stream': ['stream', 'TransitFocused', false],
+    'transit-raster': ['raster', 'TransitFocused', false],
     'raster-firstpaint-z12': ['raster', 'Roadmap', false],
     'raster-firstpaint-z17': ['raster', 'Roadmap', false],
     'raster-maps-google-com': ['raster', 'Roadmap', false],
@@ -283,6 +286,55 @@ test('the Terrain and Roadmap arms cannot rewrite into each other', () => {
     const k = classifyRequest(applyRule(rules.find((r) => r.id === c.ruleId), c.url).result);
     assert.equal(k.token, 'RoadmapDark', `${name} must stay in the Roadmap family`);
   }
+});
+
+/* ---------------------------------------------------------------------------
+ * THE TRANSIT ARM (1.0.5).
+ *
+ * Layers > Transit does not draw over the Roadmap palette; it swaps the whole
+ * base map to a `TransitFocused` style on every transport -- the CompactLegend
+ * asset, the stream tiles and the first-paint raster grid. Before rule 5 and the
+ * third alternation arm in rules 3 and 4, none of those requests matched
+ * anything and the Transit map stayed light in both engines. Measured on live
+ * Maps 2026-11-09: `CompactLegend-TransitFocusedDark-<v>` is served (HTTP 200).
+ * ------------------------------------------------------------------------- */
+
+test('the corpus covers the TransitFocused token on every rewritable transport', () => {
+  for (const transport of REWRITABLE_TRANSPORTS) {
+    const hit = MUST_MATCH.find((c) => {
+      const k = classifyRequest(c.url);
+      return k.transport === transport && k.token === 'TransitFocused';
+    });
+    assert.ok(hit, `no must-match corpus entry exercises TransitFocused on the ${transport} transport`);
+  }
+});
+
+test('the Transit arm is rewritten on every transport, by exactly the rule that owns it', () => {
+  const byName = (n) => MUST_MATCH.find((c) => c.name === n);
+  assert.deepEqual(matchingRuleIds(rules, byName('legend-transit').url), [5]);
+  assert.deepEqual(matchingRuleIds(rules, byName('transit-stream').url), [3]);
+  assert.deepEqual(matchingRuleIds(rules, byName('transit-raster').url), [4]);
+  for (const name of ['legend-transit', 'transit-stream', 'transit-raster']) {
+    const c = byName(name);
+    const k = classifyRequest(applyRule(rules.find((r) => r.id === c.ruleId), c.url).result);
+    assert.equal(k.token, 'TransitFocusedDark', `${name} must stay in the Transit family`);
+  }
+});
+
+test('MUTATION: tile rules that drop the Transit arm are caught', () => {
+  const bad = clone();
+  for (const id of [3, 4]) {
+    const r = bad.find((x) => x.id === id);
+    r.condition.regexFilter = r.condition.regexFilter.replace('|TransitFocused', '');
+  }
+  const f = corpusFailures(bad);
+  assert.ok(f.includes('under-match: transit-stream') && f.includes('under-match: transit-raster'),
+    `expected both Transit tile arms to be reported as under-matched, got ${JSON.stringify(f)}`);
+});
+
+test('MUTATION: deleting the Transit legend rule is caught', () => {
+  const f = corpusFailures(clone().filter((r) => r.id !== 5));
+  assert.ok(f.includes('missing rule 5'), `expected the missing rule 5 to be reported, got ${JSON.stringify(f)}`);
 });
 
 /**

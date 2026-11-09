@@ -10,7 +10,7 @@
  *
  *   #  transport   URL shape                                    rewritable?
  *   -  ----------  -------------------------------------------  -----------
- *   1  legend      www.gstatic.com/maps/res/CompactLegend-S-V    yes (rules 1,2)
+ *   1  legend      www.gstatic.com/maps/res/CompactLegend-S-V    yes (rules 1,2,5)
  *   2  stream      <host>/maps/vt/stream/pb=...!1sset!2sS!...    yes (rule 3)
  *   3  raster      <host>/maps/vt/pb=...!2sm!...!1sset!2sS!...   yes (rule 4)
  *   4  proto       <host>/maps/vt/proto?bpb=<base64 protobuf>    NO
@@ -27,9 +27,9 @@
 
 import { bpbOf, protoStyleToken, protoTileCoords } from './bpb.mjs';
 
-export const LIGHT_TOKENS = ['Roadmap', 'Terrain'];
-export const DARK_OF = { Roadmap: 'RoadmapDark', Terrain: 'TerrainDark' };
-export const DARK_TOKENS = ['RoadmapDark', 'TerrainDark'];
+export const LIGHT_TOKENS = ['Roadmap', 'Terrain', 'TransitFocused'];
+export const DARK_OF = { Roadmap: 'RoadmapDark', Terrain: 'TerrainDark', TransitFocused: 'TransitFocusedDark' };
+export const DARK_TOKENS = ['RoadmapDark', 'TerrainDark', 'TransitFocusedDark'];
 
 const SET_MARK = '!1sset!2s';
 const LEGEND_PREFIX = 'https://www.gstatic.com/maps/res/CompactLegend-';

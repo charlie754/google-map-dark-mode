@@ -37,6 +37,25 @@
 
 const LEGEND_V = '4311471e3660cd049e8ede59d279b3ba';
 const LEGEND_V2 = 'e3dec3f84b7764496b89ce7fd835e7f4';
+/** Live on 2026-11-09, when the Transit palette (rule 5) was first captured. */
+const LEGEND_V3 = '5e6bae4931cec7c0849f0477025453b8';
+
+/**
+ * Transit-layer captures, 2026-11-09 (google.com/maps, Layers > Transit, Chromium
+ * 1234 and Firefox 153/159, verbatim from the request log of the 1.0.5 probe; the
+ * tile URLs are truncated before the trailing `!23i` experiment ids, which no
+ * rule reads). Transit does not overlay the Roadmap palette -- it swaps the whole
+ * base map to its own `TransitFocused` style, on every transport.
+ */
+const TRANSIT_STREAM =
+  'https://www.google.com/maps/vt/stream/pb=!1m7!8m6!1m3!1i14!2i4822!3i6156!2i6!3x16777215' +
+  '!2m3!1e0!2sm!3i803569006!2m6!1e2!2stransit!3i999999!4m2!1ssp!2s2!3m8!2sen!3sus!5e1105' +
+  '!12m4!1e68!2m2!1sset!2sTransitFocused!4e1!6m9!1e12!2i2!26m1!1b1!28e3!39b1!44e2!50e0!71b1';
+const TRANSIT_RASTER =
+  'https://www.google.com/maps/vt/pb=!1m4!1m3!1i14!2i4824!3i6157!2m3!1e0!2sm!3i803568952' +
+  '!2m6!1e2!2stransit!3i999999!4m2!1ssp!2s2!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset' +
+  '!2sTransitFocused!4e0!5m1!1e0!23i1368782';
+const darkTransit = (u) => u.replace('!2sTransitFocused!', '!2sTransitFocusedDark!');
 
 /** URLs each rule id must rewrite, and what it must rewrite them to. */
 export const MUST_MATCH = [
@@ -114,6 +133,36 @@ export const MUST_MATCH = [
     expect:
       'https://www.google.com/maps/vt/pb=!1m4!1m3!1i17!2i30812!3i54180!2m3!1e0!2sm!3i789555512' +
       '!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrainDark!4e0!5m1!1e0!23i100818990',
+  },
+  {
+    ruleId: 5,
+    name: 'legend-transit',
+    why:
+      'Layers > Transit makes Maps fetch its own TransitFocused palette instead of Roadmap; ' +
+      'before rule 5 existed this request went through untouched and the Transit map was light ' +
+      'in both engines (the 1.0.5 bug report)',
+    source: 'captured 2026-11-09, Chromium and Firefox, Layers > Transit; TransitFocusedDark 200 live',
+    resourceType: 'xmlhttprequest',
+    url: `https://www.gstatic.com/maps/res/CompactLegend-TransitFocused-${LEGEND_V3}`,
+    expect: `https://www.gstatic.com/maps/res/CompactLegend-TransitFocusedDark-${LEGEND_V3}`,
+  },
+  {
+    ruleId: 3,
+    name: 'transit-stream',
+    why: 'the TransitFocused base map on the stream transport -- the third arm of the alternation',
+    source: 'captured 2026-11-09 (TRANSIT_STREAM above); identical to background.js RULE_SAMPLES[3] "vector-stream-transit"',
+    resourceType: 'xmlhttprequest',
+    url: TRANSIT_STREAM,
+    expect: darkTransit(TRANSIT_STREAM),
+  },
+  {
+    ruleId: 4,
+    name: 'transit-raster',
+    why: 'the TransitFocused base map on the first-paint raster grid',
+    source: 'captured 2026-11-09 (TRANSIT_RASTER above); identical to background.js RULE_SAMPLES[4] "raster-firstpaint-transit"',
+    resourceType: 'image',
+    url: TRANSIT_RASTER,
+    expect: darkTransit(TRANSIT_RASTER),
   },
   {
     ruleId: 4,
@@ -225,6 +274,25 @@ export const MUST_NOT_MATCH = [
       '!2m3!1e0!2sm!3i790555512!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrainDark!4e1!5m1!1e0',
   },
   {
+    name: 'legend-transit-already-dark',
+    guards: 'redirect loop -- rule 5 re-matching its own output',
+    url: `https://www.gstatic.com/maps/res/CompactLegend-TransitFocusedDark-${LEGEND_V3}`,
+  },
+  {
+    name: 'raster-transit-already-dark',
+    guards: 'redirect loop on the Transit arm -- rule 4 re-matching its own output (the diverging kind)',
+    source: 'the transit-raster must-match entry, after the substitution rule 4 performs on it',
+    derived: true,
+    url: darkTransit(TRANSIT_RASTER),
+  },
+  {
+    name: 'stream-transit-already-dark',
+    guards: 'redirect loop on the Transit arm -- rule 3 re-matching its own output',
+    source: 'the transit-stream must-match entry, after the substitution rule 3 performs on it',
+    derived: true,
+    url: darkTransit(TRANSIT_STREAM),
+  },
+  {
     name: 'proto-tile',
     guards:
       'the mapcore transport. Its style token is a length-prefixed protobuf string; a regex ' +
@@ -289,6 +357,8 @@ export const KNOWN_BAD_REGEX_FILTER =
 export const KNOWN_BAD_CHROME_ERROR =
   'Rule with id 101 was skipped as the "regexFilter" value exceeded the 2KB memory limit when compiled.';
 
-export const LEGEND_VERSIONS = [LEGEND_V2, LEGEND_V];
-export const LEGEND_STYLES_LIVE = ['Roadmap', 'RoadmapDark', 'Terrain', 'TerrainDark', 'RoadmapSatellite'];
+export const LEGEND_VERSIONS = [LEGEND_V3, LEGEND_V2, LEGEND_V];
+export const LEGEND_STYLES_LIVE = [
+  'Roadmap', 'RoadmapDark', 'Terrain', 'TerrainDark', 'TransitFocused', 'TransitFocusedDark', 'RoadmapSatellite',
+];
 export const LEGEND_STYLES_DEAD = ['RoadmapNoSuchStyle', 'RoadmapDarkDark', 'Nonsense'];
