@@ -13,7 +13,7 @@
  *   1  legend      www.gstatic.com/maps/res/CompactLegend-S-V    yes (rules 1,2,5)
  *   2  stream      <host>/maps/vt/stream/pb=...!1sset!2sS!...    yes (rule 3)
  *   3  raster      <host>/maps/vt/pb=...!2sm!...!1sset!2sS!...   yes (rule 4)
- *   4  proto       <host>/maps/vt/proto?bpb=<base64 protobuf>    NO
+ *   4  proto       <host>/maps/vt/proto?bpb=<base64 protobuf>    Terrain relief only (rules 6-8)
  *
  * "Rewritable" is not a style choice, it is a fact about the wire format: the
  * proto transport carries the style token as a length-prefixed protobuf string
@@ -23,6 +23,12 @@
  * palette from the CompactLegend asset, not from that token. A2 is asserted over
  * the rewritable transports and the proto count is reported beside it, never
  * folded in, because folding it in either fabricates a failure or hides one.
+ *
+ * One exception (1.0.5): the Terrain relief tile (shading + contours, `set` =
+ * `Terrain`) IS rewritten, by rules 6-8, with a same-length swap that drops one
+ * style option to pay for the four bytes of "Dark" (tools/proto-terrain-rules.mjs).
+ * Unlike the Roadmap proto tile, its colours are baked server-side, so it has to
+ * be. A proto tile whose token is Terrain/TerrainDark is therefore rewritable.
  */
 
 import { bpbOf, protoStyleToken, protoTileCoords } from './bpb.mjs';
@@ -180,8 +186,9 @@ export function classifyRequest(url) {
     return {
       transport: 'proto',
       baseMap: token !== null,
-      // Not rewritable by any regexSubstitution -- see the header.
-      rewritable: false,
+      // Not rewritable by a generic regexSubstitution -- see the header -- except the
+      // Terrain relief tile, which rules 6-8 rewrite with a same-length swap.
+      rewritable: token === 'Terrain' || token === 'TerrainDark',
       token,
       dark: token === null ? null : DARK_TOKENS.includes(token),
       zoom: coords?.z ?? null,

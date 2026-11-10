@@ -234,6 +234,72 @@ const RULE_SAMPLES = {
         "https://www.gstatic.com/maps/res/CompactLegend-TransitFocusedDark-5e6bae4931cec7c0849f0477025453b8",
     },
   ],
+  // Rules 6-8: the mapcore Terrain relief tile (shading + contours), whose style
+  // sits inside the base64 protobuf. One rule per base64 alignment of the rewritten
+  // region; see tools/proto-terrain-rules.mjs. Samples: Terrain tiles from a live
+  // mapcore session at San Jose, 2026-11-09 (z11 verbatim; z9 and z5 are the same
+  // request with only the tile coordinates re-encoded, which is what moves the
+  // alignment).
+  6: [
+    {
+      name: "proto-terrain-relief-z9",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFMYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRouEgJlbhoC" +
+        "dXMo0QhiAghDYgIIP2ICCANiEghEEg4KA3NldBIHVGVycmFpbqABASAAKgkIAC0AAIA_MAEyLwgMEAIw" +
+        "ADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AWbOxVPRxVOyrFS6" +
+        "3agC-LfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW" +
+        "6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFMYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRouEgJlbhoC" +
+        "dXMo0QhiAghDYgIIA2IWCEQSEgoDc2V0EgtUZXJyYWluRGFya6ABASAAKgkIAC0AAIA_MAEyLwgMEAIw" +
+        "ADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AWbOxVPRxVOyrFS6" +
+        "3agC-LfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW" +
+        "6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB",
+    },
+  ],
+  7: [
+    {
+      name: "proto-terrain-relief-z11",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "Cg0KCAgLEMwCGJwGygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aLhICZW4a" +
+        "AnVzKNEIYgIIQ2ICCD9iAggDYhIIRBIOCgNzZXQSB1RlcnJhaW6gAQEgACoJCAAtAACAPzABMi8IDBAC" +
+        "MAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFmzsVT0cVTsqxU" +
+        "ut2oAvi37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2" +
+        "FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "Cg0KCAgLEMwCGJwGygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aLhICZW4a" +
+        "AnVzKNEIYgIIQ2ICCANiFghEEhIKA3NldBILVGVycmFpbkRhcmugAQEgACoJCAAtAACAPzABMi8IDBAC" +
+        "MAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFmzsVT0cVTsqxU" +
+        "ut2oAvi37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2" +
+        "FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ",
+    },
+  ],
+  8: [
+    {
+      name: "proto-terrain-relief-z5",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggFEAoYGMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9Gi4SAmVuGgJ1" +
+        "cyjRCGICCENiAgg_YgIIA2ISCEQSDgoDc2V0EgdUZXJyYWluoAEBIAAqCQgALQAAgD8wATIvCAwQAjAA" +
+        "OAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBZs7FU9HFU7KsVLrd" +
+        "qAL4t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbp" +
+        "krsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggFEAoYGMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9Gi4SAmVuGgJ1" +
+        "cyjRCGICCENiAggDYhYIRBISCgNzZXQSC1RlcnJhaW5EYXJroAEBIAAqCQgALQAAgD8wATIvCAwQAjAA" +
+        "OAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBZs7FU9HFU7KsVLrd" +
+        "qAL4t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbp" +
+        "krsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE",
+    },
+  ],
   3: [
     {
       name: "vector-stream",

@@ -14,7 +14,9 @@
  * "Roadmap" (7 bytes) for "RoadmapDark" (11) changes the innermost length, the
  * enclosing submessage length, and the outer submessage length, and then shifts
  * every subsequent base64 character. A declarativeNetRequest `regexSubstitution`
- * cannot do arithmetic, so the plan's regex rewrite provably cannot reach this.
+ * cannot do arithmetic, so the plan's regex rewrite provably cannot reach this
+ * in general. (Rules 6-8 reach the Terrain relief tile only through a same-length
+ * swap that drops a neighbouring 4-byte style option; tools/proto-terrain-rules.mjs.)
  *
  * The parser below exists so the harness can (a) read the style token and zoom
  * out of interaction-time requests, which is what the M0 gate actually turns on,

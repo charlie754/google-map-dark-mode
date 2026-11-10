@@ -149,6 +149,9 @@ test('the transport classifier agrees with the corpus about what each URL is', (
     'raster-firstpaint-z12': ['raster', 'Roadmap', false],
     'raster-firstpaint-z17': ['raster', 'Roadmap', false],
     'raster-maps-google-com': ['raster', 'Roadmap', false],
+    'proto-terrain-relief-z9': ['proto', 'Terrain', false],
+    'proto-terrain-relief-z11': ['proto', 'Terrain', false],
+    'proto-terrain-relief-z5': ['proto', 'Terrain', false],
   };
   for (const c of MUST_MATCH) {
     const got = classifyRequest(c.url);

@@ -77,8 +77,65 @@ const TVC_RASTER =
   '!2sTerrainVectorClient!4e0!5m1!1e0!23i1368782';
 const darkTvc = (u) => u.replace('!2sTerrainVectorClient!', '!2sTerrainVectorClientDark!');
 
+
+/**
+ * mapcore Terrain relief tiles, 2026-11-09 (Chromium, WebGL renderer, San Jose,
+ * Layers > Terrain). The relief layer (shading + contours) is a proto request whose
+ * style is a protobuf string inside base64url; rules 6-8 swap it with a same-length
+ * rewrite (tools/proto-terrain-rules.mjs). z11 is verbatim from the capture; z9 and
+ * z5 are that request with only the tile-coordinate varints re-encoded (derived),
+ * which is exactly what moves the rewritten region to the other two base64
+ * alignments. All three, and their rewrites, answered HTTP 200 from Google.
+ */
+const PROTO_TERRAIN = {
+  "6": {
+    "z": 9,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFMYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRouEgJlbhoCdXMo0QhiAghDYgIIP2ICCANiEghEEg4KA3NldBIHVGVycmFpbqABASAAKgkIAC0AAIA_MAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AWbOxVPRxVOyrFS63agC-LfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFMYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRouEgJlbhoCdXMo0QhiAghDYgIIA2IWCEQSEgoDc2V0EgtUZXJyYWluRGFya6ABASAAKgkIAC0AAIA_MAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AWbOxVPRxVOyrFS63agC-LfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB"
+  },
+  "7": {
+    "z": 11,
+    "url": "https://www.google.com/maps/vt/proto?bpb=Cg0KCAgLEMwCGJwGygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aLhICZW4aAnVzKNEIYgIIQ2ICCD9iAggDYhIIRBIOCgNzZXQSB1RlcnJhaW6gAQEgACoJCAAtAACAPzABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFmzsVT0cVTsqxUut2oAvi37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=Cg0KCAgLEMwCGJwGygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aLhICZW4aAnVzKNEIYgIIQ2ICCANiFghEEhIKA3NldBILVGVycmFpbkRhcmugAQEgACoJCAAtAACAPzABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFmzsVT0cVTsqxUut2oAvi37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ"
+  },
+  "8": {
+    "z": 5,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgsKBggFEAoYGMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9Gi4SAmVuGgJ1cyjRCGICCENiAgg_YgIIA2ISCEQSDgoDc2V0EgdUZXJyYWluoAEBIAAqCQgALQAAgD8wATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBZs7FU9HFU7KsVLrdqAL4t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgsKBggFEAoYGMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9Gi4SAmVuGgJ1cyjRCGICCENiAggDYhYIRBISCgNzZXQSC1RlcnJhaW5EYXJroAEBIAAqCQgALQAAgD8wATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBZs7FU9HFU7KsVLrdqAL4t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE"
+  }
+};
+
 /** URLs each rule id must rewrite, and what it must rewrite them to. */
 export const MUST_MATCH = [
+  {
+    ruleId: 6,
+    name: 'proto-terrain-relief-z9',
+    why: 'mapcore Terrain relief tile (hillshade + landcover + contours); its style lives in the bpb protobuf',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[6]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_TERRAIN[6].url,
+    expect: PROTO_TERRAIN[6].expect,
+  },
+  {
+    ruleId: 7,
+    name: 'proto-terrain-relief-z11',
+    why: 'mapcore Terrain relief tile (hillshade + landcover + contours); its style lives in the bpb protobuf',
+    source: 'live mapcore capture 2026-11-09; background.js RULE_SAMPLES[7]',
+    resourceType: 'xmlhttprequest',
+    url: PROTO_TERRAIN[7].url,
+    expect: PROTO_TERRAIN[7].expect,
+  },
+  {
+    ruleId: 8,
+    name: 'proto-terrain-relief-z5',
+    why: 'mapcore Terrain relief tile (hillshade + landcover + contours); its style lives in the bpb protobuf',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[8]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_TERRAIN[8].url,
+    expect: PROTO_TERRAIN[8].expect,
+  },
   {
     ruleId: 1,
     name: 'legend-roadmap',
@@ -264,6 +321,21 @@ export const MUST_MATCH = [
 
 /** URLs no rule may rewrite. Each carries the failure it is guarding against. */
 export const MUST_NOT_MATCH = [
+  {
+    name: 'proto-terrain-relief-z9-already-dark',
+    guards: 'redirect loop -- rule 6 re-matching its own TerrainDark output',
+    url: PROTO_TERRAIN[6].expect,
+  },
+  {
+    name: 'proto-terrain-relief-z11-already-dark',
+    guards: 'redirect loop -- rule 7 re-matching its own TerrainDark output',
+    url: PROTO_TERRAIN[7].expect,
+  },
+  {
+    name: 'proto-terrain-relief-z5-already-dark',
+    guards: 'redirect loop -- rule 8 re-matching its own TerrainDark output',
+    url: PROTO_TERRAIN[8].expect,
+  },
   {
     name: 'legend-already-dark',
     guards: 'redirect loop -- rule 1 re-matching its own output',

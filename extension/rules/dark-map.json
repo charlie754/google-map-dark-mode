@@ -68,5 +68,47 @@
       "regexFilter": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)TransitFocused(-.*)$",
       "resourceTypes": ["xmlhttprequest", "image", "other", "media"]
     }
+  },
+  {
+    "id": 6,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1YgIIA2IWCEQSEgoDc2V0EgtUZXJyYWluRGFya6AB\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)YgIIP2ICCANiEghEEg4KA3NldBIHVGVycmFpbqAB(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1ICCANiFghEEhIKA3NldBILVGVycmFpbkRhcmugA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)ICCD9iAggDYhIIRBIOCgNzZXQSB1RlcnJhaW6gA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 8,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1iAggDYhYIRBISCgNzZXQSC1RlcnJhaW5EYXJroA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)iAgg_YgIIA2ISCEQSDgoDc2V0EgdUZXJyYWluoA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
   }
 ]
