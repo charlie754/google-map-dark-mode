@@ -1,4 +1,4 @@
-# Store listing copy — Google Map Dark Mode 1.0.5
+# Store listing copy — Google Map Dark Mode 1.0.6
 
 Everything a reviewer or a submission form will ask for, written out. Nothing
 here can be submitted by an assistant: both stores need an account holder to sign
@@ -9,24 +9,33 @@ registration fee.
 
 | Store | File |
 | --- | --- |
-| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.5.zip` |
-| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.5.xpi` |
+| Chrome Web Store | `dist/google-map-dark-mode-chrome-1.0.6.zip` |
+| addons.mozilla.org | `dist/google-map-dark-mode-firefox-1.0.6.xpi` |
 
 The version in both file names comes from the manifests and is checked against
 the archived manifest at package time; it is never typed in twice.
 
+**1.0.6** (2026-11-09) — more of the map is dark on computers where Maps draws
+with the graphics card. Terrain now also covers Google's newer vector terrain
+palette, which some setups use and which stayed light, and the mountains
+themselves (hillshade, landcover and contours) are dark too instead of beige and
+green under a dark road grid. Some Chrome profiles get map tiles with the colours
+already baked in by Google, so the plain map, Transit (for example after
+Layers → More) or Terrain stayed bright; those tiles are now requested in
+Google's dark colours as well. In Firefox, the panel now shows the same GOAT Cam
+banner as Chrome, built into the add-on: Firefox makes no request to
+goatcam.dagoat.io and asks for no data-collection permission (it declares none),
+so the **GOAT Cam banner updates** switch from 1.0.5 is gone. Chrome's banner
+behaviour is unchanged.
+
 **1.0.5** (2026-11-09) — the Transit layer is now dark too: Maps switches to a
 separate Transit palette when Layers → Transit is on, and the extension now asks
-for Google's dark version of it (Chrome and Firefox). Terrain also covers Google's
-newer vector terrain palette, which some setups use and which stayed light, and
-the mountains (hillshade and landcover) are now dark too on computers where Maps
-draws with the graphics card. On those computers some Chrome profiles get map
-tiles with the colours already baked in by Google (Transit or the plain map then
-stayed bright, for example after Layers → More); those tiles are now requested in
-Google's dark colours as well. In Firefox, the panel now shows the
-same GOAT Cam banner as Chrome, built into the add-on: Firefox makes no request to
-goatcam.dagoat.io and asks for no data-collection permission (it declares none).
-Chrome behaviour is unchanged.
+for Google's dark version of it (Chrome and Firefox). Terrain was re-checked on
+live Maps in both browsers. In Firefox, the GOAT Cam banner update from
+goatcam.dagoat.io now works: it is still off until you allow the optional
+"technical and interaction data" permission, which can now be turned on from a
+**GOAT Cam banner updates** switch in the popup and on the settings page (as well
+as in the install prompt and about:addons). Chrome behaviour is unchanged.
 
 **1.0.4** (2026-11-06) — the GOAT Cam banner can now be updated without a new
 release. While the panel is open, the extension may download a signed promo file

@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Google Map Dark Mode** — a Chrome + Firefox MV3 extension that gives `google.com/maps` a real
-dark mode. v1.0.5, packaged for both stores: dark map surface *and* dark app chrome, on by
+dark mode. v1.0.6, packaged for both stores: dark map surface *and* dark app chrome, on by
 default, verified under sustained interaction on both browsers.
 
 Internals still carry the old code name `maps-noir` in one place on purpose — the
@@ -230,7 +230,7 @@ the `-Command` form on every run while the same text pasted into a shell worked.
 Chrome downloads the GOAT Cam banner from goatcam.dagoat.io (lib/banner-fetch.js runner,
 signed file + webp, at most every 6 h). **Firefox must not.** Firefox/AMO counts that
 download as data transmission needing explicit data-collection consent, and an opt-in
-(1.0.5 tried a popup switch, then an in-panel button + consent page) left the ads section
+(1.0.5 shipped a popup switch; an in-panel button + consent page was tried after it and never released) left the ads section
 on the fallback for most users. So the Firefox build embeds the banner instead:
 
 - `node tools/embed-banner.mjs` downloads `banner/v1.signed` + its webp, verifies them with

@@ -124,9 +124,9 @@ test('both manifests agree on name and version (the store artifacts are keyed of
   assert.equal(chrome.name, firefox.name);
 });
 
-test('the shipped version is 1.0.5 (Transit dark map, Firefox banner on 1.0.4)', () => {
-  assert.equal(chrome.version, '1.0.5');
-  assert.equal(firefox.version, '1.0.5');
+test('the shipped version is 1.0.6 (WebGL Terrain/server-styled dark map, Firefox banner embedded; 1.0.5 was uploaded)', () => {
+  assert.equal(chrome.version, '1.0.6');
+  assert.equal(firefox.version, '1.0.6');
 });
 
 test('the Chrome manifest carries no gecko-only keys', () => {

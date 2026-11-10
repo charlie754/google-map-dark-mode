@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Google Map Dark Mode",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Dark mode for Google Maps on the web: dark map plus recoloured interface. Unofficial; not affiliated with Google.",
   "browser_specific_settings": {
     "gecko": {

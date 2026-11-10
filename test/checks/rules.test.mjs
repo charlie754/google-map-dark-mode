@@ -353,7 +353,7 @@ test('MUTATION: deleting the Transit legend rule is caught', () => {
 });
 
 /* ---------------------------------------------------------------------------
- * VECTOR TERRAIN (1.0.5 follow-up). Google's live config lists a second terrain
+ * VECTOR TERRAIN (1.0.6). Google's live config lists a second terrain
  * palette, `TerrainVectorClient`, with its own `TerrainVectorClientDark` twin.
  * Rule 2 required `Terrain-` and let it through light: Terrain on stayed white.
  * ------------------------------------------------------------------------- */

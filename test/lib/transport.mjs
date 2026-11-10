@@ -24,13 +24,13 @@
  * the rewritable transports and the proto count is reported beside it, never
  * folded in, because folding it in either fabricates a failure or hides one.
  *
- * One exception (1.0.5): the Terrain relief tile (shading + contours, `set` =
+ * One exception (1.0.6): the Terrain relief tile (shading + contours, `set` =
  * `Terrain`) IS rewritten, by rules 6-8, with a same-length swap that drops one
  * style option to pay for the four bytes of "Dark" (tools/proto-terrain-rules.mjs).
  * Unlike the Roadmap proto tile, its colours are baked server-side, so it has to
  * be. A proto tile whose token is Terrain/TerrainDark is therefore rewritable.
  *
- * Second exception (1.0.5 follow-up): the server-styled ("baked") variant, in which
+ * Second exception (1.0.6): the server-styled ("baked") variant, in which
  * the style set entry carries options 5 and 6 (`28 01 30 01`) after the style name
  * and Google bakes the colours into every vector tile instead of the client
  * fetching a CompactLegend. Rules 9-17 rewrite those (Roadmap, TransitFocused,
