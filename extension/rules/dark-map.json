@@ -19,11 +19,11 @@
     "action": {
       "type": "redirect",
       "redirect": {
-        "regexSubstitution": "\\1TerrainDark\\2"
+        "regexSubstitution": "\\1\\2Dark\\3"
       }
     },
     "condition": {
-      "regexFilter": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)Terrain(-.*)$",
+      "regexFilter": "^(https://www\\.gstatic\\.com/maps/res/CompactLegend-)(Terrain|TerrainVectorClient)(-.*)$",
       "resourceTypes": ["xmlhttprequest", "image", "other", "media"]
     }
   },
@@ -37,7 +37,7 @@
       }
     },
     "condition": {
-      "regexFilter": "^(https://[^/]+/maps/vt/stream/pb=.*!2s)(Roadmap|Terrain|TransitFocused)(!.*)$",
+      "regexFilter": "^(https://[^/]+/maps/vt/stream/pb=.*!2s)(Roadmap|Terrain|TerrainVectorClient|TransitFocused)(!.*)$",
       "resourceTypes": ["xmlhttprequest", "image", "other", "media"]
     }
   },
@@ -51,7 +51,7 @@
       }
     },
     "condition": {
-      "regexFilter": "^(https://[^/]+/maps/vt/pb=.*!2s)(Roadmap|Terrain|TransitFocused)(!.*)$",
+      "regexFilter": "^(https://[^/]+/maps/vt/pb=.*!2s)(Roadmap|Terrain|TerrainVectorClient|TransitFocused)(!.*)$",
       "resourceTypes": ["xmlhttprequest", "image", "other", "media"]
     }
   },

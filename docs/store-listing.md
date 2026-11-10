@@ -17,8 +17,8 @@ the archived manifest at package time; it is never typed in twice.
 
 **1.0.5** (2026-11-09) — the Transit layer is now dark too: Maps switches to a
 separate Transit palette when Layers → Transit is on, and the extension now asks
-for Google's dark version of it (Chrome and Firefox). Terrain was re-checked on
-live Maps in both browsers. In Firefox, the panel now shows the
+for Google's dark version of it (Chrome and Firefox). Terrain also covers Google's
+newer vector terrain palette, which some setups use and which stayed light. In Firefox, the panel now shows the
 same GOAT Cam banner as Chrome, built into the add-on: Firefox makes no request to
 goatcam.dagoat.io and asks for no data-collection permission (it declares none).
 Chrome behaviour is unchanged.

@@ -57,6 +57,26 @@ const TRANSIT_RASTER =
   '!2sTransitFocused!4e0!5m1!1e0!23i1368782';
 const darkTransit = (u) => u.replace('!2sTransitFocused!', '!2sTransitFocusedDark!');
 
+/**
+ * Vector terrain, 2026-11-09. Google's live Maps config (the protobuf in the page
+ * HTML, google.com/maps?hl=zh-TW) lists `CompactLegend-TerrainVectorClient-<v>` and
+ * `CompactLegend-TerrainVectorClientDark-<v>` (both HTTP 200, ~2 MB) beside the
+ * classic Terrain pair. Rule 2 was `CompactLegend-)Terrain(-.*)$`, which cannot
+ * match `TerrainVectorClient-`, so a client that renders terrain from the vector
+ * palette got Google's light terrain: the "Terrain on is still white in Firefox"
+ * report from Windows. The tile URLs below are the captured Terrain ones with the
+ * style token swapped (derived): the token sits in the same `!1sset!2s<Style>!` slot.
+ */
+const TVC_STREAM =
+  'https://www.google.com/maps/vt/stream/pb=!1m7!8m6!1m3!1i13!2i1317!3i3175!2i6!3x16777215' +
+  '!2m3!1e0!2sm!3i803569114!2m2!1e6!2scontours!2m2!1e5!2sshading!3m8!2szh-TW!3sus!5e1105' +
+  '!12m4!1e68!2m2!1sset!2sTerrainVectorClient!4e1!6m9!1e12!2i2!26m1!1b1!28e3!39b1!44e2!50e0!71b1';
+const TVC_RASTER =
+  'https://www.google.com/maps/vt/pb=!1m4!1m3!1i13!2i1317!3i3175!2m3!1e0!2sm!3i803569114' +
+  '!2m2!1e6!2scontours!2m2!1e5!2sshading!3m8!2szh-TW!3sus!5e1105!12m4!1e68!2m2!1sset' +
+  '!2sTerrainVectorClient!4e0!5m1!1e0!23i1368782';
+const darkTvc = (u) => u.replace('!2sTerrainVectorClient!', '!2sTerrainVectorClientDark!');
+
 /** URLs each rule id must rewrite, and what it must rewrite them to. */
 export const MUST_MATCH = [
   {
@@ -145,6 +165,37 @@ export const MUST_MATCH = [
     resourceType: 'xmlhttprequest',
     url: `https://www.gstatic.com/maps/res/CompactLegend-TransitFocused-${LEGEND_V3}`,
     expect: `https://www.gstatic.com/maps/res/CompactLegend-TransitFocusedDark-${LEGEND_V3}`,
+  },
+  {
+    ruleId: 2,
+    name: 'legend-terrain-vector-client',
+    why:
+      'the vector terrain palette Google lists next to TerrainVectorClientDark; rule 2 used to ' +
+      'require "Terrain-" and let it through light (Terrain on, Firefox on Windows, 1.0.5)',
+    source: 'live Maps config 2026-11-09 (page HTML protobuf); both legends HTTP 200',
+    resourceType: 'xmlhttprequest',
+    url: `https://www.gstatic.com/maps/res/CompactLegend-TerrainVectorClient-${LEGEND_V3}`,
+    expect: `https://www.gstatic.com/maps/res/CompactLegend-TerrainVectorClientDark-${LEGEND_V3}`,
+  },
+  {
+    ruleId: 3,
+    name: 'terrain-vector-client-stream',
+    why: 'the TerrainVectorClient token on the stream transport',
+    source: 'derived: captured zh-TW Terrain tile with the style token swapped',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: TVC_STREAM,
+    expect: darkTvc(TVC_STREAM),
+  },
+  {
+    ruleId: 4,
+    name: 'terrain-vector-client-raster',
+    why: 'the TerrainVectorClient token on the first-paint raster grid',
+    source: 'derived: captured zh-TW Terrain tile with the style token swapped',
+    derived: true,
+    resourceType: 'image',
+    url: TVC_RASTER,
+    expect: darkTvc(TVC_RASTER),
   },
   {
     ruleId: 3,
@@ -274,6 +325,23 @@ export const MUST_NOT_MATCH = [
       '!2m3!1e0!2sm!3i790555512!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sTerrainDark!4e1!5m1!1e0',
   },
   {
+    name: 'legend-terrain-vector-client-already-dark',
+    guards: 'redirect loop -- rule 2 re-matching its own TerrainVectorClientDark output',
+    url: `https://www.gstatic.com/maps/res/CompactLegend-TerrainVectorClientDark-${LEGEND_V3}`,
+  },
+  {
+    name: 'stream-terrain-vector-client-already-dark',
+    guards: 'redirect loop -- rule 3 re-matching its own TerrainVectorClientDark output',
+    derived: true,
+    url: darkTvc(TVC_STREAM),
+  },
+  {
+    name: 'raster-terrain-vector-client-already-dark',
+    guards: 'redirect loop -- rule 4 re-matching its own TerrainVectorClientDark output',
+    derived: true,
+    url: darkTvc(TVC_RASTER),
+  },
+  {
     name: 'legend-transit-already-dark',
     guards: 'redirect loop -- rule 5 re-matching its own output',
     url: `https://www.gstatic.com/maps/res/CompactLegend-TransitFocusedDark-${LEGEND_V3}`,
@@ -359,6 +427,7 @@ export const KNOWN_BAD_CHROME_ERROR =
 
 export const LEGEND_VERSIONS = [LEGEND_V3, LEGEND_V2, LEGEND_V];
 export const LEGEND_STYLES_LIVE = [
-  'Roadmap', 'RoadmapDark', 'Terrain', 'TerrainDark', 'TransitFocused', 'TransitFocusedDark', 'RoadmapSatellite',
+  'Roadmap', 'RoadmapDark', 'Terrain', 'TerrainDark', 'TerrainVectorClient', 'TerrainVectorClientDark',
+  'TransitFocused', 'TransitFocusedDark', 'RoadmapSatellite',
 ];
 export const LEGEND_STYLES_DEAD = ['RoadmapNoSuchStyle', 'RoadmapDarkDark', 'Nonsense'];

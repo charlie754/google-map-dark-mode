@@ -50,9 +50,9 @@ places, and a fifth for the Transit layer's own palette:
 | Rule | Rewrites | Covers |
 | --- | --- | --- |
 | 1 | `CompactLegend-Roadmap-<v>` → `-RoadmapDark-` | the vector renderer (stock desktop Chrome) and Firefox's canvas+labeler renderer — **the one that matters** |
-| 2 | `CompactLegend-Terrain-<v>` → `-TerrainDark-` | the same, for the Terrain base map |
-| 3 | `/maps/vt/stream/pb=…!2s(Roadmap\|Terrain\|TransitFocused)!` → `…Dark!` | the plain-canvas fallback, which colours server-side |
-| 4 | `/maps/vt/pb=…!2s(Roadmap\|Terrain\|TransitFocused)!` → `…Dark!` | the first-paint raster grid, present in every mode — its only job is to remove a ~1 second light flash |
+| 2 | `CompactLegend-(Terrain\|TerrainVectorClient)-<v>` → `…Dark-` | the same, for the Terrain base map — both the classic palette and the vector (client-rendered) one Google lists as `TerrainVectorClient` |
+| 3 | `/maps/vt/stream/pb=…!2s(Roadmap\|Terrain\|TerrainVectorClient\|TransitFocused)!` → `…Dark!` | the plain-canvas fallback, which colours server-side |
+| 4 | `/maps/vt/pb=…!2s(Roadmap\|Terrain\|TerrainVectorClient\|TransitFocused)!` → `…Dark!` | the first-paint raster grid, present in every mode — its only job is to remove a ~1 second light flash |
 | 5 | `CompactLegend-TransitFocused-<v>` → `-TransitFocusedDark-` | **Layers → Transit**, which swaps the whole base map to its own `TransitFocused` palette (added in 1.0.5; before it the Transit map stayed light in both browsers) |
 
 An invalid style name 404s cleanly, which is how the extension can tell whether
@@ -201,7 +201,10 @@ the GOAT desktop app.
   switched on from the Layers control on live Maps in Chromium, Playwright's
   Firefox 153 and stock Firefox 159, and the map stayed dark (screenshots, not the
   live gate's time series). The live gate itself still only drives the default
-  map.
+  map. Google also serves a second, vector terrain palette (`TerrainVectorClient`,
+  listed in the live Maps config with its own `…Dark` twin); the rules cover it and
+  the redirect is proven in both browsers, but no session here has made Maps pick
+  it on its own, so a Terrain map rendered from it has not been seen dark firsthand.
 - **Firefox rule health degrades to "unknown".** `testMatchOutcome` does not
   exist there, so the self-check falls back to a weaker oracle that proves the
   engine compiled each rule but not that it matched.

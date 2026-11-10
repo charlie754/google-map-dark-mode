@@ -69,7 +69,12 @@ https://www.gstatic.com/maps/res/CompactLegend-Roadmap-<32-hex-version>
 
 `CompactLegend-RoadmapDark-<same version>` exists (HTTP 200, ~1.9 MB). Swapping the name is a
 **pure string substitution** — no protobuf, no length arithmetic — and it turns the WebGL map into
-Google's genuine dark cartography. `Terrain` / `TerrainDark` likewise. Invalid style names 404
+Google's genuine dark cartography. `Terrain` / `TerrainDark` likewise, and so does the vector
+terrain palette `TerrainVectorClient` / `TerrainVectorClientDark` (rule 2 and the rule 3/4
+alternations; an exact `Terrain-` match missed it and Terrain stayed white for a Windows Firefox
+user). The live config Maps uses lists every style name: it is the base64 protobuf after
+`["/maps/vt"],<epoch>,["/maps/vt/stream"]` in the page HTML; decode it and look for
+`CompactLegend-*` before guessing at a new layer's palette name. Invalid style names 404
 cleanly, which is the health canary. Version hashes rotate; two were observed in one day, so never
 pin one.
 

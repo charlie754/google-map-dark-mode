@@ -27,9 +27,9 @@
 
 import { bpbOf, protoStyleToken, protoTileCoords } from './bpb.mjs';
 
-export const LIGHT_TOKENS = ['Roadmap', 'Terrain', 'TransitFocused'];
-export const DARK_OF = { Roadmap: 'RoadmapDark', Terrain: 'TerrainDark', TransitFocused: 'TransitFocusedDark' };
-export const DARK_TOKENS = ['RoadmapDark', 'TerrainDark', 'TransitFocusedDark'];
+export const LIGHT_TOKENS = ['Roadmap', 'Terrain', 'TerrainVectorClient', 'TransitFocused'];
+export const DARK_OF = { Roadmap: 'RoadmapDark', Terrain: 'TerrainDark', TerrainVectorClient: 'TerrainVectorClientDark', TransitFocused: 'TransitFocusedDark' };
+export const DARK_TOKENS = ['RoadmapDark', 'TerrainDark', 'TerrainVectorClientDark', 'TransitFocusedDark'];
 
 const SET_MARK = '!1sset!2s';
 const LEGEND_PREFIX = 'https://www.gstatic.com/maps/res/CompactLegend-';

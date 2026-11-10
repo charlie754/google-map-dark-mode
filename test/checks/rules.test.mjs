@@ -141,6 +141,9 @@ test('the transport classifier agrees with the corpus about what each URL is', (
     'terrain-stream': ['stream', 'Terrain', false],
     'terrain-raster': ['raster', 'Terrain', false],
     'legend-transit': ['legend', 'TransitFocused', false],
+    'legend-terrain-vector-client': ['legend', 'TerrainVectorClient', false],
+    'terrain-vector-client-stream': ['stream', 'TerrainVectorClient', false],
+    'terrain-vector-client-raster': ['raster', 'TerrainVectorClient', false],
     'transit-stream': ['stream', 'TransitFocused', false],
     'transit-raster': ['raster', 'TransitFocused', false],
     'raster-firstpaint-z12': ['raster', 'Roadmap', false],
@@ -335,6 +338,44 @@ test('MUTATION: tile rules that drop the Transit arm are caught', () => {
 test('MUTATION: deleting the Transit legend rule is caught', () => {
   const f = corpusFailures(clone().filter((r) => r.id !== 5));
   assert.ok(f.includes('missing rule 5'), `expected the missing rule 5 to be reported, got ${JSON.stringify(f)}`);
+});
+
+/* ---------------------------------------------------------------------------
+ * VECTOR TERRAIN (1.0.5 follow-up). Google's live config lists a second terrain
+ * palette, `TerrainVectorClient`, with its own `TerrainVectorClientDark` twin.
+ * Rule 2 required `Terrain-` and let it through light: Terrain on stayed white.
+ * ------------------------------------------------------------------------- */
+
+test('the TerrainVectorClient arm is rewritten on every transport, by the rule that owns it', () => {
+  const byName = (n) => MUST_MATCH.find((c) => c.name === n);
+  assert.deepEqual(matchingRuleIds(rules, byName('legend-terrain-vector-client').url), [2]);
+  assert.deepEqual(matchingRuleIds(rules, byName('terrain-vector-client-stream').url), [3]);
+  assert.deepEqual(matchingRuleIds(rules, byName('terrain-vector-client-raster').url), [4]);
+  for (const name of ['legend-terrain-vector-client', 'terrain-vector-client-stream', 'terrain-vector-client-raster']) {
+    const c = byName(name);
+    const k = classifyRequest(applyRule(rules.find((r) => r.id === c.ruleId), c.url).result);
+    assert.equal(k.token, 'TerrainVectorClientDark', `${name} must stay in the vector-terrain family`);
+  }
+});
+
+test('MUTATION: the pre-fix rule 2 (Terrain- only) is caught', () => {
+  const bad = clone();
+  const r = bad.find((x) => x.id === 2);
+  r.condition.regexFilter = r.condition.regexFilter.replace('(Terrain|TerrainVectorClient)', '(Terrain)');
+  const f = corpusFailures(bad);
+  assert.ok(f.includes('under-match: legend-terrain-vector-client'),
+    `expected the vector terrain legend to be reported as under-matched, got ${JSON.stringify(f)}`);
+});
+
+test('MUTATION: tile rules that drop the TerrainVectorClient arm are caught', () => {
+  const bad = clone();
+  for (const id of [3, 4]) {
+    const r = bad.find((x) => x.id === id);
+    r.condition.regexFilter = r.condition.regexFilter.replace('|TerrainVectorClient', '');
+  }
+  const f = corpusFailures(bad);
+  assert.ok(f.includes('under-match: terrain-vector-client-stream') && f.includes('under-match: terrain-vector-client-raster'),
+    `expected both vector-terrain tile arms to be reported as under-matched, got ${JSON.stringify(f)}`);
 });
 
 /**

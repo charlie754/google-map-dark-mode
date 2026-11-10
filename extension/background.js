@@ -36,9 +36,9 @@ if (typeof importScripts === "function") importScripts("lib/banner-core.js", "li
  *           Layers > Transit swaps the whole base-map palette to its own
  *           "TransitFocused" style (both engines, measured 2026-11-09). Without
  *           this rule the Transit map is Google's light one.
- *   rule 3  /maps/vt/stream/pb=…!2s(Roadmap|Terrain|TransitFocused)! -> …Dark!
+ *   rule 3  /maps/vt/stream/pb=…!2s(Roadmap|Terrain|TerrainVectorClient|TransitFocused)! -> …Dark!
  *           Covers plain `canvas` mode, which colours from the server stream.
- *   rule 4  /maps/vt/pb=…!2s(Roadmap|Terrain|TransitFocused)! -> …Dark!
+ *   rule 4  /maps/vt/pb=…!2s(Roadmap|Terrain|TerrainVectorClient|TransitFocused)! -> …Dark!
  *           The server-HTML first-paint raster grid, present in ALL modes. Its
  *           only job is to remove the ~1 s light flash before the vector layer
  *           arrives; it cannot darken the map on its own (the vector renderer
@@ -189,7 +189,7 @@ const RASTER_DEAD_MAX_BYTES = 500;
  *
  * The value is a LIST because a rule's regex can carry alternatives that the
  * self-check must not be narrower than: rules 3 and 4 match
- * `(Roadmap|Terrain|TransitFocused)`, and a table with only the Roadmap arm
+ * `(Roadmap|Terrain|TerrainVectorClient|TransitFocused)`, and a table with only the Roadmap arm
  * would report "ok" for a ruleset whose Terrain or Transit arm had been broken.
  *
  * `type` is the DNR resource type to test under. The CompactLegend asset is
@@ -213,6 +213,16 @@ const RULE_SAMPLES = {
       url: "https://www.gstatic.com/maps/res/CompactLegend-Terrain-4311471e3660cd049e8ede59d279b3ba",
       expect:
         "https://www.gstatic.com/maps/res/CompactLegend-TerrainDark-4311471e3660cd049e8ede59d279b3ba",
+    },
+    {
+      // Google's vector (client-rendered) terrain palette, listed in the live Maps
+      // config 2026-11-09 next to TerrainVectorClientDark; the 1.0.5 "Terrain is
+      // still white in Firefox" report.
+      name: "legend-terrain-vector-client",
+      type: "xmlhttprequest",
+      url: "https://www.gstatic.com/maps/res/CompactLegend-TerrainVectorClient-5e6bae4931cec7c0849f0477025453b8",
+      expect:
+        "https://www.gstatic.com/maps/res/CompactLegend-TerrainVectorClientDark-5e6bae4931cec7c0849f0477025453b8",
     },
   ],
   5: [

@@ -8,7 +8,7 @@
  * on Google's CDN. Nothing in the codebase can make them keep existing; the only
  * defence is noticing quickly when they stop. This check asks the CDN directly:
  *
- *   CompactLegend-{Roadmap,RoadmapDark,Terrain,TerrainDark,TransitFocused,TransitFocusedDark}-<version>  -> 200
+ *   CompactLegend-{Roadmap,RoadmapDark,Terrain,TerrainDark,TerrainVectorClient(Dark),TransitFocused,TransitFocusedDark}-<version>  -> 200
  *   CompactLegend-<nonsense>-<version>                                 -> 404
  *
  * Two distinct failures have to stay distinguishable, or this check will cry
@@ -31,7 +31,7 @@
 import { LEGEND_VERSIONS, LEGEND_STYLES_LIVE, LEGEND_STYLES_DEAD } from '../fixtures/url-corpus.mjs';
 
 const CANARY_STYLE = 'RoadmapSatellite';
-const REQUIRED_LIVE = ['Roadmap', 'RoadmapDark', 'Terrain', 'TerrainDark', 'TransitFocused', 'TransitFocusedDark'];
+const REQUIRED_LIVE = ['Roadmap', 'RoadmapDark', 'Terrain', 'TerrainDark', 'TerrainVectorClient', 'TerrainVectorClientDark', 'TransitFocused', 'TransitFocusedDark'];
 
 const url = (style, version) => `https://www.gstatic.com/maps/res/CompactLegend-${style}-${version}`;
 
