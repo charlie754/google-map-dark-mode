@@ -152,6 +152,15 @@ test('the transport classifier agrees with the corpus about what each URL is', (
     'proto-terrain-relief-z9': ['proto', 'Terrain', false],
     'proto-terrain-relief-z11': ['proto', 'Terrain', false],
     'proto-terrain-relief-z5': ['proto', 'Terrain', false],
+    'proto-baked-roadmap-z9': ['proto', 'Roadmap', false],
+    'proto-baked-roadmap-z4': ['proto', 'Roadmap', false],
+    'proto-baked-roadmap-z5': ['proto', 'Roadmap', false],
+    'proto-baked-transitfocused-z14': ['proto', 'TransitFocused', false],
+    'proto-baked-transitfocused-z5': ['proto', 'TransitFocused', false],
+    'proto-baked-transitfocused-z9': ['proto', 'TransitFocused', false],
+    'proto-baked-terrain-z14': ['proto', 'Terrain', false],
+    'proto-baked-terrain-z1': ['proto', 'Terrain', false],
+    'proto-baked-terrain-z9': ['proto', 'Terrain', false],
   };
   for (const c of MUST_MATCH) {
     const got = classifyRequest(c.url);

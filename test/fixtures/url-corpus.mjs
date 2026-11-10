@@ -105,8 +105,167 @@ const PROTO_TERRAIN = {
   }
 };
 
+/**
+ * Rules 9-17: the server-styled ("baked") mapcore tiles -- the variant whose style
+ * set entry carries options 5 and 6 (`28 01 30 01`) and which never fetches a
+ * CompactLegend. Live Chrome mapcore capture at Mountain View, 2026-11-09; the ones
+ * marked verbatim are byte-for-byte as captured, the others have only the tile
+ * coordinates re-encoded (which is what moves the base64 alignment).
+ */
+const PROTO_BAKED = {
+  "9": {
+    "style": "Roadmap",
+    "z": 9,
+    "verbatim": true,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFIYxgHKAQASEwgCEgdjcmlzaXMy-o3FjAsCCAMaJhICZW4aAnVzKNEIYhYIRBIOCgNzZXQSB1JvYWRtYXAoATABoAEBIAEyOwgMEAIwADgBQAKIAQHgAQaAAgG4AgHAAgHIAgHYAgHoAgGQAwLIAwHgAwHwAwn4AxaaBAQIARAByAUBogECEAO6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFIYxgHKAQASEwgCEgdjcmlzaXMy-o3FjAsCCAMaJhICZW4aAnVzKNEIYhYIRBISCgNzZXQSC1JvYWRtYXBEYXJroAEBIAEyOwgMEAIwADgBQAKIAQHgAQaAAgG4AgHAAgHIAgHYAgHoAgGQAwLIAwHgAwHwAwn4AxaaBAQIARAByAUBogECEAO6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser=0"
+  },
+  "10": {
+    "style": "Roadmap",
+    "z": 4,
+    "verbatim": true,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgsKBggEEAIYBsoBABIPCAAYv4Q9IgcKBW5kbGNjGiYSAmVuGgJ1cyjRCGIWCEQSDgoDc2V0EgdSb2FkbWFwKAEwAaABASABKgUtAACAPzI5CAwQAjAAOAFAAogBAdIBBAgBIAHgAQaAAgG4AgHIAgHYAgHoAgGQAwGwAwHgAwGaBAQIARAByAUBogEGGAEwAXgBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgsKBggEEAIYBsoBABIPCAAYv4Q9IgcKBW5kbGNjGiYSAmVuGgJ1cyjRCGIWCEQSEgoDc2V0EgtSb2FkbWFwRGFya6ABASABKgUtAACAPzI5CAwQAjAAOAFAAogBAdIBBAgBIAHgAQaAAgG4AgHIAgHYAgHoAgGQAwGwAwHgAwGaBAQIARAByAUBogEGGAEwAXgBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuser=0"
+  },
+  "11": {
+    "style": "Roadmap",
+    "z": 5,
+    "verbatim": false,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgsKBggFEAUYDMoBABITCAISB2NyaXNpczL6jcWMCwIIAxomEgJlbhoCdXMo0QhiFghEEg4KA3NldBIHUm9hZG1hcCgBMAGgAQEgATI7CAwQAjAAOAFAAogBAeABBoACAbgCAcACAcgCAdgCAegCAZADAsgDAeADAfADCfgDFpoEBAgBEAHIBQGiAQIQA7oBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgsKBggFEAUYDMoBABITCAISB2NyaXNpczL6jcWMCwIIAxomEgJlbhoCdXMo0QhiFghEEhIKA3NldBILUm9hZG1hcERhcmugAQEgATI7CAwQAjAAOAFAAogBAeABBoACAbgCAcACAcgCAdgCAegCAZADAsgDAeADAfADCfgDFpoEBAgBEAHIBQGiAQIQA7oBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authuser=0"
+  },
+  "12": {
+    "style": "TransitFocused",
+    "z": 14,
+    "verbatim": true,
+    "url": "https://www.google.com/maps/vt/proto?bpb=Cg0KCAgOEMoUGNExygEACg0KCAgOEMoUGNIxygEACg0KCAgOEMoUGNMxygEACg0KCAgOEMoUGNQxygEACg0KCAgOEMsUGNExygEACg0KCAgOEMsUGNIxygEACg0KCAgOEMsUGNMxygEACg0KCAgOEMsUGNQxygEACg0KCAgOEMwUGNExygEACg0KCAgOEMwUGNIxygEACg0KCAgOEMwUGNMxygEACg0KCAgOEMwUGNQxygEACg0KCAgOEM0UGNExygEACg0KCAgOEM0UGNIxygEACg0KCAgOEM0UGNMxygEACg0KCAgOEM0UGNQxygEACg0KCAgOEM4UGNExygEACg0KCAgOEM4UGNIxygEACg0KCAgOEM4UGNMxygEACg0KCAgOEM4UGNQxygEACg0KCAgOEM8UGNExygEACg0KCAgOEM8UGNIxygEACg0KCAgOEM8UGNMxygEACg0KCAgOEM8UGNQxygEAEg8IAhIHdHJhbnNpdBi_hD0aLRICZW4aAnVzKNEIYh0IRBIVCgNzZXQSDlRyYW5zaXRGb2N1c2VkKAEwAaABASABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAboBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEPotTb0g8JCgcKAnNwEgEy4AGjBoACAQ&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=Cg0KCAgOEMoUGNExygEACg0KCAgOEMoUGNIxygEACg0KCAgOEMoUGNMxygEACg0KCAgOEMoUGNQxygEACg0KCAgOEMsUGNExygEACg0KCAgOEMsUGNIxygEACg0KCAgOEMsUGNMxygEACg0KCAgOEMsUGNQxygEACg0KCAgOEMwUGNExygEACg0KCAgOEMwUGNIxygEACg0KCAgOEMwUGNMxygEACg0KCAgOEMwUGNQxygEACg0KCAgOEM0UGNExygEACg0KCAgOEM0UGNIxygEACg0KCAgOEM0UGNMxygEACg0KCAgOEM0UGNQxygEACg0KCAgOEM4UGNExygEACg0KCAgOEM4UGNIxygEACg0KCAgOEM4UGNMxygEACg0KCAgOEM4UGNQxygEACg0KCAgOEM8UGNExygEACg0KCAgOEM8UGNIxygEACg0KCAgOEM8UGNMxygEACg0KCAgOEM8UGNQxygEAEg8IAhIHdHJhbnNpdBi_hD0aLRICZW4aAnVzKNEIYh0IRBIZCgNzZXQSElRyYW5zaXRGb2N1c2VkRGFya6ABASABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAboBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEPotTb0g8JCgcKAnNwEgEy4AGjBoACAQ&authuser=0"
+  },
+  "13": {
+    "style": "TransitFocused",
+    "z": 5,
+    "verbatim": false,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgsKBggFEAUYDMoBAAoNCggIDhDKFBjSMcoBAAoNCggIDhDKFBjTMcoBAAoNCggIDhDKFBjUMcoBAAoNCggIDhDLFBjRMcoBAAoNCggIDhDLFBjSMcoBAAoNCggIDhDLFBjTMcoBAAoNCggIDhDLFBjUMcoBAAoNCggIDhDMFBjRMcoBAAoNCggIDhDMFBjSMcoBAAoNCggIDhDMFBjTMcoBAAoNCggIDhDMFBjUMcoBAAoNCggIDhDNFBjRMcoBAAoNCggIDhDNFBjSMcoBAAoNCggIDhDNFBjTMcoBAAoNCggIDhDNFBjUMcoBAAoNCggIDhDOFBjRMcoBAAoNCggIDhDOFBjSMcoBAAoNCggIDhDOFBjTMcoBAAoNCggIDhDOFBjUMcoBAAoNCggIDhDPFBjRMcoBAAoNCggIDhDPFBjSMcoBAAoNCggIDhDPFBjTMcoBAAoNCggIDhDPFBjUMcoBABIPCAISB3RyYW5zaXQYv4Q9Gi0SAmVuGgJ1cyjRCGIdCEQSFQoDc2V0Eg5UcmFuc2l0Rm9jdXNlZCgBMAGgAQEgATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQG6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBD6LU29IPCQoHCgJzcBIBMuABowaAAgE&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgsKBggFEAUYDMoBAAoNCggIDhDKFBjSMcoBAAoNCggIDhDKFBjTMcoBAAoNCggIDhDKFBjUMcoBAAoNCggIDhDLFBjRMcoBAAoNCggIDhDLFBjSMcoBAAoNCggIDhDLFBjTMcoBAAoNCggIDhDLFBjUMcoBAAoNCggIDhDMFBjRMcoBAAoNCggIDhDMFBjSMcoBAAoNCggIDhDMFBjTMcoBAAoNCggIDhDMFBjUMcoBAAoNCggIDhDNFBjRMcoBAAoNCggIDhDNFBjSMcoBAAoNCggIDhDNFBjTMcoBAAoNCggIDhDNFBjUMcoBAAoNCggIDhDOFBjRMcoBAAoNCggIDhDOFBjSMcoBAAoNCggIDhDOFBjTMcoBAAoNCggIDhDOFBjUMcoBAAoNCggIDhDPFBjRMcoBAAoNCggIDhDPFBjSMcoBAAoNCggIDhDPFBjTMcoBAAoNCggIDhDPFBjUMcoBABIPCAISB3RyYW5zaXQYv4Q9Gi0SAmVuGgJ1cyjRCGIdCEQSGQoDc2V0EhJUcmFuc2l0Rm9jdXNlZERhcmugAQEgATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQG6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBD6LU29IPCQoHCgJzcBIBMuABowaAAgE&authuser=0"
+  },
+  "14": {
+    "style": "TransitFocused",
+    "z": 9,
+    "verbatim": false,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFIYxgHKAQAKDQoICA4QyhQY0jHKAQAKDQoICA4QyhQY0zHKAQAKDQoICA4QyhQY1DHKAQAKDQoICA4QyxQY0THKAQAKDQoICA4QyxQY0jHKAQAKDQoICA4QyxQY0zHKAQAKDQoICA4QyxQY1DHKAQAKDQoICA4QzBQY0THKAQAKDQoICA4QzBQY0jHKAQAKDQoICA4QzBQY0zHKAQAKDQoICA4QzBQY1DHKAQAKDQoICA4QzRQY0THKAQAKDQoICA4QzRQY0jHKAQAKDQoICA4QzRQY0zHKAQAKDQoICA4QzRQY1DHKAQAKDQoICA4QzhQY0THKAQAKDQoICA4QzhQY0jHKAQAKDQoICA4QzhQY0zHKAQAKDQoICA4QzhQY1DHKAQAKDQoICA4QzxQY0THKAQAKDQoICA4QzxQY0jHKAQAKDQoICA4QzxQY0zHKAQAKDQoICA4QzxQY1DHKAQASDwgCEgd0cmFuc2l0GL-EPRotEgJlbhoCdXMo0QhiHQhEEhUKA3NldBIOVHJhbnNpdEZvY3VzZWQoATABoAEBIAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQ-i1NvSDwkKBwoCc3ASATLgAaMGgAIB&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFIYxgHKAQAKDQoICA4QyhQY0jHKAQAKDQoICA4QyhQY0zHKAQAKDQoICA4QyhQY1DHKAQAKDQoICA4QyxQY0THKAQAKDQoICA4QyxQY0jHKAQAKDQoICA4QyxQY0zHKAQAKDQoICA4QyxQY1DHKAQAKDQoICA4QzBQY0THKAQAKDQoICA4QzBQY0jHKAQAKDQoICA4QzBQY0zHKAQAKDQoICA4QzBQY1DHKAQAKDQoICA4QzRQY0THKAQAKDQoICA4QzRQY0jHKAQAKDQoICA4QzRQY0zHKAQAKDQoICA4QzRQY1DHKAQAKDQoICA4QzhQY0THKAQAKDQoICA4QzhQY0jHKAQAKDQoICA4QzhQY0zHKAQAKDQoICA4QzhQY1DHKAQAKDQoICA4QzxQY0THKAQAKDQoICA4QzxQY0jHKAQAKDQoICA4QzxQY0zHKAQAKDQoICA4QzxQY1DHKAQASDwgCEgd0cmFuc2l0GL-EPRotEgJlbhoCdXMo0QhiHQhEEhkKA3NldBISVHJhbnNpdEZvY3VzZWREYXJroAEBIAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQ-i1NvSDwkKBwoCc3ASATLgAaMGgAIB&authuser=0"
+  },
+  "15": {
+    "style": "Terrain",
+    "z": 14,
+    "verbatim": false,
+    "url": "https://www.google.com/maps/vt/proto?bpb=Cg0KCAgOEMwUGNYxygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aMhICZW4aAnVzKNEIYgIIQ2ICCD9iAggDYhYIRBIOCgNzZXQSB1RlcnJhaW4oATABoAEBIAAqCQgALQAAgD8wATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=Cg0KCAgOEMwUGNYxygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aMhICZW4aAnVzKNEIYgIIQ2ICCD9iAggDYhYIRBISCgNzZXQSC1RlcnJhaW5EYXJroAEBIAAqCQgALQAAgD8wATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authuser=0"
+  },
+  "16": {
+    "style": "Terrain",
+    "z": 1,
+    "verbatim": true,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgsKBggBEAAYAMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9GjISAmVuGgJ1cyjRCGICCENiAgg_YgIIA2IWCEQSDgoDc2V0EgdUZXJyYWluKAEwAaABASAAKgkIAC0AAIA_MAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgsKBggBEAAYAMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9GjISAmVuGgJ1cyjRCGICCENiAgg_YgIIA2IWCEQSEgoDc2V0EgtUZXJyYWluRGFya6ABASAAKgkIAC0AAIA_MAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser=0"
+  },
+  "17": {
+    "style": "Terrain",
+    "z": 9,
+    "verbatim": false,
+    "url": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFIYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRoyEgJlbhoCdXMo0QhiAghDYgIIP2ICCANiFghEEg4KA3NldBIHVGVycmFpbigBMAGgAQEgACoJCAAtAACAPzABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuser=0",
+    "expect": "https://www.google.com/maps/vt/proto?bpb=CgwKBwgJEFIYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRoyEgJlbhoCdXMo0QhiAghDYgIIP2ICCANiFghEEhIKA3NldBILVGVycmFpbkRhcmugAQEgACoJCAAtAACAPzABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuser=0"
+  }
+};
+
 /** URLs each rule id must rewrite, and what it must rewrite them to. */
 export const MUST_MATCH = [
+  {
+    ruleId: 9,
+    name: 'proto-baked-roadmap-z9',
+    why: 'server-styled mapcore Roadmap tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09; background.js RULE_SAMPLES[9]',
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[9].url,
+    expect: PROTO_BAKED[9].expect,
+  },
+  {
+    ruleId: 10,
+    name: 'proto-baked-roadmap-z4',
+    why: 'server-styled mapcore Roadmap tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09; background.js RULE_SAMPLES[10]',
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[10].url,
+    expect: PROTO_BAKED[10].expect,
+  },
+  {
+    ruleId: 11,
+    name: 'proto-baked-roadmap-z5',
+    why: 'server-styled mapcore Roadmap tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[11]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[11].url,
+    expect: PROTO_BAKED[11].expect,
+  },
+  {
+    ruleId: 12,
+    name: 'proto-baked-transitfocused-z14',
+    why: 'server-styled mapcore TransitFocused tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09; background.js RULE_SAMPLES[12]',
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[12].url,
+    expect: PROTO_BAKED[12].expect,
+  },
+  {
+    ruleId: 13,
+    name: 'proto-baked-transitfocused-z5',
+    why: 'server-styled mapcore TransitFocused tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[13]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[13].url,
+    expect: PROTO_BAKED[13].expect,
+  },
+  {
+    ruleId: 14,
+    name: 'proto-baked-transitfocused-z9',
+    why: 'server-styled mapcore TransitFocused tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[14]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[14].url,
+    expect: PROTO_BAKED[14].expect,
+  },
+  {
+    ruleId: 15,
+    name: 'proto-baked-terrain-z14',
+    why: 'server-styled mapcore Terrain tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[15]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[15].url,
+    expect: PROTO_BAKED[15].expect,
+  },
+  {
+    ruleId: 16,
+    name: 'proto-baked-terrain-z1',
+    why: 'server-styled mapcore Terrain tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09; background.js RULE_SAMPLES[16]',
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[16].url,
+    expect: PROTO_BAKED[16].expect,
+  },
+  {
+    ruleId: 17,
+    name: 'proto-baked-terrain-z9',
+    why: 'server-styled mapcore Terrain tile: colours baked in by Google, no CompactLegend is fetched',
+    source: 'live mapcore capture 2026-11-09 (tile coordinates re-encoded); background.js RULE_SAMPLES[17]',
+    derived: true,
+    resourceType: 'xmlhttprequest',
+    url: PROTO_BAKED[17].url,
+    expect: PROTO_BAKED[17].expect,
+  },
   {
     ruleId: 6,
     name: 'proto-terrain-relief-z9',
@@ -321,6 +480,51 @@ export const MUST_MATCH = [
 
 /** URLs no rule may rewrite. Each carries the failure it is guarding against. */
 export const MUST_NOT_MATCH = [
+  {
+    name: 'proto-baked-roadmap-z9-already-dark',
+    guards: 'redirect loop -- rule 9 re-matching its own RoadmapDark output',
+    url: PROTO_BAKED[9].expect,
+  },
+  {
+    name: 'proto-baked-roadmap-z4-already-dark',
+    guards: 'redirect loop -- rule 10 re-matching its own RoadmapDark output',
+    url: PROTO_BAKED[10].expect,
+  },
+  {
+    name: 'proto-baked-roadmap-z5-already-dark',
+    guards: 'redirect loop -- rule 11 re-matching its own RoadmapDark output',
+    url: PROTO_BAKED[11].expect,
+  },
+  {
+    name: 'proto-baked-transitfocused-z14-already-dark',
+    guards: 'redirect loop -- rule 12 re-matching its own TransitFocusedDark output',
+    url: PROTO_BAKED[12].expect,
+  },
+  {
+    name: 'proto-baked-transitfocused-z5-already-dark',
+    guards: 'redirect loop -- rule 13 re-matching its own TransitFocusedDark output',
+    url: PROTO_BAKED[13].expect,
+  },
+  {
+    name: 'proto-baked-transitfocused-z9-already-dark',
+    guards: 'redirect loop -- rule 14 re-matching its own TransitFocusedDark output',
+    url: PROTO_BAKED[14].expect,
+  },
+  {
+    name: 'proto-baked-terrain-z14-already-dark',
+    guards: 'redirect loop -- rule 15 re-matching its own TerrainDark output',
+    url: PROTO_BAKED[15].expect,
+  },
+  {
+    name: 'proto-baked-terrain-z1-already-dark',
+    guards: 'redirect loop -- rule 16 re-matching its own TerrainDark output',
+    url: PROTO_BAKED[16].expect,
+  },
+  {
+    name: 'proto-baked-terrain-z9-already-dark',
+    guards: 'redirect loop -- rule 17 re-matching its own TerrainDark output',
+    url: PROTO_BAKED[17].expect,
+  },
   {
     name: 'proto-terrain-relief-z9-already-dark',
     guards: 'redirect loop -- rule 6 re-matching its own TerrainDark output',

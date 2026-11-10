@@ -110,5 +110,131 @@
       "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)iAgg_YgIIA2ISCEQSDgoDc2V0EgdUZXJyYWluoA(.*)$",
       "resourceTypes": ["xmlhttprequest", "other"]
     }
+  },
+  {
+    "id": 9,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1YhYIRBISCgNzZXQSC1JvYWRtYXBEYXJroA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)YhYIRBIOCgNzZXQSB1JvYWRtYXAoATABoA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 10,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1IWCEQSEgoDc2V0EgtSb2FkbWFwRGFya6AB\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)IWCEQSDgoDc2V0EgdSb2FkbWFwKAEwAaAB(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 11,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1iFghEEhIKA3NldBILUm9hZG1hcERhcmugA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)iFghEEg4KA3NldBIHUm9hZG1hcCgBMAGgA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 12,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1Yh0IRBIZCgNzZXQSElRyYW5zaXRGb2N1c2VkRGFya6AB\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)Yh0IRBIVCgNzZXQSDlRyYW5zaXRGb2N1c2VkKAEwAaAB(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 13,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1IdCEQSGQoDc2V0EhJUcmFuc2l0Rm9jdXNlZERhcmugA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)IdCEQSFQoDc2V0Eg5UcmFuc2l0Rm9jdXNlZCgBMAGgA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 14,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1iHQhEEhkKA3NldBISVHJhbnNpdEZvY3VzZWREYXJroA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)iHQhEEhUKA3NldBIOVHJhbnNpdEZvY3VzZWQoATABoA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 15,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1YhYIRBISCgNzZXQSC1RlcnJhaW5EYXJroA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)YhYIRBIOCgNzZXQSB1RlcnJhaW4oATABoA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 16,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1IWCEQSEgoDc2V0EgtUZXJyYWluRGFya6AB\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)IWCEQSDgoDc2V0EgdUZXJyYWluKAEwAaAB(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 17,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "\\1iFghEEhIKA3NldBILVGVycmFpbkRhcmugA\\2"
+      }
+    },
+    "condition": {
+      "regexFilter": "^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)iFghEEg4KA3NldBIHVGVycmFpbigBMAGgA(.*)$",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
   }
 ]

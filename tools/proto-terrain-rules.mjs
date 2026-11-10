@@ -29,7 +29,7 @@
  * If Google ever reorders or renames these options the literal no longer matches
  * and the tile simply stays as it is today (light relief); nothing breaks.
  *
- * Usage: node tools/proto-terrain-rules.mjs   -> prints the three rules as JSON.
+ * Usage: node tools/proto-terrain-rules.mjs   -> prints rules 6-17 as JSON.
  */
 
 const b = (...xs) => Buffer.from(xs);
@@ -65,22 +65,69 @@ export function regionCore(region, k) {
 
 export const FIRST_RULE_ID = 6;
 
-export function protoTerrainRules() {
-  if (OLD_REGION.length !== NEW_REGION.length) throw new Error('regions must be the same length');
+/*
+ * Rules 9-17: the "server-styled" mapcore tiles (found 2026-11-09, Chrome on a
+ * profile Google had put in the variant that bakes colours into the tile).
+ *
+ * In that variant every vector tile request carries two extra options inside the
+ * style set entry -- `28 01 30 01` (fields 5 and 6 = 1) right after the style
+ * name -- and Google returns the tile with the style's colours baked in. The
+ * client then never fetches a CompactLegend palette at all, so rules 1/2/5 have
+ * nothing to redirect and the map renders in the light `Roadmap` / `TransitFocused`
+ * colours although the extension is on (the "Transit, then More, still bright"
+ * report: the variant is per profile, not per click, and Firefox's profile was
+ * in the default variant). Same trick as rules 6-8: the 4 bytes of the two
+ * options are dropped while the 4 bytes of "Dark" are added, so the region keeps
+ * its length. Without the options Google returns the tile in the default
+ * (palette) form for the Dark style, and the client fetches the Dark legend
+ * itself (verified: the page turns dark, the RoadmapDark/TransitFocusedDark
+ * CompactLegend is fetched -- see docs/turns/2026-11-09-version-1.0.5.md).
+ */
+const setEntry = (name, extra) => {
+  const nm = s(name);
+  const inner = Buffer.concat([b(0x0a, 0x03), s('set'), b(0x12, nm.length), nm]);
+  const body = Buffer.concat([b(0x08, 0x44, 0x12, inner.length), inner, extra]);
+  return Buffer.concat([b(0x62, body.length), body]);
+};
+const BAKED = b(0x28, 0x01, 0x30, 0x01);
+const NEXT = b(0xa0, 0x01);
+
+export const SWAPS = [
+  { name: 'terrain-relief', firstId: FIRST_RULE_ID, old: OLD_REGION, new: NEW_REGION },
+  ...['Roadmap', 'TransitFocused', 'Terrain'].map((style, i) => ({
+    name: `baked-${style}`,
+    firstId: 9 + 3 * i,
+    old: Buffer.concat([setEntry(style, BAKED), NEXT]),
+    new: Buffer.concat([setEntry(`${style}Dark`, Buffer.alloc(0)), NEXT]),
+  })),
+];
+
+function swapRules(swap) {
+  if (swap.old.length !== swap.new.length) throw new Error(`${swap.name}: regions must be the same length`);
   return [0, 1, 2].map((k) => ({
-    id: FIRST_RULE_ID + k,
+    id: swap.firstId + k,
     priority: 1,
     action: {
       type: 'redirect',
-      redirect: { regexSubstitution: `\\1${regionCore(NEW_REGION, k)}\\2` },
+      redirect: { regexSubstitution: `\\1${regionCore(swap.new, k)}\\2` },
     },
     condition: {
-      regexFilter: `^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)${regionCore(OLD_REGION, k)}(.*)$`,
+      regexFilter: `^(https://[^/]+/maps/vt/proto\\?bpb=[^&]*)${regionCore(swap.old, k)}(.*)$`,
       resourceTypes: ['xmlhttprequest', 'other'],
     },
   }));
 }
 
+/** Rules 6-8 (Terrain relief). */
+export function protoTerrainRules() {
+  return swapRules(SWAPS[0]);
+}
+
+/** Rules 6-17: Terrain relief plus the server-styled Roadmap / TransitFocused / Terrain tiles. */
+export function protoRules() {
+  return SWAPS.flatMap(swapRules);
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  console.log(JSON.stringify(protoTerrainRules(), null, 2));
+  console.log(JSON.stringify(protoRules(), null, 2));
 }

@@ -300,6 +300,232 @@ const RULE_SAMPLES = {
         "krsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE",
     },
   ],
+  // Rules 9-17: server-styled ("baked") mapcore tiles -- the variant in which the
+  // style set entry carries options 5 and 6 and no CompactLegend is fetched. Live
+  // Chrome mapcore capture at Mountain View, 2026-11-09 (9, 10, 12 and 16 verbatim; the
+  // others are the same request with only the tile coordinates re-encoded).
+  9: [
+    {
+      name: "proto-baked-roadmap-z9",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFIYxgHKAQASEwgCEgdjcmlzaXMy-o3FjAsCCAMaJhICZW4aAnVzKNEIYhYIRBIOCgNzZXQS" +
+        "B1JvYWRtYXAoATABoAEBIAEyOwgMEAIwADgBQAKIAQHgAQaAAgG4AgHAAgHIAgHYAgHoAgGQAwLIAwHg" +
+        "AwHwAwn4AxaaBAQIARAByAUBogECEAO6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLs" +
+        "krsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99Pgs" +
+        "wITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFIYxgHKAQASEwgCEgdjcmlzaXMy-o3FjAsCCAMaJhICZW4aAnVzKNEIYhYIRBISCgNzZXQS" +
+        "C1JvYWRtYXBEYXJroAEBIAEyOwgMEAIwADgBQAKIAQHgAQaAAgG4AgHAAgHIAgHYAgHoAgGQAwLIAwHg" +
+        "AwHwAwn4AxaaBAQIARAByAUBogECEAO6AW7OxVPRxVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLs" +
+        "krsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99Pgs" +
+        "wITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser=0",
+    },
+  ],
+  10: [
+    {
+      name: "proto-baked-roadmap-z4",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggEEAIYBsoBABIPCAAYv4Q9IgcKBW5kbGNjGiYSAmVuGgJ1cyjRCGIWCEQSDgoDc2V0EgdSb2Fk" +
+        "bWFwKAEwAaABASABKgUtAACAPzI5CAwQAjAAOAFAAogBAdIBBAgBIAHgAQaAAgG4AgHIAgHYAgHoAgGQ" +
+        "AwGwAwHgAwGaBAQIARAByAUBogEGGAEwAXgBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLq" +
+        "krsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsi" +
+        "vfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggEEAIYBsoBABIPCAAYv4Q9IgcKBW5kbGNjGiYSAmVuGgJ1cyjRCGIWCEQSEgoDc2V0EgtSb2Fk" +
+        "bWFwRGFya6ABASABKgUtAACAPzI5CAwQAjAAOAFAAogBAdIBBAgBIAHgAQaAAgG4AgHIAgHYAgHoAgGQ" +
+        "AwGwAwHgAwGaBAQIARAByAUBogEGGAEwAXgBugFuzsVT0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLq" +
+        "krsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsi" +
+        "vfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuser=0",
+    },
+  ],
+  11: [
+    {
+      name: "proto-baked-roadmap-z5",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggFEAUYDMoBABITCAISB2NyaXNpczL6jcWMCwIIAxomEgJlbhoCdXMo0QhiFghEEg4KA3NldBIH" +
+        "Um9hZG1hcCgBMAGgAQEgATI7CAwQAjAAOAFAAogBAeABBoACAbgCAcACAcgCAdgCAegCAZADAsgDAeAD" +
+        "AfADCfgDFpoEBAgBEAHIBQGiAQIQA7oBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuyS" +
+        "uyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzA" +
+        "hN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authuser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggFEAUYDMoBABITCAISB2NyaXNpczL6jcWMCwIIAxomEgJlbhoCdXMo0QhiFghEEhIKA3NldBIL" +
+        "Um9hZG1hcERhcmugAQEgATI7CAwQAjAAOAFAAogBAeABBoACAbgCAcACAcgCAdgCAegCAZADAsgDAeAD" +
+        "AfADCfgDFpoEBAgBEAHIBQGiAQIQA7oBbs7FU9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuyS" +
+        "uyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzA" +
+        "hN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authuser=0",
+    },
+  ],
+  12: [
+    {
+      name: "proto-baked-transitfocused-z14",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "Cg0KCAgOEMoUGNExygEACg0KCAgOEMoUGNIxygEACg0KCAgOEMoUGNMxygEACg0KCAgOEMoUGNQxygEA" +
+        "Cg0KCAgOEMsUGNExygEACg0KCAgOEMsUGNIxygEACg0KCAgOEMsUGNMxygEACg0KCAgOEMsUGNQxygEA" +
+        "Cg0KCAgOEMwUGNExygEACg0KCAgOEMwUGNIxygEACg0KCAgOEMwUGNMxygEACg0KCAgOEMwUGNQxygEA" +
+        "Cg0KCAgOEM0UGNExygEACg0KCAgOEM0UGNIxygEACg0KCAgOEM0UGNMxygEACg0KCAgOEM0UGNQxygEA" +
+        "Cg0KCAgOEM4UGNExygEACg0KCAgOEM4UGNIxygEACg0KCAgOEM4UGNMxygEACg0KCAgOEM4UGNQxygEA" +
+        "Cg0KCAgOEM8UGNExygEACg0KCAgOEM8UGNIxygEACg0KCAgOEM8UGNMxygEACg0KCAgOEM8UGNQxygEA" +
+        "Eg8IAhIHdHJhbnNpdBi_hD0aLRICZW4aAnVzKNEIYh0IRBIVCgNzZXQSDlRyYW5zaXRGb2N1c2VkKAEw" +
+        "AaABASABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAboBbs7F" +
+        "U9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2o" +
+        "Au6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEPotTb0g8JCgcK" +
+        "AnNwEgEy4AGjBoACAQ&authuser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "Cg0KCAgOEMoUGNExygEACg0KCAgOEMoUGNIxygEACg0KCAgOEMoUGNMxygEACg0KCAgOEMoUGNQxygEA" +
+        "Cg0KCAgOEMsUGNExygEACg0KCAgOEMsUGNIxygEACg0KCAgOEMsUGNMxygEACg0KCAgOEMsUGNQxygEA" +
+        "Cg0KCAgOEMwUGNExygEACg0KCAgOEMwUGNIxygEACg0KCAgOEMwUGNMxygEACg0KCAgOEMwUGNQxygEA" +
+        "Cg0KCAgOEM0UGNExygEACg0KCAgOEM0UGNIxygEACg0KCAgOEM0UGNMxygEACg0KCAgOEM0UGNQxygEA" +
+        "Cg0KCAgOEM4UGNExygEACg0KCAgOEM4UGNIxygEACg0KCAgOEM4UGNMxygEACg0KCAgOEM4UGNQxygEA" +
+        "Cg0KCAgOEM8UGNExygEACg0KCAgOEM8UGNIxygEACg0KCAgOEM8UGNMxygEACg0KCAgOEM8UGNQxygEA" +
+        "Eg8IAhIHdHJhbnNpdBi_hD0aLRICZW4aAnVzKNEIYh0IRBIZCgNzZXQSElRyYW5zaXRGb2N1c2VkRGFy" +
+        "a6ABASABMi8IDBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAboBbs7F" +
+        "U9HFU7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2o" +
+        "Au6f7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEPotTb0g8JCgcK" +
+        "AnNwEgEy4AGjBoACAQ&authuser=0",
+    },
+  ],
+  13: [
+    {
+      name: "proto-baked-transitfocused-z5",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggFEAUYDMoBAAoNCggIDhDKFBjSMcoBAAoNCggIDhDKFBjTMcoBAAoNCggIDhDKFBjUMcoBAAoN" +
+        "CggIDhDLFBjRMcoBAAoNCggIDhDLFBjSMcoBAAoNCggIDhDLFBjTMcoBAAoNCggIDhDLFBjUMcoBAAoN" +
+        "CggIDhDMFBjRMcoBAAoNCggIDhDMFBjSMcoBAAoNCggIDhDMFBjTMcoBAAoNCggIDhDMFBjUMcoBAAoN" +
+        "CggIDhDNFBjRMcoBAAoNCggIDhDNFBjSMcoBAAoNCggIDhDNFBjTMcoBAAoNCggIDhDNFBjUMcoBAAoN" +
+        "CggIDhDOFBjRMcoBAAoNCggIDhDOFBjSMcoBAAoNCggIDhDOFBjTMcoBAAoNCggIDhDOFBjUMcoBAAoN" +
+        "CggIDhDPFBjRMcoBAAoNCggIDhDPFBjSMcoBAAoNCggIDhDPFBjTMcoBAAoNCggIDhDPFBjUMcoBABIP" +
+        "CAISB3RyYW5zaXQYv4Q9Gi0SAmVuGgJ1cyjRCGIdCEQSFQoDc2V0Eg5UcmFuc2l0Rm9jdXNlZCgBMAGg" +
+        "AQEgATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQG6AW7OxVPR" +
+        "xVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALu" +
+        "n-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBD6LU29IPCQoHCgJz" +
+        "cBIBMuABowaAAgE&authuser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggFEAUYDMoBAAoNCggIDhDKFBjSMcoBAAoNCggIDhDKFBjTMcoBAAoNCggIDhDKFBjUMcoBAAoN" +
+        "CggIDhDLFBjRMcoBAAoNCggIDhDLFBjSMcoBAAoNCggIDhDLFBjTMcoBAAoNCggIDhDLFBjUMcoBAAoN" +
+        "CggIDhDMFBjRMcoBAAoNCggIDhDMFBjSMcoBAAoNCggIDhDMFBjTMcoBAAoNCggIDhDMFBjUMcoBAAoN" +
+        "CggIDhDNFBjRMcoBAAoNCggIDhDNFBjSMcoBAAoNCggIDhDNFBjTMcoBAAoNCggIDhDNFBjUMcoBAAoN" +
+        "CggIDhDOFBjRMcoBAAoNCggIDhDOFBjSMcoBAAoNCggIDhDOFBjTMcoBAAoNCggIDhDOFBjUMcoBAAoN" +
+        "CggIDhDPFBjRMcoBAAoNCggIDhDPFBjSMcoBAAoNCggIDhDPFBjTMcoBAAoNCggIDhDPFBjUMcoBABIP" +
+        "CAISB3RyYW5zaXQYv4Q9Gi0SAmVuGgJ1cyjRCGIdCEQSGQoDc2V0EhJUcmFuc2l0Rm9jdXNlZERhcmug" +
+        "AQEgATIvCAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQG6AW7OxVPR" +
+        "xVOyrFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALu" +
+        "n-8EsqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBD6LU29IPCQoHCgJz" +
+        "cBIBMuABowaAAgE&authuser=0",
+    },
+  ],
+  14: [
+    {
+      name: "proto-baked-transitfocused-z9",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFIYxgHKAQAKDQoICA4QyhQY0jHKAQAKDQoICA4QyhQY0zHKAQAKDQoICA4QyhQY1DHKAQAK" +
+        "DQoICA4QyxQY0THKAQAKDQoICA4QyxQY0jHKAQAKDQoICA4QyxQY0zHKAQAKDQoICA4QyxQY1DHKAQAK" +
+        "DQoICA4QzBQY0THKAQAKDQoICA4QzBQY0jHKAQAKDQoICA4QzBQY0zHKAQAKDQoICA4QzBQY1DHKAQAK" +
+        "DQoICA4QzRQY0THKAQAKDQoICA4QzRQY0jHKAQAKDQoICA4QzRQY0zHKAQAKDQoICA4QzRQY1DHKAQAK" +
+        "DQoICA4QzhQY0THKAQAKDQoICA4QzhQY0jHKAQAKDQoICA4QzhQY0zHKAQAKDQoICA4QzhQY1DHKAQAK" +
+        "DQoICA4QzxQY0THKAQAKDQoICA4QzxQY0jHKAQAKDQoICA4QzxQY0zHKAQAKDQoICA4QzxQY1DHKAQAS" +
+        "DwgCEgd0cmFuc2l0GL-EPRotEgJlbhoCdXMo0QhiHQhEEhUKA3NldBIOVHJhbnNpdEZvY3VzZWQoATAB" +
+        "oAEBIAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBugFuzsVT" +
+        "0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC" +
+        "7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQ-i1NvSDwkKBwoC" +
+        "c3ASATLgAaMGgAIB&authuser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFIYxgHKAQAKDQoICA4QyhQY0jHKAQAKDQoICA4QyhQY0zHKAQAKDQoICA4QyhQY1DHKAQAK" +
+        "DQoICA4QyxQY0THKAQAKDQoICA4QyxQY0jHKAQAKDQoICA4QyxQY0zHKAQAKDQoICA4QyxQY1DHKAQAK" +
+        "DQoICA4QzBQY0THKAQAKDQoICA4QzBQY0jHKAQAKDQoICA4QzBQY0zHKAQAKDQoICA4QzBQY1DHKAQAK" +
+        "DQoICA4QzRQY0THKAQAKDQoICA4QzRQY0jHKAQAKDQoICA4QzRQY0zHKAQAKDQoICA4QzRQY1DHKAQAK" +
+        "DQoICA4QzhQY0THKAQAKDQoICA4QzhQY0jHKAQAKDQoICA4QzhQY0zHKAQAKDQoICA4QzhQY1DHKAQAK" +
+        "DQoICA4QzxQY0THKAQAKDQoICA4QzxQY0jHKAQAKDQoICA4QzxQY0zHKAQAKDQoICA4QzxQY1DHKAQAS" +
+        "DwgCEgd0cmFuc2l0GL-EPRotEgJlbhoCdXMo0QhiHQhEEhkKA3NldBISVHJhbnNpdEZvY3VzZWREYXJr" +
+        "oAEBIAEyLwgMEAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBugFuzsVT" +
+        "0cVTsqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC" +
+        "7p_vBLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQ-i1NvSDwkKBwoC" +
+        "c3ASATLgAaMGgAIB&authuser=0",
+    },
+  ],
+  15: [
+    {
+      name: "proto-baked-terrain-z14",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "Cg0KCAgOEMwUGNYxygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aMhICZW4a" +
+        "AnVzKNEIYgIIQ2ICCD9iAggDYhYIRBIOCgNzZXQSB1RlcnJhaW4oATABoAEBIAAqCQgALQAAgD8wATIv" +
+        "CAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBbs7FU9HF" +
+        "U7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f" +
+        "7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authu" +
+        "ser=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "Cg0KCAgOEMwUGNYxygEAEgsIBRIHc2hhZGluZxIMCAYSCGNvbnRvdXJzEgkIABIBbRi_hD0aMhICZW4a" +
+        "AnVzKNEIYgIIQ2ICCD9iAggDYhYIRBISCgNzZXQSC1RlcnJhaW5EYXJroAEBIAAqCQgALQAAgD8wATIv" +
+        "CAwQAjAAOAFAAogBAeABBoACAbgCAcgCAdgCAegCAZADAeADAZoEBAgBEAHIBQGSAQIIAboBbs7FU9HF" +
+        "U7KsVLrdqAKHsu8E9bfvBJW6thbpkrsi6pK7IuySuyK_iMwivfT4LO3zhTCe9IUwzsVT0cVTut2oAu6f" +
+        "7wSyrFSl_rcWlbq2FumSuyLqkrsi7JK7Ir30-CzAhN8i7fOFMKOpiDC_iMwi2gEA4AGjBoACAQ&authu" +
+        "ser=0",
+    },
+  ],
+  16: [
+    {
+      name: "proto-baked-terrain-z1",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggBEAAYAMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9GjISAmVuGgJ1" +
+        "cyjRCGICCENiAgg_YgIIA2IWCEQSDgoDc2V0EgdUZXJyYWluKAEwAaABASAAKgkIAC0AAIA_MAEyLwgM" +
+        "EAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AW7OxVPRxVOy" +
+        "rFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8E" +
+        "sqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser" +
+        "=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgsKBggBEAAYAMoBABILCAUSB3NoYWRpbmcSDAgGEghjb250b3VycxIJCAASAW0Yv4Q9GjISAmVuGgJ1" +
+        "cyjRCGICCENiAgg_YgIIA2IWCEQSEgoDc2V0EgtUZXJyYWluRGFya6ABASAAKgkIAC0AAIA_MAEyLwgM" +
+        "EAIwADgBQAKIAQHgAQaAAgG4AgHIAgHYAgHoAgGQAwHgAwGaBAQIARAByAUBkgECCAG6AW7OxVPRxVOy" +
+        "rFS63agCh7LvBPW37wSVurYW6ZK7IuqSuyLskrsiv4jMIr30-Czt84UwnvSFMM7FU9HFU7rdqALun-8E" +
+        "sqxUpf63FpW6thbpkrsi6pK7IuySuyK99PgswITfIu3zhTCjqYgwv4jMItoBAOABowaAAgE&authuser" +
+        "=0",
+    },
+  ],
+  17: [
+    {
+      name: "proto-baked-terrain-z9",
+      type: "xmlhttprequest",
+      url:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFIYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRoyEgJlbhoC" +
+        "dXMo0QhiAghDYgIIP2ICCANiFghEEg4KA3NldBIHVGVycmFpbigBMAGgAQEgACoJCAAtAACAPzABMi8I" +
+        "DBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFuzsVT0cVT" +
+        "sqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_v" +
+        "BLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuse" +
+        "r=0",
+      expect:
+        "https://www.google.com/maps/vt/proto?bpb=" +
+        "CgwKBwgJEFIYxgHKAQASCwgFEgdzaGFkaW5nEgwIBhIIY29udG91cnMSCQgAEgFtGL-EPRoyEgJlbhoC" +
+        "dXMo0QhiAghDYgIIP2ICCANiFghEEhIKA3NldBILVGVycmFpbkRhcmugAQEgACoJCAAtAACAPzABMi8I" +
+        "DBACMAA4AUACiAEB4AEGgAIBuAIByAIB2AIB6AIBkAMB4AMBmgQECAEQAcgFAZIBAggBugFuzsVT0cVT" +
+        "sqxUut2oAoey7wT1t-8Elbq2FumSuyLqkrsi7JK7Ir-IzCK99Pgs7fOFMJ70hTDOxVPRxVO63agC7p_v" +
+        "BLKsVKX-txaVurYW6ZK7IuqSuyLskrsivfT4LMCE3yLt84Uwo6mIML-IzCLaAQDgAaMGgAIB&authuse" +
+        "r=0",
+    },
+  ],
   3: [
     {
       name: "vector-stream",

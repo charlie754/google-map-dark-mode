@@ -78,7 +78,7 @@ user). The live config Maps uses lists every style name: it is the base64 protob
 cleanly, which is the health canary. Version hashes rotate; two were observed in one day, so never
 pin one.
 
-Eight DNR rules in `extension/rules/dark-map.json` cover all three modes. Rule 1 (the legend) is the
+Seventeen DNR rules in `extension/rules/dark-map.json` cover all three modes. Rule 1 (the legend) is the
 one that matters; rule 4 (first-paint raster tiles) exists only to kill a ~1 s light flash; rule 5
 is the Transit layer, which swaps the WHOLE palette to `CompactLegend-TransitFocused-<v>` (and the
 tile token to `!2sTransitFocused!`, covered by rules 3/4) rather than drawing over Roadmap. Any new
@@ -103,13 +103,32 @@ an alignment-enforcing `(?:[A-Za-z0-9_-]{4})*[A-Za-z0-9_-]{2}` prefix trips Chro
 the WebGL renderer string (UNMASKED_RENDERER_WEBGL → a real GPU) in an init script; with
 SwiftShader/llvmpipe Maps always picks canvas+labeler and the relief bug is invisible.
 
+Rules 9–17: **the server-styled ("baked") mapcore variant.** Google puts some browser profiles
+(it follows the Google cookies, not the cache or the Maps service worker) in a variant where every
+`/maps/vt/proto?bpb=` request's set entry carries options 5 and 6 right after the style name —
+`62 16 08 44 12 0e 0a 03 "set" 12 07 "Roadmap" 28 01 30 01` — and Google bakes the style's
+colours into the tile. The client then fetches **no CompactLegend at all**, so rules 1/2/5 never
+fire and Roadmap, Transit and the Terrain relief render light with the extension on (the
+"Chrome: Transit, then More, still bright" report; the user's Firefox profile was in the default
+variant). Signature in a capture: proto `200`s, zero `CompactLegend-<Style>-` requests except the
+self-check's own e3dec canary. Fix: the same same-length swap — drop `28 01 30 01`, add `Dark`
+(Roadmap, TransitFocused, Terrain; 3 alignments each). Without the options Google returns the
+default (palette) form of the Dark style and the client then fetches the Dark palette itself
+(observed: `CompactLegend-TransitFocused-…` 307 → `…Dark-`). To reproduce you need a profile in
+that variant; keep one (copy the profile dir) — a fresh profile is usually in the default one.
+Testing trap: Chrome keeps the extension service worker of an unpacked extension loaded from the
+same path at the same version across launches, so after changing `background.js` a reused profile
+can run the OLD self-check against the NEW rules (→ `rules-broken`, ruleset auto-disabled). Load
+the build from a fresh copy path when reusing a profile.
+
 ### Dead ends — proven, do not retry
 
 - **Rewriting the `set:` token inside `/maps/vt/proto?bpb=` generically.** Impossible for a regex:
   `Roadmap`(7) → `RoadmapDark`(11) needs three nested protobuf length prefixes incremented and the
   base64 re-encoded. `regexSubstitution` has no arithmetic. (Rules 6–8 get around it only because
-  the Terrain relief tile has a droppable 4-byte option next to the set entry — see above. The
-  Roadmap tile has none, and does not need it: its colours come from the palette.) Prepending or
+  the Terrain relief tile has a droppable 4-byte option next to the set entry, and 9–17 because
+  the server-styled tiles carry options 5/6 right after it — see above. The default-variant
+  Roadmap tile has neither, and does not need it: its colours come from the palette.) Prepending or
   appending a second `set` entry instead returns HTTP 400.
 - **Rewriting only the raster `/maps/vt/pb=` tiles.** Produces a correct dark map for ~1–6 s that
   the vector renderer then overpaints. A single settled screenshot cannot distinguish "never

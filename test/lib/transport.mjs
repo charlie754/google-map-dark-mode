@@ -13,7 +13,7 @@
  *   1  legend      www.gstatic.com/maps/res/CompactLegend-S-V    yes (rules 1,2,5)
  *   2  stream      <host>/maps/vt/stream/pb=...!1sset!2sS!...    yes (rule 3)
  *   3  raster      <host>/maps/vt/pb=...!2sm!...!1sset!2sS!...   yes (rule 4)
- *   4  proto       <host>/maps/vt/proto?bpb=<base64 protobuf>    Terrain relief only (rules 6-8)
+ *   4  proto       <host>/maps/vt/proto?bpb=<base64 protobuf>    Terrain relief + server-styled tiles (rules 6-17)
  *
  * "Rewritable" is not a style choice, it is a fact about the wire format: the
  * proto transport carries the style token as a length-prefixed protobuf string
@@ -29,9 +29,24 @@
  * style option to pay for the four bytes of "Dark" (tools/proto-terrain-rules.mjs).
  * Unlike the Roadmap proto tile, its colours are baked server-side, so it has to
  * be. A proto tile whose token is Terrain/TerrainDark is therefore rewritable.
+ *
+ * Second exception (1.0.5 follow-up): the server-styled ("baked") variant, in which
+ * the style set entry carries options 5 and 6 (`28 01 30 01`) after the style name
+ * and Google bakes the colours into every vector tile instead of the client
+ * fetching a CompactLegend. Rules 9-17 rewrite those (Roadmap, TransitFocused,
+ * Terrain) with the same kind of swap, so such a tile is rewritable too.
  */
 
 import { bpbOf, protoStyleToken, protoTileCoords } from './bpb.mjs';
+
+/** True when the bpb asks for the server-styled variant (options 5 and 6 right after the style name). */
+export function protoServerStyled(buf) {
+  const token = protoStyleToken(buf);
+  if (!token) return false;
+  const name = Buffer.from(token, 'latin1');
+  const i = buf.indexOf(Buffer.concat([Buffer.from([0x0a, 0x03]), Buffer.from('set'), Buffer.from([0x12, name.length]), name]));
+  return i >= 0 && buf.subarray(i + 7 + name.length, i + 11 + name.length).equals(Buffer.from([0x28, 0x01, 0x30, 0x01]));
+}
 
 export const LIGHT_TOKENS = ['Roadmap', 'Terrain', 'TerrainVectorClient', 'TransitFocused'];
 export const DARK_OF = { Roadmap: 'RoadmapDark', Terrain: 'TerrainDark', TerrainVectorClient: 'TerrainVectorClientDark', TransitFocused: 'TransitFocusedDark' };
@@ -187,8 +202,9 @@ export function classifyRequest(url) {
       transport: 'proto',
       baseMap: token !== null,
       // Not rewritable by a generic regexSubstitution -- see the header -- except the
-      // Terrain relief tile, which rules 6-8 rewrite with a same-length swap.
-      rewritable: token === 'Terrain' || token === 'TerrainDark',
+      // Terrain relief tile (rules 6-8) and the server-styled tiles (rules 9-17),
+      // which are rewritten with a same-length swap.
+      rewritable: token === 'Terrain' || token === 'TerrainDark' || (buf !== null && protoServerStyled(buf)),
       token,
       dark: token === null ? null : DARK_TOKENS.includes(token),
       zoom: coords?.z ?? null,

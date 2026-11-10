@@ -20,7 +20,10 @@ separate Transit palette when Layers → Transit is on, and the extension now as
 for Google's dark version of it (Chrome and Firefox). Terrain also covers Google's
 newer vector terrain palette, which some setups use and which stayed light, and
 the mountains (hillshade and landcover) are now dark too on computers where Maps
-draws with the graphics card. In Firefox, the panel now shows the
+draws with the graphics card. On those computers some Chrome profiles get map
+tiles with the colours already baked in by Google (Transit or the plain map then
+stayed bright, for example after Layers → More); those tiles are now requested in
+Google's dark colours as well. In Firefox, the panel now shows the
 same GOAT Cam banner as Chrome, built into the add-on: Firefox makes no request to
 goatcam.dagoat.io and asks for no data-collection permission (it declares none).
 Chrome behaviour is unchanged.
@@ -140,8 +143,8 @@ checking.
 > Google address. Google Maps fetches its map palette from
 > `https://www.gstatic.com/maps/res/CompactLegend-Roadmap-<version>`; a dark
 > variant of that same asset, `CompactLegend-RoadmapDark-<version>`, is served by
-> Google from the same host. Four static rules rewrite that one name, and the
-> equivalent style token on Maps' tile requests. The destination is always
+> Google from the same host. A handful of static rules rewrite that one name, and the
+> equivalent style name on Maps' tile requests. The destination is always
 > another Google address on a host the user has already granted; nothing is
 > redirected to any third party, no request is blocked, and no header is
 > modified.
@@ -230,7 +233,7 @@ checking.
 
 > To a different address on Google's own servers, from Google's light map palette
 > to Google's dark one. `gstatic.com` → `gstatic.com`, `google.com` →
-> `google.com`. The rules are four lines of static JSON in the package
+> `google.com`. The rules are a short static JSON file in the package
 > (`rules/dark-map.json`) and can be read in full in under a minute; each is
 > anchored to a Google host and each rewrites one style name.
 
