@@ -56,7 +56,9 @@ test('"none" is declared alone, and technicalAndInteraction is never required', 
   const dcp = firefox.browser_specific_settings.gecko.data_collection_permissions;
   if (dcp.required.includes('none')) {
     assert.equal(dcp.required.length, 1, '"none" cannot be combined with other required types');
-    assert.deepEqual(dcp.optional, ['technicalAndInteraction']);
+    // Firefox embeds the GOAT Cam banner offline and transmits nothing, so there is
+    // no optional data type to ask for either (see CLAUDE.md, "Firefox banner").
+    assert.equal(dcp.optional, undefined);
   }
   assert.ok(
     !dcp.required.includes('technicalAndInteraction'),
@@ -172,6 +174,6 @@ test('Firefox loads the banner libraries before the classic background and decla
   });
   assert.deepEqual(
     firefox.browser_specific_settings.gecko.data_collection_permissions,
-    { required: ['none'], optional: ['technicalAndInteraction'] },
+    { required: ['none'] },
   );
 });

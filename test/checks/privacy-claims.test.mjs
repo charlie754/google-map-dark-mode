@@ -9,9 +9,12 @@ const readDoc = (relPath) =>
   fs.readFileSync(path.join(ROOT, relPath), "utf8").replace(/\r\n/g, "\n");
 
 const DISCLOSURE =
-  "To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. In Firefox this happens only if you turn on the optional technical and interaction data permission.";
+  "To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. This happens in Chrome only";
+// The Firefox build embeds the banner offline (lib/banner-embedded.js); the 1.0.4/1.0.5 opt-in wording must not come back.
+const FIREFOX_OPTIN = "In Firefox this happens only if you turn on the optional technical and interaction data permission";
 
 const OLD_PRIVACY_PHRASES = [
+  FIREFOX_OPTIN,
   "This extension collects nothing, sends nothing, and has no analytics.",
   "There is no server belonging to this extension.",
   "Nothing you do in Google Maps is recorded, and nothing about you\nleaves your computer because of this extension.",
@@ -22,6 +25,7 @@ const OLD_PRIVACY_PHRASES = [
 ];
 
 const OLD_STORE_LISTING_PHRASES = [
+  FIREFOX_OPTIN,
   "The photo and the QR code are\nembedded in the extension, so showing the banner makes no network request, and\nno permission changed.",
   'Neither store requires one when nothing is collected, but pointing at a real document makes review faster. Chrome\'s data-usage tab wants an explicit "no data collected" declaration either way.',
   "• Nothing collected, nothing transmitted, no analytics, no accounts, no servers",

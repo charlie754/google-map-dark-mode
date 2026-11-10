@@ -321,7 +321,4 @@
     bind();
     return loadHealth(settings);
   });
-  if (globalThis.GoatBannerConsent) {
-    globalThis.GoatBannerConsent.bind(el('bannerConsent'), el('onlineBanner'));
-  }
 })();

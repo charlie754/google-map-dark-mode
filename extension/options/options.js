@@ -408,7 +408,4 @@
     bind();
     return loadHealth(false);
   });
-  if (globalThis.GoatBannerConsent) {
-    globalThis.GoatBannerConsent.bind(el('bannerConsent'), el('onlineBanner'));
-  }
 })();

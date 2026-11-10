@@ -529,17 +529,7 @@
       "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-photo__frame { transform: none; }\n" +
       "  .goat--online .goat-lockup:is(:hover, :focus-visible, .is-active) .gc-vf { inset: var(--gc-vf-t, 6px) var(--gc-vf-r, 6px) var(--gc-vf-b, 6px) var(--gc-vf-l, 6px); }\n" +
     "}\n";
-  // Firefox-only opt-in under the bundled banner (see consentNeeded below).
-  const GOAT_CONSENT_CSS =
-    ".goat-consent { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }\n" +
-    ".goat-consent[hidden] { display: none; }\n" +
-    ".goat-consent__btn { all: unset; box-sizing: border-box; width: 100%; padding: 8px 12px; border-radius: 10px;" +
-    " border: 1px solid #f0c07a; background: rgba(240, 192, 122, .12); color: #f8eedf; font-size: 12px; font-weight: 600;" +
-    " text-align: center; cursor: pointer; transition: background 160ms ease; }\n" +
-    ".goat-consent__btn:hover { background: rgba(240, 192, 122, .24); }\n" +
-    ".goat-consent__btn:focus-visible { outline: 2px solid #f0c07a; outline-offset: 2px; }\n" +
-    ".goat-consent__hint { color: #b9bec7; font-size: 10px; line-height: 1.35; }\n";
-  const CSS_ALL = CSS + "\n" + GOAT_LOCKUP_CSS + "\n" + GOAT_ONLINE_FIX_CSS + "\n" + GOAT_CONSENT_CSS;
+  const CSS_ALL = CSS + "\n" + GOAT_LOCKUP_CSS + "\n" + GOAT_ONLINE_FIX_CSS;
 
   // goatcam-banner-render:begin
   // Static extension preview only; this image is not part of the signed banner.
@@ -975,10 +965,6 @@
     '<span class="gh__label">Star Project on Github</span>' +
     '</span></button>' +
     '<div class="goat-mount" data-goat-banner></div>' +
-    '<div class="goat-consent" data-goat-consent hidden>' +
-    '<button type="button" class="goat-consent__btn">Show the latest GOAT Cam banner</button>' +
-    '<span class="goat-consent__hint">Firefox asks first: opens a one-click page to allow downloads from goatcam.dagoat.io</span>' +
-    '</div>' +
 
     '</div></div></div></div>';
 
@@ -994,9 +980,6 @@
   let pinned = false; // click-to-pin, so touch and keyboard users get a latch
   let reloading = false; // a map-affecting setting changed; the page is going back
   let bannerMount = null;
-  let consentRow = null;
-  let consentNeeded = false;
-  let consentDismissed = false;
   let bannerPort = null;
   let bannerDisplay = null;
   let bannerModel = { kind: 'dagoat' };
@@ -1181,7 +1164,6 @@
       setBannerFitBlocked(true);
       connectBannerPort();
       loadBannerDisplay();
-      loadConsentState();
       setTimeout(place, 360);
       setTimeout(function () {
         if (!shell || !shell.classList.contains('is-open')) return;
@@ -1224,7 +1206,22 @@
     try { port.disconnect(); } catch (_) { /* already disconnected */ }
   }
 
+  // Firefox build: lib/banner-embedded.js (listed before this file in
+  // manifest.firefox.json) carries the GOAT Cam banner offline. When it is present the
+  // panel draws it directly and never talks to the banner runner, so Firefox makes no
+  // banner request at all. Chrome ships without that file and keeps the online path.
+  let embeddedBannerCache;
+  function embeddedBannerModel() {
+    if (embeddedBannerCache !== undefined) return embeddedBannerCache;
+    const embedded = typeof GoatBannerEmbedded !== 'undefined' ? GoatBannerEmbedded : null;
+    embeddedBannerCache = embedded && validBannerObject(embedded.banner) && base64(embedded.webp)
+      ? { kind: 'online', banner: embedded.banner, photo: { kind: 'webp', dataUrl: 'data:image/webp;base64,' + embedded.webp } }
+      : null;
+    return embeddedBannerCache;
+  }
+
   function connectBannerPort() {
+    if (embeddedBannerModel()) return;
     if (!shell || !shell.classList.contains('is-open') || bannerPort ||
         !api || !api.runtime || typeof api.runtime.connect !== 'function') return;
     try {
@@ -1346,25 +1343,6 @@
     });
   }
 
-  // Firefox: the background publishes goatcamBanner.consent.needed when the optional
-  // data-collection consent the online banner waits for is not granted (always false
-  // on Chrome). The row sits outside the banner mount, so the GOAT Cam copy is untouched.
-  function updateConsentRow() {
-    if (!consentRow) return;
-    const show = consentNeeded && !consentDismissed && bannerModel.kind !== 'online';
-    if (consentRow.hidden === !show) return;
-    consentRow.hidden = !show;
-    place();
-  }
-
-  async function loadConsentState() {
-    const got = await localGet(['goatcamBanner.consent', 'goatcamBanner.consentDismissed']);
-    const state = got && got['goatcamBanner.consent'];
-    consentNeeded = Boolean(state && state.needed === true);
-    consentDismissed = Boolean(got && got['goatcamBanner.consentDismissed'] === true);
-    updateConsentRow();
-  }
-
   function drawBannerModel(model) {
     if (!bannerMount) return;
     bannerReadSerial += 1;
@@ -1373,7 +1351,6 @@
     bannerModel = model && model.kind === 'online' ? model : { kind: 'dagoat' };
     renderGoatBanner(bannerMount, bannerModel);
     bindBannerEvents();
-    updateConsentRow();
     place();
     scheduleBannerFit();
   }
@@ -1400,6 +1377,10 @@
   }
 
   async function loadBannerDisplay() {
+    if (embeddedBannerModel()) {
+      if (bannerModel.kind !== 'online') drawBannerModel(embeddedBannerModel());
+      return;
+    }
     const got = await localGet('goatcamBanner.display');
     if (!shell || !shell.classList.contains('is-open')) return;
     const display = got && got['goatcamBanner.display'];
@@ -1518,16 +1499,12 @@
     shell = shadow.querySelector('.shell');
     pill = shadow.querySelector('.pill');
     bannerMount = shadow.querySelector('[data-goat-banner]');
-    consentRow = shadow.querySelector('[data-goat-consent]');
-    consentRow.querySelector('.goat-consent__btn').addEventListener('click', function () {
-      send({ type: 'goatcamBanner.openConsent' });
-    });
     setBannerFitBlocked(true);
     if (typeof ResizeObserver === 'function') {
       bannerResizeObserver = new ResizeObserver(function () { scheduleBannerFit(); });
       bannerResizeObserver.observe(bannerMount);
     }
-    drawBannerModel({ kind: 'dagoat' });
+    drawBannerModel(embeddedBannerModel() || { kind: 'dagoat' });
 
     shell.addEventListener('transitionend', function (event) {
       if (!shell.classList.contains('is-open') ||
@@ -1648,8 +1625,7 @@
       api.storage.onChanged.addListener(function (changes, area) {
         if (area !== 'local') return;
         const bannerChange = changes['goatcamBanner.display'];
-        if (bannerChange) applyBannerDisplay(bannerChange.newValue);
-        if (changes['goatcamBanner.consent'] || changes['goatcamBanner.consentDismissed']) loadConsentState();
+        if (bannerChange && !embeddedBannerModel()) applyBannerDisplay(bannerChange.newValue);
         if (!changes.settings) return;
         const next = changes.settings.newValue;
         if (!next) return;

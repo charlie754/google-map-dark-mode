@@ -17,7 +17,8 @@ also keep the old id deliberately — they are recorded evidence, not inputs.
 ```bash
 node tools/build.mjs        # assemble extension/ -> dist/chrome/ and dist/firefox/
 node tools/package.mjs      # build + emit the store ZIP and XPI into dist/
-npm test                    # 42 offline checks, ~150 ms, no network, no browser
+node tools/embed-banner.mjs # refresh the Firefox-embedded GOAT Cam banner (network), then release
+npm test                    # offline checks, ~150 ms, no network, no browser
 npm run test:theme          # 28 theme-layer checks (browser, no network)
 npm run test:widget         # 36 in-page widget checks (browser + live Maps)
 npm run test:dnr            # 2 KB DNR-trap detector (launches a browser)
@@ -177,6 +178,28 @@ extension here (measured: 0/3, twice). So the check parks the cursor via
 PowerShell and asserts `no stray pointer over the widget at rest` outright.
 Note the parking must use `-EncodedCommand`; Node's Windows argv quoting mangled
 the `-Command` form on every run while the same text pasted into a shell worked.
+
+## Firefox banner: embedded offline, never fetched (rule)
+
+Chrome downloads the GOAT Cam banner from goatcam.dagoat.io (lib/banner-fetch.js runner,
+signed file + webp, at most every 6 h). **Firefox must not.** Firefox/AMO counts that
+download as data transmission needing explicit data-collection consent, and an opt-in
+(1.0.5 tried a popup switch, then an in-panel button + consent page) left the ads section
+on the fallback for most users. So the Firefox build embeds the banner instead:
+
+- `node tools/embed-banner.mjs` downloads `banner/v1.signed` + its webp, verifies them with
+  lib/banner-core.js and the shipped public key, and writes `extension/lib/banner-embedded.js`
+  (`GoatBannerEmbedded`: banner fields, webp base64, raw signed file, hashes). Never hand-edit it.
+- Only `manifest.firefox.json` lists it (first content script); `tools/build.mjs` excludes it
+  from dist/chrome. When present, content/widget.js draws it directly and never opens the
+  `goatcamBanner` port; background.js `goatBannerGate` is hard-false on Firefox as a second lock.
+- The Firefox manifest declares `data_collection_permissions: { required: ["none"] }` and
+  nothing optional. Do not add `technicalAndInteraction`, `permissions.request`, or any
+  Firefox banner download/opt-in UI back.
+- **Updating the Firefox banner = re-run the script and ship a new Firefox release.**
+  The embedded copy ignores the signed `expires`; it is a packaged asset.
+- test/checks/banner-embedded.test.mjs re-verifies the signature/photo hash offline and pins
+  the no-fetch wiring.
 
 ## Verification discipline
 

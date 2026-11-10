@@ -18,12 +18,10 @@ the archived manifest at package time; it is never typed in twice.
 **1.0.5** (2026-11-09) — the Transit layer is now dark too: Maps switches to a
 separate Transit palette when Layers → Transit is on, and the extension now asks
 for Google's dark version of it (Chrome and Firefox). Terrain was re-checked on
-live Maps in both browsers. In Firefox, the GOAT Cam banner update from
-goatcam.dagoat.io now works: it is still off until you allow the optional
-"technical and interaction data" permission, which can now be turned on from a
-**Show the latest GOAT Cam banner** button under the banner in the Maps panel, or
-the **GOAT Cam banner updates** switch in the popup and on the settings page (as well
-as in the install prompt and about:addons). Chrome behaviour is unchanged.
+live Maps in both browsers. In Firefox, the panel now shows the
+same GOAT Cam banner as Chrome, built into the add-on: Firefox makes no request to
+goatcam.dagoat.io and asks for no data-collection permission (it declares none).
+Chrome behaviour is unchanged.
 
 **1.0.4** (2026-11-06) — the GOAT Cam banner can now be updated without a new
 release. While the panel is open, the extension may download a signed promo file
@@ -99,8 +97,8 @@ campaign lines under StarGithub. Dark-mode behaviour is unchanged from 1.0.0.
 > • No account, no analytics, no tracking, and settings stored locally on your device
 > • The panel also shows a small first-party banner for the author's own iPhone app, GOAT Cam.
 >   There is no ad network; while the panel is open, the extension may download a
->   signed promo card and image from goatcam.dagoat.io (in Firefox, only if you
->   opt in), and clicking it opens goatcam.dagoat.io while its QR code links to the App Store.
+>   signed promo card and image from goatcam.dagoat.io (Chrome only; the Firefox
+>   add-on has the banner built in and makes no such request), and clicking it opens goatcam.dagoat.io while its QR code links to the App Store.
 > • Free and open source under the MIT licence
 >
 > It checks its own health: if Google stops serving the dark map style, the
@@ -211,7 +209,7 @@ checking.
 > and stores settings locally. For its dark-palette self-check, it makes two
 > `HEAD` requests and one fixed map-tile `GET` to Google's own servers, all with
 > credentials omitted, whose sole purpose is to check that the dark map style is
-> still available. To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. In Firefox this happens only if you turn on the optional technical and interaction data permission. Full statement:
+> still available. To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. This happens in Chrome only; the Firefox add-on has the banner built in and never contacts goatcam.dagoat.io. Full statement:
 > https://github.com/charlie754/google-map-dark-mode/blob/main/PRIVACY.md
 
 ---
@@ -244,8 +242,8 @@ checking.
 > rather than a 404, so its size is the only available signal. If the answer is
 > that the dark style is gone, the extension disables its own rules. In addition,
 > while the panel is open, it may download a signed public promo file and image
-> from `goatcam.dagoat.io` at most every 6 hours (in Firefox, only when the
-> optional technical and interaction data permission is enabled).
+> from `goatcam.dagoat.io` at most every 6 hours (Chrome only; the Firefox add-on
+> ships that banner inside the package and makes no request for it).
 
 **"The panel shows a banner for another product."**
 

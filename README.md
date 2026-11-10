@@ -148,16 +148,16 @@ boundary this panel's own palette would be transformed along with Maps'.
 At the bottom of the panel is a banner for the author's own iPhone app,
 [GOAT Cam](https://goatcam.dagoat.io), which turns the phone into a webcam for a
 Windows 11 PC. It is self-promotion, not an ad network. A default coffee photo
-and App Store QR code are embedded in the extension. While the panel is open the
-extension may download a signed promo update from goatcam.dagoat.io (at most every
-six hours; see [PRIVACY.md](PRIVACY.md)) and falls back to the bundled banner if it
-is offline, bad or expired. In Firefox that download waits for the optional
-*technical and interaction data* consent — offered in the install prompt, and from
-1.0.5 also as a **Show the latest GOAT Cam banner** button right under the banner
-in the Maps panel (it opens a one-page explanation with an Allow button) and as the
-**GOAT Cam banner updates** switch in the popup and settings page. A temporary add-on
-loaded from about:debugging gets no install prompt, so it starts with the bundled
-banner and that button until you allow it. Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
+and App Store QR code are embedded in the extension. In Chrome, while the panel is
+open the extension may download a signed promo update from goatcam.dagoat.io (at
+most every six hours; see [PRIVACY.md](PRIVACY.md)) and falls back to the bundled
+banner if it is offline, bad or expired. **Firefox never downloads it**: Firefox and
+AMO treat that download as data transmission that needs the user's explicit
+data-collection consent, so instead the Firefox build embeds the current GOAT Cam
+banner (the same signed file and photo Chrome downloads, written to
+`extension/lib/banner-embedded.js` by `node tools/embed-banner.mjs`) and shows it
+offline, with no prompt. Updating the banner on Firefox therefore needs a new
+release. Clicking it opens goatcam.dagoat.io in a new tab. Hovering or
 keyboard-focusing the QR code enlarges it so a phone can scan it. The banner
 animates only while the pointer or keyboard focus is on it; in reduced-motion
 mode nothing travels and the QR code enlarges instantly.

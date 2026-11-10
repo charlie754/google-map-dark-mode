@@ -12,11 +12,7 @@ const PINNED = {
   'extension/lib/banner-core.js': '876fdf2bea928f725dece0e29c0da3ae417f30a166db27a8c6d19e1a0368ff80',
   'extension/lib/banner-machine.js': 'bb456db1f0c07db1185f1f3fe3c313b841e54bd55753cdb2c9b5b02af60492d1',
   'extension/lib/banner-fetch.js': '7b4e004e61a6cf91bd54acde6973d69ec1750c36be771435b968fd49f77d6896',
-  // 1.0.5: one deliberate edit to the f1a6460 copy -- `firefoxOnline: false` -> `true`, the
-  // Firefox switch the key file carries for exactly this purpose. The key itself (publicKeyHex,
-  // keyId, floor) is unchanged; f1a6460's bytes hashed to cf2710c3...e0723f5. Re-copy from the
-  // generator (with firefoxOnline true) rather than hand-editing anything else in this file.
-  'extension/lib/banner-key.js': '2a8e78c287a7c6ab04a290ead0a8fd1995a1974ea6d1652e950203e54d1c8890',
+  'extension/lib/banner-key.js': 'cf2710c3724b3df1fca9eb646fbe09218437f299e02e449e8762acec4e0723f5',
   'test/banner/client/banner-core.test.mjs': '23e61e3187bbe57deaf11a41368859625d5a27fc3fd4d7b7d698038307a6dcb2',
   'test/banner/client/banner-machine.test.mjs': '18bc5b81846189e9d890e11bba87701608cc1c320b42471f935453885240d68b',
   'test/banner/vectors/cases.json': 'b75e96e0eeffe4dd4158a7d8c86cc4f3a8db7b1eabb9bf09764cd32ebfbf154b',

@@ -27,8 +27,10 @@ const DIST = join(ROOT, "dist");
 
 /** Per-target manifest variants. These are never copied verbatim. */
 const TARGETS = [
-  { name: "chrome", manifest: "manifest.chrome.json" },
-  { name: "firefox", manifest: "manifest.firefox.json" },
+  // lib/banner-embedded.js is the offline GOAT Cam banner for Firefox only (see
+  // tools/embed-banner.mjs); Chrome downloads the banner online and ships without it.
+  { name: "chrome", manifest: "manifest.chrome.json", exclude: new Set(["lib/banner-embedded.js"]) },
+  { name: "firefox", manifest: "manifest.firefox.json", exclude: new Set() },
 ];
 
 const MANIFEST_VARIANTS = new Set(TARGETS.map((t) => t.manifest));
@@ -151,6 +153,7 @@ async function build() {
     const emitted = [];
 
     for (const rel of payload) {
+      if (target.exclude.has(rel)) continue;
       const bytes = await readFile(join(SRC, ...rel.split("/")));
       await emit(join(outDir, ...rel.split("/")), bytes);
       emitted.push({ rel, bytes: bytes.length });

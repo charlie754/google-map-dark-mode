@@ -1,7 +1,7 @@
 # Privacy policy — Google Map Dark Mode
 
 **Last updated: 2026-11-09. Applies to versions 1.0.0 to 1.0.5.**
-The GOAT Cam banner was introduced in 1.0.3, and the signed promo update from `goatcam.dagoat.io` described below arrived in 1.0.4 (Chrome only in 1.0.4; from 1.0.5 also in Firefox, after you opt in — see below). 1.0.1 and 1.0.2 showed a
+The GOAT Cam banner was introduced in 1.0.3, and the signed promo update from `goatcam.dagoat.io` described below arrived in 1.0.4 (Chrome only; the Firefox build makes no such request — from 1.0.5 it carries the current GOAT Cam banner inside the add-on, see below). 1.0.1 and 1.0.2 showed a
 Goat Project banner linking to dagoat.io instead, and 1.0.0 showed no banner.
 
 ## The short version
@@ -55,9 +55,9 @@ and then at most once every six hours.
 
 These are the same servers Google Maps is already talking to while you use it.
 
-To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. In Firefox this happens only if you turn on the optional technical and interaction data permission.
+To update the promo card in its own panel, the extension may download a signed public file and image from goatcam.dagoat.io over HTTPS, at most every 6 hours and only while the panel is open. That request carries what every web request carries — your IP address and your browser's user agent and language — plus the extension's public ID; nothing else is sent. This happens in Chrome only.
 
-In Firefox that permission is off unless you choose it: in the add-on's install prompt, with the **Show the latest GOAT Cam banner** button under the banner in the Maps panel (it opens a one-page explanation with an Allow button), with the **GOAT Cam banner updates** switch in the toolbar popup or on the settings page (from 1.0.5), or under about:addons → Permissions and data. Turning it off again stops the download; the panel then shows the banner bundled with the extension.
+The Firefox build never contacts goatcam.dagoat.io. From 1.0.5 the current GOAT Cam banner (text, photo and QR code) is embedded in the add-on package and shown from there, so Firefox users see the same banner as Chrome users without any download, and the Firefox add-on declares that it collects no data (`data_collection_permissions: required ["none"]`). A newer banner reaches Firefox only with a new release of the add-on.
 
 ## What it does to Maps' own requests
 

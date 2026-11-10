@@ -139,8 +139,8 @@ function makeFakeBrowser({ flavor = 'chrome', data = {}, fetchImpl, permissions 
     runtime,
     storage: { local: storageLocal },
     alarms: alarmsApi,
-    permissions: { onAdded: eventSource(), onRemoved: eventSource(), async getAll() { return { data_collection: [...permissions] }; } },
-    tabs: { created: [], async create(info) { this.created.push(info); return info; } },
+    permissions: { async getAll() { return { data_collection: permissions }; } },
+    tabs: { async create(info) { return info; } },
   };
   const context = {
     console,
@@ -300,7 +300,9 @@ test('firefox-gate-off', async () => {
   }
 });
 
-test('firefox-gate-on-when-allowed', async () => {
+test('firefox-never-fetches-even-with-consent-and-flag', async () => {
+  // Firefox embeds the banner offline (lib/banner-embedded.js); the background must not
+  // download it whatever the key flag or data-collection grants say.
   const fake = await loadBackground({
     flavor: 'firefox',
     firefoxOnline: true,
@@ -308,64 +310,11 @@ test('firefox-gate-on-when-allowed', async () => {
     fetchImpl: validFetch,
   });
   const port = await connect(fake);
-  await waitFor(() => fake.state.get(DISPLAY_KEY)?.kind === 'online', 'Firefox online display');
-  assert.equal(fake.fetchCalls.filter(({ url }) => url.endsWith('/banner/v1.signed')).length, 1);
-  assert.equal(fake.state.get(DISPLAY_KEY).kind, 'online');
-  await port.disconnect();
-});
-
-test('firefox-consent-granted-while-panel-open-fetches-now', async () => {
-  // 1.0.5: the popup/options switch requests technicalAndInteraction from a click. A grant
-  // made while a Maps panel is already open must start the download there and then.
-  const permissions = [];
-  const fake = await loadBackground({
-    flavor: 'firefox',
-    firefoxOnline: true,
-    permissions,
-    fetchImpl: validFetch,
-  });
-  const port = await connect(fake);
-  await waitFor(() => fake.state.get(DISPLAY_KEY)?.kind === 'dagoat', 'Firefox fallback before consent');
+  await waitFor(() => fake.state.has(DISPLAY_KEY), 'Firefox display written');
+  await new Promise((resolve) => setTimeout(resolve, 50));
   assert.equal(fake.fetchCalls.length, 0);
-  permissions.push('technicalAndInteraction');
-  await fake.api.permissions.onAdded.emit({ permissions: [], origins: [], data_collection: ['technicalAndInteraction'] });
-  await waitFor(() => fake.state.get(DISPLAY_KEY)?.kind === 'online', 'Firefox online display after consent');
-  assert.equal(fake.fetchCalls.filter(({ url }) => url.endsWith('/banner/v1.signed')).length, 1);
+  assert.equal(fake.state.get(DISPLAY_KEY).kind, 'dagoat');
   await port.disconnect();
-});
-
-test('shipped key enables the Firefox banner behind the consent gate', () => {
-  // 1.0.4 shipped firefoxOnline:false, so Firefox never fetched even with consent -- the
-  // "ads section does not work on Firefox" report. The consent gate itself is unchanged.
-  const key = fs.readFileSync(path.join(LIB_DIR, 'banner-key.js'), 'utf8');
-  assert.match(key, /firefoxOnline: true,/);
-});
-
-test('firefox-panel-consent-button-state-and-page', async () => {
-  // 1.0.5 follow-up: a temporary/self-installed Firefox add-on never shows the install-prompt
-  // checkbox, so the Maps panel itself offers the opt-in. The background publishes whether
-  // it is needed and opens consent/consent.html on request; a grant clears the flag.
-  const permissions = [];
-  const fake = await loadBackground({ flavor: 'firefox', firefoxOnline: true, permissions, fetchImpl: validFetch });
-  await waitFor(() => fake.state.get('goatcamBanner.consent')?.needed === true, 'consent needed published');
-  await fake.api.runtime.onMessage.emit({ type: 'goatcamBanner.openConsent' }, {}, () => {});
-  await waitFor(() => fake.api.tabs.created.length === 1, 'consent page opened');
-  assert.match(fake.api.tabs.created[0].url, /consent\/consent\.html$/);
-  permissions.push('technicalAndInteraction');
-  await fake.api.permissions.onAdded.emit({ permissions: [], origins: [], data_collection: ['technicalAndInteraction'] });
-  await waitFor(() => fake.state.get('goatcamBanner.consent')?.needed === false, 'consent flag cleared');
-  await fake.api.runtime.onMessage.emit({ type: 'goatcamBanner.openConsent' }, {}, () => {});
-  await new Promise((r) => setTimeout(r, 50));
-  assert.equal(fake.api.tabs.created.length, 1, 'no page once granted');
-});
-
-test('chrome-never-offers-the-consent-button', async () => {
-  const fake = await loadBackground({ fetchImpl: validFetch });
-  await waitFor(() => fake.state.has('goatcamBanner.consent'), 'consent state published');
-  assert.equal(fake.state.get('goatcamBanner.consent').needed, false);
-  await fake.api.runtime.onMessage.emit({ type: 'goatcamBanner.openConsent' }, {}, () => {});
-  await new Promise((r) => setTimeout(r, 50));
-  assert.equal(fake.api.tabs.created.length, 0);
 });
 
 test('display-written', async () => {
